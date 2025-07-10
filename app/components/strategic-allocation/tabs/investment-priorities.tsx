@@ -122,8 +122,7 @@ function PriorityModal({ isOpen, onClose, priority, onSave }: { isOpen: boolean;
 
     useEffect(() => {
         if (priority) {
-            setFormData({ ...priority, kpis: priority.kpis.join('
-') });
+            setFormData({ ...priority, kpis: priority.kpis.join('\n') });
         } else {
             setFormData({ code: '', name: '', description: '', weight: 0, minThreshold: 0, budgetMin: 0, budgetMax: 0, timeHorizon: 'medium', sponsor: '', kpis: '' });
         }
@@ -199,8 +198,7 @@ export function InvestmentPriorities() {
   };
 
   const handleSavePriority = (formData: PriorityFormData) => {
-    const kpis = formData.kpis.split('
-').filter(Boolean);
+    const kpis = formData.kpis.split('\n').filter(Boolean);
     if (editingPriority) {
       updatePriority(editingPriority.id, { ...formData, kpis });
     } else {

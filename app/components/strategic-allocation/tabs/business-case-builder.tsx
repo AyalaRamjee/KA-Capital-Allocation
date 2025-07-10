@@ -129,8 +129,8 @@ function RiskMatrix({ risks }: { risks: Risk[] }) {
           </div>
         ))}
         {Array.from({ length: matrixSize }, (_, row) => (
-          <>
-            <div key={`row-${row}`} className="text-xs text-slate-400 flex items-center">
+          <React.Fragment key={`row-fragment-${row}`}>
+            <div className="text-xs text-slate-400 flex items-center">
               {matrixSize - row}
             </div>
             {Array.from({ length: matrixSize }, (_, col) => {
@@ -150,7 +150,7 @@ function RiskMatrix({ risks }: { risks: Risk[] }) {
                 </div>
               )
             })}
-          </>
+          </React.Fragment>
         ))}
       </div>
       <div className="flex justify-between text-xs text-slate-400">
