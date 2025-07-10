@@ -10,7 +10,7 @@ import { ScoringAllocation } from './tabs/scoring-allocation'
 import { DataValidation } from './tabs/data-validation'
 import { PortfolioAnalytics } from './tabs/portfolio-analytics'
 import { ScenarioModeling } from './tabs/scenario-modeling'
-import { useAllocationData } from '@/hooks/use-allocation-data'
+import { useAllocationData } from '../../hooks/use-allocation-data'
 
 export function SCASApp() {
   const { state, setCurrentTab } = useAllocationData()

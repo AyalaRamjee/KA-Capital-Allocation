@@ -102,14 +102,12 @@ export interface SkillRequirement {
 
 export interface Risk {
   id: string
-  title: string
   description: string
-  category: 'financial' | 'operational' | 'strategic' | 'compliance' | 'technology'
+  category: 'financial' | 'operational' | 'strategic' | 'compliance' | 'technology' | 'technical' | 'regulatory'
   probability: number // 1-5
   impact: number // 1-5
   mitigation: string
   owner: string
-  status: 'open' | 'mitigated' | 'closed'
 }
 
 export interface Dependency {
@@ -123,47 +121,45 @@ export interface Dependency {
   status: 'pending' | 'in_progress' | 'completed' | 'blocked'
 }
 
+export interface Phase {
+  id: string
+  name: string
+  type: 'planning' | 'compliance' | 'implementation' | 'ramp-up'
+  startWeek: number
+  durationWeeks: number
+  description: string
+  deliverables: string[]
+  dependencies: string[]
+  milestones: Milestone[]
+}
+
+export interface Milestone {
+  id: string
+  name: string
+  description: string
+  dueDate: Date
+  status: 'pending' | 'in_progress' | 'completed' | 'overdue'
+  owner: string
+}
+
+export interface Resource {
+  id: string
+  skillType: string
+  totalFTE: number
+  rampUp: { week: number; fte: number }[]
+  cost: number
+}
+
 export interface BusinessCase {
   id: string
   projectId: string
-  
-  // Timeline
-  phases: {
-    planning: {
-      startDate: Date
-      duration: number // months
-      milestones: Milestone[]
-    }
-    compliance: {
-      startDate: Date
-      duration: number
-      requirements: ComplianceItem[]
-    }
-    implementation: {
-      startDate: Date
-      duration: number
-      workstreams: Workstream[]
-    }
-    rampUp: {
-      startDate: Date
-      duration: number
-      targetMetrics: Metric[]
-    }
-  }
-  
-  // Resources
-  staffing: {
-    kickoffTeam: number
-    rampUpCurve: { month: number; fte: number }[]
-    steadyState: number
-    skills: SkillRequirement[]
-  }
-  
-  // Risks
+  status: 'draft' | 'review' | 'approved' | 'rejected'
+  phases: Phase[]
+  resources: Resource[]
   risks: Risk[]
-  
-  // Dependencies
-  dependencies: Dependency[]
+  dependencies: string[]
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface ProjectScore {
@@ -243,6 +239,7 @@ export interface Scenario {
     budgetUsed: number
     riskScore: number
   }
+  createdAt: Date
 }
 
 export interface AppState {

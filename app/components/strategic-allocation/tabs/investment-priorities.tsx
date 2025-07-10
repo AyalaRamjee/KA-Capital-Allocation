@@ -2,17 +2,17 @@
 
 import { useState } from 'react'
 import { Plus, Target, Percent, DollarSign, Filter, Edit, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useAllocationData } from '@/hooks/use-allocation-data'
-import { Priority } from '@/lib/data-models'
-import { formatLargeNumber } from '@/lib/utils'
+import { Button } from '../../../components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card'
+import { Badge } from '../../../components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
+import { Input } from '../../../components/ui/input'
+import { Textarea } from '../../../components/ui/textarea'
+import { Label } from '../../../components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { useAllocationData } from '../../../hooks/use-allocation-data'
+import { Priority } from '../../../lib/data-models'
+import { formatLargeNumber } from '../../../lib/utils'
 
 const PRIORITY_COLORS = [
   '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { AppState, Priority, Project, ProjectScore } from '@/lib/data-models'
-import { loadAppState, saveAppState, scheduleAutoSave } from '@/lib/storage-utils'
-import { calculateProjectScore, optimizePortfolio, calculatePortfolioMetrics } from '@/lib/calculations'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { AppState, Priority, Project, ProjectScore, ValidationIssue } from '../lib/data-models'
+import { loadAppState, saveAppState, scheduleAutoSave } from '../lib/storage-utils'
+import { calculateProjectScore, optimizePortfolio, calculatePortfolioMetrics } from '../lib/calculations'
 
 export function useAllocationData() {
   const [state, setState] = useState<AppState | null>(null)
@@ -183,7 +183,7 @@ export function useAllocationData() {
   const validateData = useCallback(() => {
     if (!state) return []
 
-    const issues = []
+    const issues: ValidationIssue[] = []
 
     // Check priority weights sum to 100
     const totalWeight = state.priorities.reduce((sum, p) => sum + p.weight, 0)
@@ -237,21 +237,76 @@ export function useAllocationData() {
     return issues
   }, [state, updateState])
 
-  // Computed values
-  const computedMetrics = state ? {
-    totalProjects: state.projects.length,
-    totalPriorities: state.priorities.length,
-    allocatedProjects: state.projectScores.filter(s => s.allocated).length,
-    totalCapitalRequired: state.projects.reduce((sum, p) => sum + p.initialCapex, 0),
-    budgetUtilization: state.portfolioMetrics.totalCapital / (state.availableBudget / 1000000) * 100,
-    dataQualityScore: Math.max(0, 100 - state.validationIssues.filter(i => i.severity === 'error').length * 20)
-  } : null
+  // Memoized computed values for performance
+  const computedMetrics = useMemo(() => {
+    if (!state) return null
+    
+    return {
+      totalProjects: state.projects.length,
+      totalPriorities: state.priorities.length,
+      allocatedProjects: state.projectScores.filter(s => s.allocated).length,
+      totalCapitalRequired: state.projects.reduce((sum, p) => sum + p.initialCapex, 0),
+      budgetUtilization: state.portfolioMetrics.totalCapital / (state.availableBudget / 1000000) * 100,
+      dataQualityScore: Math.max(0, 100 - state.validationIssues.filter(i => i.severity === 'error').length * 20)
+    }
+  }, [state?.projects, state?.priorities, state?.projectScores, state?.portfolioMetrics, state?.availableBudget, state?.validationIssues])
+
+  // Memoized portfolio calculations
+  const portfolioAnalytics = useMemo(() => {
+    if (!state) return null
+    
+    const allocatedProjects = state.projects.filter(p => 
+      state.projectScores.find(ps => ps.projectId === p.id)?.allocated
+    )
+    
+    const totalInvestment = allocatedProjects.reduce((sum, p) => sum + p.initialCapex, 0)
+    const totalNPV = allocatedProjects.reduce((sum, p) => sum + p.npv, 0)
+    const averageIRR = allocatedProjects.length > 0 
+      ? allocatedProjects.reduce((sum, p) => sum + (p.irr * p.initialCapex / totalInvestment), 0)
+      : 0
+    const averagePayback = allocatedProjects.length > 0
+      ? allocatedProjects.reduce((sum, p) => sum + p.paybackPeriod, 0) / allocatedProjects.length
+      : 0
+    
+    return {
+      allocatedProjects,
+      totalInvestment,
+      totalNPV,
+      averageIRR,
+      averagePayback,
+      portfolioRisk: allocatedProjects.reduce((sum, p) => {
+        const riskWeight = p.riskLevel === 'high' ? 3 : p.riskLevel === 'medium' ? 2 : 1
+        return sum + (riskWeight * p.initialCapex)
+      }, 0) / totalInvestment
+    }
+  }, [state?.projects, state?.projectScores])
+
+  // Memoized validation status
+  const validationStatus = useMemo(() => {
+    if (!state) return null
+    
+    const criticalIssues = state.validationIssues.filter(i => i.severity === 'error').length
+    const warnings = state.validationIssues.filter(i => i.severity === 'warning').length
+    const totalIssues = state.validationIssues.length
+    
+    return {
+      criticalIssues,
+      warnings,
+      totalIssues,
+      isValid: criticalIssues === 0,
+      dataQualityScore: Math.max(0, 100 - criticalIssues * 20)
+    }
+  }, [state?.validationIssues])
 
   return {
     // State
     state,
     loading,
+    
+    // Memoized computed values for performance
     computedMetrics,
+    portfolioAnalytics,
+    validationStatus,
 
     // Priority management
     addPriority,
