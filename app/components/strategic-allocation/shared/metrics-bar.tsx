@@ -14,141 +14,86 @@ interface MetricCardProps {
 }
 
 function MetricCard({ icon: Icon, label, value, subtitle, trend, color = 'blue', status }: MetricCardProps) {
-  const colorClasses = {
-    blue: 'text-blue-400',
-    green: 'text-green-400',
-    amber: 'text-amber-400',
-    red: 'text-red-400',
-    purple: 'text-purple-400',
-    cyan: 'text-cyan-400'
-  }
-
-  const iconBgClasses = {
-    blue: 'bg-blue-500/10',
-    green: 'bg-green-500/10',
-    amber: 'bg-amber-500/10',
-    red: 'bg-red-500/10',
-    purple: 'bg-purple-500/10',
-    cyan: 'bg-cyan-500/10'
-  }
-
-  return (
-    <div style={{ 
-      background: 'rgba(30, 32, 40, 0.7)', 
-      backdropFilter: 'blur(10px)', 
-      border: '1px solid rgba(255, 255, 255, 0.1)', 
-      borderRadius: '12px', 
-      padding: '20px', 
-      minHeight: '120px', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      justifyContent: 'space-between' 
-    }}>
-      {/* Icon */}
-      <div style={{ marginBottom: '16px' }}>
-        <div className={`w-10 h-10 rounded-lg ${iconBgClasses[color as keyof typeof iconBgClasses]} flex items-center justify-center`}>
-          <Icon style={{ width: '18px', height: '18px' }} className={colorClasses[color as keyof typeof colorClasses]} />
-        </div>
-      </div>
-      
-      {/* Label */}
-      <div style={{ 
-        fontSize: '11px', 
-        textTransform: 'uppercase', 
-        letterSpacing: '0.5px', 
-        color: '#6b7280', 
-        marginBottom: '6px', 
-        fontWeight: '500',
-        lineHeight: '1.2'
-      }}>
-        {label}
-      </div>
-      
-      {/* Value */}
-      <div style={{ 
-        fontSize: '20px', 
-        fontWeight: '600', 
-        color: '#ffffff', 
-        marginBottom: '4px', 
-        fontFamily: 'monospace', 
-        lineHeight: '1.1' 
-      }}>
-        {value}
-      </div>
-      
-      {/* Subtitle and Trend */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {subtitle && (
-          <div style={{ fontSize: '11px', color: '#9ca3af', lineHeight: '1.2' }}>
-            {subtitle}
-          </div>
-        )}
-        {trend && (
-          <div style={{ fontSize: '11px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '2px' }}>
-            {trend.direction === 'up' ? (
-              <ArrowUp style={{ width: '12px', height: '12px' }} />
-            ) : (
-              <ArrowDown style={{ width: '12px', height: '12px' }} />
-            )}
-            {Math.abs(trend.value)}%
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-export function MetricsBar() {
-  const { state, computedMetrics } = useAllocationData()
+    const colorClasses = {
+      blue: 'text-blue-400',
+      green: 'text-green-400',
+      amber: 'text-amber-400',
+      red: 'text-red-400',
+      purple: 'text-purple-400',
+      cyan: 'text-cyan-400'
+    }
   
-  if (!state || !computedMetrics) {
+    const iconBgClasses = {
+      blue: 'bg-blue-500/10',
+      green: 'bg-green-500/10',
+      amber: 'bg-amber-500/10',
+      red: 'bg-red-500/10',
+      purple: 'bg-purple-500/10',
+      cyan: 'bg-cyan-500/10'
+    }
+  
     return (
-      <div className="layout-metrics">
-        <div className="flex items-center justify-center h-full">
-          <div className="flex space-x-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="loading-shimmer h-20 w-48 rounded-lg"></div>
-            ))}
+      <div className="bg-slate-800/70 backdrop-blur-sm border border-slate-700 rounded-xl p-4 flex flex-col justify-between h-full min-h-[120px]">
+        <div className="flex items-center justify-between mb-2">
+          <div className={`w-9 h-9 rounded-lg ${iconBgClasses[color]} flex items-center justify-center`}>
+            <Icon className={`w-5 h-5 ${colorClasses[color]}`} />
           </div>
+        </div>
+        <div>
+          <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">{label}</p>
+          <div className="flex items-baseline space-x-2">
+            <h4 className="text-xl font-bold text-white">{value}</h4>
+            {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+          </div>
+          {trend && (
+            <div className={`flex items-center text-xs mt-1 ${trend.direction === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+              {trend.direction === 'up' ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
+              <span>{Math.abs(trend.value)}% {trend.label}</span>
+            </div>
+          )}
         </div>
       </div>
     )
   }
 
-  const allocatedCapital = state.portfolioMetrics.totalCapital / 1000000 // Convert to millions
-  const totalNPV = state.portfolioMetrics.totalNPV / 1000000
-  const avgIRR = state.portfolioMetrics.avgIRR
-  const riskIssues = state.validationIssues.filter(i => i.severity === 'error').length
-  const budgetUtilization = (computedMetrics.totalCapitalRequired / state.availableBudget) * 100
-  const projectsOnTrack = Math.floor(computedMetrics.totalProjects * 0.68) // 68% on track
-
-  return (
-    <div className="layout-metrics">
-      <div className="max-w-full">
-        {/* Title Row */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <div>
-              <h3 className="text-lg font-bold text-white">Enterprise Portfolio Overview</h3>
-              <p className="text-sm text-slate-400 font-medium">Real-time strategic capital allocation metrics</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-700/50 border border-slate-600">
-                <div className="w-2 h-2 bg-green-400 rounded-full pulse"></div>
-                <span className="text-sm text-slate-300 font-medium">Live Data</span>
-              </div>
-              <div className="text-xs text-slate-500">Last updated: {new Date().toLocaleTimeString()}</div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-900/20 border border-blue-500/30">
-            <Shield className="w-4 h-4 text-blue-400" />
-            <span className="text-sm text-blue-300 font-medium">Q3 2024</span>
+  export function MetricsBar() {
+    const { state, computedMetrics } = useAllocationData()
+  
+    if (!state || !computedMetrics) {
+      return (
+        <div className="p-4 sm:p-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="bg-slate-800/70 rounded-xl p-4 h-[120px] animate-pulse"></div>
+            ))}
           </div>
         </div>
-
-        {/* Metrics Grid - Only 5 metrics */}
+      )
+    }
+  
+    const allocatedCapital = state.portfolioMetrics.totalCapital / 10000000; // In Cr
+    const totalNPV = state.portfolioMetrics.totalNPV / 10000000; // In Cr
+    const budgetUtilization = (computedMetrics.totalCapitalRequired / state.availableBudget) * 100
+  
+    return (
+      <div className="p-4 sm:p-6 bg-slate-900/50">
+        <div className="flex items-center justify-between mb-4 flex-wrap">
+          <div>
+            <h2 className="text-xl font-bold text-white">Enterprise Portfolio Overview</h2>
+            <p className="text-sm text-slate-400">Real-time strategic capital allocation metrics</p>
+          </div>
+          <div className="flex items-center space-x-2 text-xs text-slate-400">
+             <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm text-slate-300 font-medium">Live</span>
+              </div>
+            <span>Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            <div className="px-3 py-1.5 rounded-full bg-blue-900/30 border border-blue-500/40 text-blue-300">Q3 2024</div>
+          </div>
+        </div>
+  
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <MetricCard 
+           <MetricCard 
             icon={Target} 
             label="Priorities" 
             value={computedMetrics.totalPriorities.toString()}
@@ -159,32 +104,32 @@ export function MetricsBar() {
             icon={Briefcase} 
             label="Projects" 
             value={computedMetrics.totalProjects.toString()}
-            subtitle="In Pipeline"
+            subtitle="Pipeline"
             color="blue"
           />
           <MetricCard 
             icon={DollarSign} 
             label="Capital" 
-            value={`₹${allocatedCapital.toFixed(0)},000 Cr`}
-            subtitle={`${budgetUtilization.toFixed(0)}% Allocated`}
+            value={`₹${allocatedCapital.toFixed(2)} Cr`}
+            subtitle={`${budgetUtilization.toFixed(0)}% Used`}
             color="green"
           />
           <MetricCard 
             icon={TrendingUp} 
-            label="Portfolio" 
-            value={`₹${totalNPV.toFixed(0)},000 Cr`}
-            subtitle="Total NPV"
+            label="Portfolio NPV" 
+            value={`₹${totalNPV.toFixed(2)} Cr`}
+            subtitle="Net Present Value"
             color="cyan"
           />
           <MetricCard 
             icon={Activity} 
-            label="Avg IRR" 
-            value={`${avgIRR.toFixed(1)}%`}
+            label="Avg. IRR" 
+            value={`${state.portfolioMetrics.avgIRR.toFixed(1)}%`}
             subtitle="Returns"
-            color="green"
+            color="amber"
           />
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
+  

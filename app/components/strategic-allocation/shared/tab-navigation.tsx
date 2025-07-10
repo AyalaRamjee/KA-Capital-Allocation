@@ -23,15 +23,16 @@ function TabButton({ number, icon: Icon, label, active, completed, onClick }: Ta
     <button
       onClick={onClick}
       className={`
-        flex items-center space-x-2 px-4 py-3 rounded-lg transition-all hover-glow
-        ${active ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}
+        flex-shrink-0 flex items-center space-x-2 px-3 py-2.5 rounded-md transition-all duration-200 ease-in-out
+        ${active ? 'bg-blue-600/90 text-white shadow-lg' : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/80'}
+        whitespace-nowrap
       `}
     >
       <div className={`
-        w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-        ${completed ? 'bg-green-500 text-white' : active ? 'bg-white/20 text-white' : 'bg-slate-600 text-slate-400'}
+        w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold border
+        ${completed ? 'bg-green-500 border-green-400 text-white' : active ? 'bg-white/25 border-white/30 text-white' : 'bg-slate-600 border-slate-500 text-slate-300'}
       `}>
-        {completed ? '✓' : number}
+        {completed ? '✓' : ''}
       </div>
       <Icon className="w-4 h-4" />
       <span className="text-sm font-medium">{label}</span>
@@ -46,18 +47,18 @@ interface TabNavigationProps {
 
 export function TabNavigation({ currentTab, onTabChange }: TabNavigationProps) {
   const tabs: TabInfo[] = [
-    { id: 'priorities', label: 'Investment Priorities', icon: Target, completed: false },
-    { id: 'opportunities', label: 'Opportunities Pipeline', icon: Briefcase, completed: false },
-    { id: 'business-case', label: 'Business Case Builder', icon: FileText, completed: false },
-    { id: 'scoring', label: 'Scoring & Allocation', icon: Calculator, completed: false },
-    { id: 'validation', label: 'Data Validation', icon: CheckCircle, completed: false },
-    { id: 'analytics', label: 'Portfolio Analytics', icon: BarChart3, completed: false },
-    { id: 'scenarios', label: 'What-If Analysis', icon: Shuffle, completed: false },
+    { id: 'priorities', label: 'Priorities', icon: Target, completed: true },
+    { id: 'pipeline', label: 'Pipeline', icon: Briefcase, completed: false },
+    { id: 'business-case', label: 'Business Case', icon: FileText, completed: false },
+    { id: 'scoring', label: 'Scoring', icon: Calculator, completed: false },
+    { id: 'validation', label: 'Validation', icon: CheckCircle, completed: false },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, completed: false },
+    { id: 'scenarios', label: 'Scenarios', icon: Shuffle, completed: false },
   ]
 
   return (
-    <div className="bg-slate-800 border-b border-slate-700">
-      <div className="flex space-x-1 p-2">
+    <div className="bg-slate-800/50 border-b border-slate-700 w-full backdrop-blur-sm">
+      <nav className="flex items-center space-x-2 p-2 overflow-x-auto">
         {tabs.map((tab, index) => (
           <TabButton
             key={tab.id}
@@ -69,7 +70,7 @@ export function TabNavigation({ currentTab, onTabChange }: TabNavigationProps) {
             onClick={() => onTabChange(tab.id)}
           />
         ))}
-      </div>
+      </nav>
     </div>
   )
 }
