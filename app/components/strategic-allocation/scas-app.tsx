@@ -18,7 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 const tabComponents: Record<string, React.ElementType> = {
   priorities: InvestmentPriorities,
-  opportunities: OpportunitiesPipeline,
+  pipeline: OpportunitiesPipeline,
   'business-case': BusinessCaseBuilder,
   scoring: ScoringAllocation,
   validation: DataValidation,
@@ -28,18 +28,16 @@ const tabComponents: Record<string, React.ElementType> = {
 
 const tabHasSidebar: Record<string, boolean> = {
   priorities: true,
-  opportunities: false,
+  pipeline: false,
   'business-case': true,
   scoring: true,
+  validation: false,
   analytics: true,
+  scenarios: false,
 }
 
 function Sidebar({ currentTab, state }: { currentTab: string; state: any }) {
-    if (!state || !state.investmentPriorities) {
-        return <div className="p-4 text-sm text-slate-400">Loading analytics...</div>;
-    }
-
-    if (currentTab !== 'priorities') {
+    if (currentTab !== 'priorities' || !state?.investmentPriorities) {
         return null; 
     }
 

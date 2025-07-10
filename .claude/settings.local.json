@@ -15,7 +15,8 @@
       "Bash(for file in app/components/ui/*.tsx)",
       "Bash(do sed -i 's|@/lib/utils|../../lib/utils|g' \"$file\")",
       "Bash(done)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

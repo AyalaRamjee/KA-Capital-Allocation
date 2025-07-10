@@ -47,13 +47,13 @@ interface TabNavigationProps {
 
 export function TabNavigation({ currentTab, onTabChange }: TabNavigationProps) {
   const tabs: TabInfo[] = [
-    { id: 'priorities', label: 'Priorities', icon: Target, completed: true },
-    { id: 'pipeline', label: 'Pipeline', icon: Briefcase, completed: false },
-    { id: 'business-case', label: 'Business Case', icon: FileText, completed: false },
-    { id: 'scoring', label: 'Scoring', icon: Calculator, completed: false },
-    { id: 'validation', label: 'Validation', icon: CheckCircle, completed: false },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, completed: false },
-    { id: 'scenarios', label: 'Scenarios', icon: Shuffle, completed: false },
+    { id: 'priorities', label: 'Add Priorities', icon: Target, completed: false },
+    { id: 'pipeline', label: 'Manage Projects', icon: Briefcase, completed: false },
+    { id: 'business-case', label: 'Build Cases', icon: FileText, completed: false },
+    { id: 'scoring', label: 'Score & Allocate', icon: Calculator, completed: false },
+    { id: 'validation', label: 'Validate Data', icon: CheckCircle, completed: false },
+    { id: 'analytics', label: 'Review Portfolio', icon: BarChart3, completed: false },
+    { id: 'scenarios', label: 'What-If Analysis', icon: Shuffle, completed: false },
   ]
 
   return (
