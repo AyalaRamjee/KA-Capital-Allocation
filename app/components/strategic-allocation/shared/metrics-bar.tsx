@@ -21,10 +21,10 @@ function MetricCard({ icon: Icon, label, value, trend, color = 'blue' }: MetricC
   }
 
   return (
-    <div className="metric-card min-w-0 flex-1 p-4">
+    <div className="card-hover min-w-0 flex-1 p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-3 min-w-0">
-          <div className={`w-12 h-12 rounded-xl bg-slate-800/50 border border-slate-700 flex items-center justify-center group-hover:border-slate-600 transition-colors`}>
+          <div className={`w-12 h-12 rounded-xl bg-slate-700/50 border border-slate-600 flex items-center justify-center hover:border-slate-500 transition-all duration-300 float`}>
             <Icon className={`w-6 h-6 ${colorClasses[color as keyof typeof colorClasses]}`} />
           </div>
           <div className="min-w-0 flex-1">

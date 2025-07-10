@@ -24,7 +24,7 @@ export function Header() {
           
           {/* Brand */}
           <div className="flex flex-col">
-            <h1 className="text-2xl font-bold text-white tracking-tight">SCAS</h1>
+            <h1 className="text-2xl font-bold gradient-text tracking-tight">SCAS</h1>
             <p className="text-sm text-slate-400 font-medium">Strategic Capital Allocation System</p>
           </div>
         </div>

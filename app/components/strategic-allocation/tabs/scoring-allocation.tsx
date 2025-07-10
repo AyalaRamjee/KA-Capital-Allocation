@@ -113,17 +113,17 @@ export function ScoringAllocation() {
   const [excludedProjects, setExcludedProjects] = useState<string[]>([])
   const [availableBudget, setAvailableBudget] = useState(125000000)
   
+  useEffect(() => {
+    if (state?.projectScores?.length === 0 && state?.projects?.length > 0) {
+      recalculateScores()
+    }
+  }, [state?.projects, state?.priorities, recalculateScores, state?.projectScores?.length])
+  
   if (!state) {
     return <div className="p-6 text-center">Loading...</div>
   }
 
   const { projects, priorities, projectScores } = state
-
-  useEffect(() => {
-    if (projectScores.length === 0 && projects.length > 0) {
-      recalculateScores()
-    }
-  }, [projects, priorities, recalculateScores, projectScores.length])
 
   const handleRecalculate = () => {
     recalculateScores()

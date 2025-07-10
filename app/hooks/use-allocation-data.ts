@@ -74,6 +74,24 @@ export function useAllocationData() {
     }))
   }, [updateState])
 
+  const reorderPriorities = useCallback((dragIndex: number, hoverIndex: number) => {
+    updateState(state => {
+      const newPriorities = [...state.priorities]
+      const draggedPriority = newPriorities[dragIndex]
+      
+      // Remove the dragged item
+      newPriorities.splice(dragIndex, 1)
+      
+      // Insert at new position
+      newPriorities.splice(hoverIndex, 0, draggedPriority)
+      
+      return {
+        ...state,
+        priorities: newPriorities
+      }
+    })
+  }, [updateState])
+
   // Project management
   const addProject = useCallback((project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
     updateState(state => ({
@@ -312,6 +330,7 @@ export function useAllocationData() {
     addPriority,
     updatePriority,
     deletePriority,
+    reorderPriorities,
 
     // Project management
     addProject,

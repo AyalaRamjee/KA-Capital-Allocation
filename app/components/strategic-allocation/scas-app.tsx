@@ -4,12 +4,12 @@ import { Header } from './shared/header'
 import { MetricsBar } from './shared/metrics-bar'
 import { TabNavigation } from './shared/tab-navigation'
 import { InvestmentPriorities } from './tabs/investment-priorities'
-import { OpportunitiesPipeline } from './tabs/opportunities-pipeline'
-import { BusinessCaseBuilder } from './tabs/business-case-builder'
-import { ScoringAllocation } from './tabs/scoring-allocation'
-import { DataValidation } from './tabs/data-validation'
-import { PortfolioAnalytics } from './tabs/portfolio-analytics'
-import { ScenarioModeling } from './tabs/scenario-modeling'
+import { OpportunitiesPipelineEnhanced } from './tabs/opportunities-pipeline-enhanced'
+import { BusinessCaseBuilderEnhanced } from './tabs/business-case-builder-enhanced'
+import { ScoringAllocationEnhanced } from './tabs/scoring-allocation-enhanced'
+import { DataValidationEnhanced } from './tabs/data-validation-enhanced'
+import { PortfolioAnalyticsEnhanced } from './tabs/portfolio-analytics-enhanced'
+import { ScenarioModelingEnhanced } from './tabs/scenario-modeling-enhanced'
 import { useAllocationData } from '../../hooks/use-allocation-data'
 
 export function SCASApp() {
@@ -33,17 +33,17 @@ export function SCASApp() {
       case 'priorities':
         return <InvestmentPriorities />
       case 'opportunities':
-        return <OpportunitiesPipeline />
+        return <OpportunitiesPipelineEnhanced />
       case 'business-case':
-        return <BusinessCaseBuilder />
+        return <BusinessCaseBuilderEnhanced />
       case 'scoring':
-        return <ScoringAllocation />
+        return <ScoringAllocationEnhanced />
       case 'validation':
-        return <DataValidation />
+        return <DataValidationEnhanced />
       case 'analytics':
-        return <PortfolioAnalytics />
+        return <PortfolioAnalyticsEnhanced />
       case 'scenarios':
-        return <ScenarioModeling />
+        return <ScenarioModelingEnhanced />
       default:
         return <InvestmentPriorities />
     }

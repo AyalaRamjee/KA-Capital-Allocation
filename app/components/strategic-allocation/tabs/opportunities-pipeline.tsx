@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Upload, Plus, Kanban, Table, Circle, Edit, BarChart3 } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Upload, Plus, Kanban, Table, Circle, Edit, BarChart3, Search, Filter, Download, Eye, Trash2, Copy, MoreHorizontal, ArrowUpDown } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -15,6 +15,10 @@ import { Project } from '../../../lib/data-models'
 import { calculateNPV, calculateIRR, calculatePaybackPeriod } from '../../../lib/calculations'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer } from 'recharts'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/dropdown-menu'
+import { Progress } from '../../../components/ui/progress'
+import { Alert, AlertDescription } from '../../../components/ui/alert'
+import { cn } from '../../../lib/utils'
 
 interface ProjectFormData {
   projectId: string

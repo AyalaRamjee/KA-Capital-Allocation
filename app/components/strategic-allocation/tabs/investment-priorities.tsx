@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Target, Percent, DollarSign, Filter, Edit, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Target, Percent, DollarSign, Filter, Edit, Trash2, GripVertical, TrendingUp, AlertCircle } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
@@ -12,7 +12,8 @@ import { Label } from '../../../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { useAllocationData } from '../../../hooks/use-allocation-data'
 import { Priority } from '../../../lib/data-models'
-import { formatLargeNumber } from '../../../lib/utils'
+import { formatLargeNumber, cn } from '../../../lib/utils'
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 
 const PRIORITY_COLORS = [
   '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
@@ -56,22 +57,64 @@ function MetricCard({ title, value, icon: Icon, color = 'blue', subtitle }: Metr
 
 interface PriorityCardProps {
   priority: Priority
+  index: number
   onEdit: (priority: Priority) => void
   onDelete: (id: string) => void
   onWeightChange: (id: string, weight: number) => void
+  onReorder: (dragIndex: number, hoverIndex: number) => void
+  isDragging?: boolean
 }
 
-function PriorityCard({ priority, onEdit, onDelete, onWeightChange }: PriorityCardProps) {
+function PriorityCard({ priority, index, onEdit, onDelete, onWeightChange, onReorder, isDragging }: PriorityCardProps) {
+  const [draggedOver, setDraggedOver] = useState(false)
+  
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', index.toString())
+  }
+  
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDraggedOver(true)
+  }
+  
+  const handleDragLeave = () => {
+    setDraggedOver(false)
+  }
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'))
+    onReorder(dragIndex, index)
+    setDraggedOver(false)
+  }
+  
   return (
-    <div className="p-4 bg-slate-700 rounded-lg border border-slate-600 hover:border-blue-500/50 transition-all space-y-3">
+    <div 
+      className={cn(
+        "p-4 bg-slate-700 rounded-lg border border-slate-600 hover:border-blue-500/50 transition-all space-y-3",
+        isDragging && "opacity-50",
+        draggedOver && "border-blue-400 bg-slate-600"
+      )}
+      draggable
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div 
-            className="w-10 h-10 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: priority.color }}
-          >
-            <span className="text-white font-bold">{priority.code}</span>
+          <div className="cursor-move text-slate-400 hover:text-white transition-colors">
+            <GripVertical className="w-5 h-5" />
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-400 text-sm font-mono">#{index + 1}</span>
+            <div 
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: priority.color }}
+            >
+              <span className="text-white font-bold">{priority.code}</span>
+            </div>
           </div>
           <div>
             <h3 className="font-semibold text-white">{priority.name}</h3>
@@ -92,7 +135,20 @@ function PriorityCard({ priority, onEdit, onDelete, onWeightChange }: PriorityCa
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-slate-400">Weight</span>
-          <span className="text-white font-mono">{priority.weight}%</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-white font-mono">{priority.weight}%</span>
+            {priority.weight > 0 && (
+              <div className="w-16 h-2 bg-slate-600 rounded-full">
+                <div 
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${(priority.weight / 100) * 100}%`,
+                    backgroundColor: priority.color 
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
         <input
           type="range"
@@ -311,9 +367,25 @@ function PriorityModal({
 }
 
 export function InvestmentPriorities() {
-  const { state, addPriority, updatePriority, deletePriority } = useAllocationData()
+  const { state, addPriority, updatePriority, deletePriority, reorderPriorities } = useAllocationData()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingPriority, setEditingPriority] = useState<Priority | undefined>()
+  const [autoBalanceEnabled, setAutoBalanceEnabled] = useState(false)
+  
+  // Auto-balance weights when enabled
+  useEffect(() => {
+    if (autoBalanceEnabled && state?.priorities && state.priorities.length > 0) {
+      const equalWeight = Math.floor(100 / state.priorities.length)
+      const remainder = 100 - (equalWeight * state.priorities.length)
+      
+      state.priorities.forEach((priority, index) => {
+        const newWeight = index === 0 ? equalWeight + remainder : equalWeight
+        if (priority.weight !== newWeight) {
+          updatePriority(priority.id, { weight: newWeight })
+        }
+      })
+    }
+  }, [autoBalanceEnabled, state?.priorities?.length, updatePriority])
   
   if (!state) {
     return <div className="p-6 text-center">Loading...</div>
@@ -337,8 +409,55 @@ export function InvestmentPriorities() {
   }
   
   const handleWeightChange = (id: string, weight: number) => {
+    if (autoBalanceEnabled) {
+      // When auto-balance is enabled, adjust other priorities proportionally
+      const currentPriority = priorities.find(p => p.id === id)
+      if (!currentPriority) return
+      
+      const otherPriorities = priorities.filter(p => p.id !== id)
+      const otherTotalWeight = otherPriorities.reduce((sum, p) => sum + p.weight, 0)
+      const remainingWeight = 100 - weight
+      
+      if (otherTotalWeight > 0 && remainingWeight >= 0) {
+        // Proportionally adjust other priorities
+        otherPriorities.forEach(priority => {
+          const newWeight = Math.round((priority.weight / otherTotalWeight) * remainingWeight)
+          updatePriority(priority.id, { weight: newWeight })
+        })
+      }
+    }
+    
     updatePriority(id, { weight })
   }
+  
+  const handleReorder = (dragIndex: number, hoverIndex: number) => {
+    if (dragIndex === hoverIndex) return
+    reorderPriorities(dragIndex, hoverIndex)
+  }
+  
+  const handleAutoBalance = () => {
+    const equalWeight = Math.floor(100 / priorities.length)
+    const remainder = 100 - (equalWeight * priorities.length)
+    
+    priorities.forEach((priority, index) => {
+      const newWeight = index === 0 ? equalWeight + remainder : equalWeight
+      updatePriority(priority.id, { weight: newWeight })
+    })
+  }
+  
+  const pieChartData = priorities.map(priority => ({
+    name: priority.code,
+    value: priority.weight,
+    color: priority.color,
+    label: `${priority.code}: ${priority.weight}%`
+  }))
+  
+  const budgetChartData = priorities.map(priority => ({
+    name: priority.code,
+    min: priority.budgetMin,
+    max: priority.budgetMax,
+    color: priority.color
+  }))
   
   const handleAddPriority = () => {
     setEditingPriority(undefined)
@@ -417,13 +536,50 @@ export function InvestmentPriorities() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {priorities.map((priority) => (
+                {/* Auto-balance controls */}
+                <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-600">
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={autoBalanceEnabled}
+                        onChange={(e) => setAutoBalanceEnabled(e.target.checked)}
+                        className="rounded"
+                      />
+                      <span className="text-sm text-slate-300">Auto-balance weights</span>
+                    </label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutoBalance}
+                      className="text-xs"
+                    >
+                      Balance Now
+                    </Button>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-slate-400">Total Weight:</span>
+                    <span className={cn(
+                      "text-sm font-mono font-bold",
+                      totalWeight === 100 ? "text-green-400" : "text-red-400"
+                    )}>
+                      {totalWeight}%
+                    </span>
+                    {totalWeight !== 100 && (
+                      <AlertCircle className="w-4 h-4 text-red-400" />
+                    )}
+                  </div>
+                </div>
+                
+                {priorities.map((priority, index) => (
                   <PriorityCard
                     key={priority.id}
                     priority={priority}
+                    index={index}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onWeightChange={handleWeightChange}
+                    onReorder={handleReorder}
                   />
                 ))}
               </div>
@@ -433,34 +589,55 @@ export function InvestmentPriorities() {
 
         {/* Right: Visualizations (4 cols) */}
         <div className="col-span-4 space-y-4">
-          {/* Weight Distribution */}
+          {/* Weight Distribution Pie Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Weight Distribution</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="w-5 h-5" />
+                <span>Weight Distribution</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}%`}
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1e293b', 
+                        border: '1px solid #475569',
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Legend */}
+              <div className="mt-4 space-y-2">
                 {priorities.map((priority) => (
-                  <div key={priority.id} className="flex items-center justify-between">
+                  <div key={priority.id} className="flex items-center justify-between text-sm">
                     <div className="flex items-center space-x-2">
                       <div 
-                        className="w-4 h-4 rounded"
+                        className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: priority.color }}
                       />
-                      <span className="text-sm text-slate-300">{priority.code}</span>
+                      <span className="text-slate-300">{priority.code}</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-32 bg-slate-700 rounded-full h-2">
-                        <div 
-                          className="h-2 rounded-full transition-all duration-300"
-                          style={{ 
-                            width: `${(priority.weight / 100) * 100}%`,
-                            backgroundColor: priority.color 
-                          }}
-                        />
-                      </div>
-                      <span className="text-sm font-mono text-slate-400 w-10">{priority.weight}%</span>
-                    </div>
+                    <span className="text-slate-400 font-mono">{priority.weight}%</span>
                   </div>
                 ))}
               </div>
@@ -473,25 +650,40 @@ export function InvestmentPriorities() {
               <CardTitle>Budget Allocation</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {priorities.map((priority) => (
-                  <div key={priority.id} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-300">{priority.code}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-32 bg-slate-700 rounded-full h-2">
-                        <div 
-                          className="h-2 rounded-full bg-blue-500 transition-all duration-300"
-                          style={{ 
-                            width: `${(priority.budgetMax / totalBudgetMax) * 100}%`
-                          }}
-                        />
-                      </div>
-                      <span className="text-sm font-mono text-slate-400 w-20">${priority.budgetMax}M</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={budgetChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                    <XAxis dataKey="name" stroke="#94a3b8" />
+                    <YAxis stroke="#94a3b8" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1e293b', 
+                        border: '1px solid #475569',
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                      formatter={(value: number, name: string) => [
+                        `$${value}M`,
+                        name === 'min' ? 'Min Budget' : 'Max Budget'
+                      ]}
+                    />
+                    <Bar dataKey="min" fill="#64748b" name="Min Budget" />
+                    <Bar dataKey="max" fill="#3b82f6" name="Max Budget" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Budget Summary */}
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div className="text-center">
+                  <div className="text-slate-400">Total Min</div>
+                  <div className="text-white font-mono">${totalBudgetMin}M</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-400">Total Max</div>
+                  <div className="text-white font-mono">${totalBudgetMax}M</div>
+                </div>
               </div>
             </CardContent>
           </Card>

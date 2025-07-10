@@ -181,8 +181,9 @@ export interface ValidationIssue {
   title: string
   description: string
   affectedItems: string[]
-  category: 'completeness' | 'consistency' | 'logic' | 'format'
+  category: 'completeness' | 'consistency' | 'accuracy' | 'compliance' | 'logic' | 'format'
   resolved: boolean
+  comments?: string
 }
 
 export interface ApprovalStatus {
