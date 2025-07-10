@@ -262,52 +262,70 @@ export interface AppState {
   }
 }
 
-// Default data
+// Enterprise Strategic Priorities - Global Scale
 export const defaultPriorities: Priority[] = [
   {
     id: '1',
     code: 'P1',
-    name: 'Digital Transformation',
-    description: 'Modernize digital infrastructure and capabilities',
-    weight: 30,
-    minThreshold: 15,
-    budgetMin: 20,
-    budgetMax: 50,
-    timeHorizon: 'medium',
-    kpis: ['Digital adoption rate', 'System uptime', 'User satisfaction'],
-    sponsor: 'John Smith, CTO',
-    color: '#3b82f6',
+    name: 'Green Energy Transition',
+    description: 'Accelerate renewable energy capacity to 50GW by 2030 with integrated green hydrogen production across India',
+    weight: 45,
+    minThreshold: 75,
+    budgetMin: 3500000, // ₹35,000 Cr
+    budgetMax: 4500000, // ₹45,000 Cr
+    timeHorizon: 'long',
+    kpis: [
+      'Solar Park - 50GW capacity development',
+      'Green Hydrogen Plant - 1M TPA production',
+      'Offshore Wind Farms - 5GW across Gujarat coast',
+      'Carbon neutrality achievement by 2050',
+      'Renewable energy cost reduction by 40%'
+    ],
+    sponsor: 'Executive Director, Chief Executive Officer',
+    color: '#10b981',
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
     id: '2',
     code: 'P2',
-    name: 'Market Expansion',
-    description: 'Enter new geographical markets and segments',
+    name: 'Infrastructure Expansion',
+    description: 'Strategic expansion of ports, airports, roads and logistics infrastructure to capture emerging market opportunities',
     weight: 25,
-    minThreshold: 10,
-    budgetMin: 15,
-    budgetMax: 40,
-    timeHorizon: 'long',
-    kpis: ['Revenue growth', 'Market share', 'Customer acquisition'],
-    sponsor: 'Sarah Johnson, CMO',
-    color: '#10b981',
+    minThreshold: 70,
+    budgetMin: 2000000, // ₹20,000 Cr
+    budgetMax: 3000000, // ₹30,000 Cr
+    timeHorizon: 'medium',
+    kpis: [
+      'Ports expansion - 5 new facilities by 2027',
+      'Cargo capacity - 200 MT annual throughput',
+      'Airport network - 3 new international hubs',
+      'Digital logistics platform implementation',
+      'Mumbai-Delhi Expressway completion'
+    ],
+    sponsor: 'VP Operations, Vice President',
+    color: '#4B7BFF',
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
     id: '3',
     code: 'P3',
-    name: 'Operational Excellence',
-    description: 'Improve efficiency and reduce operational costs',
+    name: 'Digital Transformation',
+    description: 'Enterprise-wide digital transformation with data centers, logistics technology, and super app development',
     weight: 20,
-    minThreshold: 12,
-    budgetMin: 10,
-    budgetMax: 30,
+    minThreshold: 65,
+    budgetMin: 1000000, // ₹10,000 Cr
+    budgetMax: 1500000, // ₹15,000 Cr
     timeHorizon: 'short',
-    kpis: ['Cost reduction', 'Process efficiency', 'Quality metrics'],
-    sponsor: 'Mike Davis, COO',
+    kpis: [
+      'Data center network - 15 facilities across India',
+      'AI-powered logistics optimization',
+      'Super app ecosystem development',
+      'Digital automation - 80% process coverage',
+      'Cybersecurity infrastructure enhancement'
+    ],
+    sponsor: 'Chief Strategy Officer, CSO',
     color: '#f59e0b',
     createdAt: new Date(),
     updatedAt: new Date()
@@ -315,130 +333,281 @@ export const defaultPriorities: Priority[] = [
   {
     id: '4',
     code: 'P4',
-    name: 'Customer Experience',
-    description: 'Enhance customer satisfaction and retention',
-    weight: 15,
-    minThreshold: 8,
-    budgetMin: 5,
-    budgetMax: 25,
-    timeHorizon: 'medium',
-    kpis: ['NPS score', 'Customer retention', 'Response time'],
-    sponsor: 'Lisa Chen, CCO',
-    color: '#ef4444',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '5',
-    code: 'P5',
-    name: 'Innovation & R&D',
-    description: 'Invest in future technologies and innovation',
+    name: 'Operational Excellence',
+    description: 'Drive operational efficiency and cost optimization initiatives across all business verticals',
     weight: 10,
-    minThreshold: 5,
-    budgetMin: 8,
-    budgetMax: 20,
-    timeHorizon: 'long',
-    kpis: ['Patent applications', 'Innovation revenue', 'R&D ROI'],
-    sponsor: 'Alex Rodriguez, CIO',
+    minThreshold: 60,
+    budgetMin: 500000,  // ₹5,000 Cr
+    budgetMax: 1000000, // ₹10,000 Cr
+    timeHorizon: 'medium',
+    kpis: [
+      'Cost reduction - 15% across operations',
+      'Process automation implementation',
+      'Safety protocols - zero incidents target',
+      'Supply chain optimization',
+      'Performance management systems'
+    ],
+    sponsor: 'Portfolio Manager, Senior Director',
     color: '#8b5cf6',
     createdAt: new Date(),
     updatedAt: new Date()
   }
 ]
 
+// Enterprise Portfolio Projects
 export const defaultProjects: Project[] = [
   {
     id: '1',
-    projectId: 'PROJ-001',
-    name: 'Cloud Infrastructure Migration',
-    category: 'technology',
-    description: 'Migrate legacy systems to cloud infrastructure for improved scalability and cost efficiency',
-    sponsor: 'John Smith, CTO',
+    projectId: 'SOLAR-001',
+    name: 'Solar Park Phase III',
+    category: 'renewable_energy',
+    description: 'World\'s largest solar park expansion - 10GW additional capacity',
+    sponsor: 'Executive Director, Chief Executive Officer',
     status: 'evaluation',
-    initialCapex: 5000000,
-    annualOpex: 800000,
-    revenuePotential: 2000000,
-    savingsPotential: 1500000,
-    npv: 8500000,
-    irr: 24.5,
-    mirr: 18.2,
-    paybackPeriod: 2.8,
-    ebitdaImpact: 1200000,
+    initialCapex: 7500000, // ₹75,000 Cr
+    annualOpex: 150000,
+    revenuePotential: 1800000,
+    savingsPotential: 0,
+    npv: 9200000, // ₹92,000 Cr
+    irr: 24.2,
+    mirr: 18.8,
+    paybackPeriod: 3.1,
+    ebitdaImpact: 1400000,
     riskLevel: 'medium',
-    priorityAlignment: ['1', '3'],
-    businessUnit: 'Technology',
-    geography: 'Global',
+    priorityAlignment: ['1'],
+    businessUnit: 'Green Energy Division',
+    geography: 'Gujarat',
     cashFlows: [
-      { year: 0, amount: -5000000 },
-      { year: 1, amount: 1200000 },
-      { year: 2, amount: 2500000 },
-      { year: 3, amount: 3200000 },
-      { year: 4, amount: 3800000 },
-      { year: 5, amount: 4200000 }
+      { year: 0, amount: -7500000 },
+      { year: 1, amount: 800000 },
+      { year: 2, amount: 1600000 },
+      { year: 3, amount: 2400000 },
+      { year: 4, amount: 2800000 },
+      { year: 5, amount: 3200000 }
     ],
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
     id: '2',
-    projectId: 'PROJ-002',
-    name: 'Southeast Asia Market Entry',
-    category: 'expansion',
-    description: 'Expand operations to key Southeast Asian markets including Singapore, Thailand, and Vietnam',
-    sponsor: 'Sarah Johnson, CMO',
+    projectId: 'PORT-002',
+    name: 'Vizhinjam Deep Water Port',
+    category: 'infrastructure',
+    description: 'International container transshipment terminal in Kerala with 18m depth capability',
+    sponsor: 'VP Operations, Vice President',
     status: 'ready',
-    initialCapex: 12000000,
-    annualOpex: 2000000,
-    revenuePotential: 8000000,
+    initialCapex: 2000000, // ₹20,000 Cr
+    annualOpex: 200000,
+    revenuePotential: 800000,
     savingsPotential: 0,
-    npv: 15600000,
-    irr: 28.3,
-    mirr: 21.7,
-    paybackPeriod: 3.2,
-    ebitdaImpact: 4500000,
+    npv: 3100000, // ₹31,000 Cr
+    irr: 31.2,
+    mirr: 23.4,
+    paybackPeriod: 2.8,
+    ebitdaImpact: 600000,
     riskLevel: 'high',
-    priorityAlignment: ['2', '4'],
-    businessUnit: 'Sales & Marketing',
-    geography: 'APAC',
+    priorityAlignment: ['2'],
+    businessUnit: 'Infrastructure Division',
+    geography: 'Kerala',
     cashFlows: [
-      { year: 0, amount: -12000000 },
-      { year: 1, amount: -1000000 },
-      { year: 2, amount: 2000000 },
-      { year: 3, amount: 5500000 },
-      { year: 4, amount: 8200000 },
-      { year: 5, amount: 12000000 }
+      { year: 0, amount: -2000000 },
+      { year: 1, amount: 200000 },
+      { year: 2, amount: 600000 },
+      { year: 3, amount: 900000 },
+      { year: 4, amount: 1200000 },
+      { year: 5, amount: 1400000 }
     ],
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
     id: '3',
-    projectId: 'PROJ-003',
-    name: 'AI-Powered Customer Service',
-    category: 'technology',
-    description: 'Implement AI chatbots and predictive analytics to enhance customer service operations',
-    sponsor: 'Lisa Chen, CCO',
-    status: 'ideation',
-    initialCapex: 3500000,
-    annualOpex: 600000,
+    projectId: 'HYDRO-003',
+    name: 'Dibang Hydro Electric Project',
+    category: 'renewable_energy',
+    description: '2,880 MW run-of-river hydroelectric project in Arunachal Pradesh',
+    sponsor: 'Hydro Project Team',
+    status: 'approved',
+    initialCapex: 4500000, // ₹45,000 Cr
+    annualOpex: 180000,
     revenuePotential: 1200000,
-    savingsPotential: 2500000,
-    npv: 6800000,
-    irr: 32.1,
-    mirr: 22.4,
-    paybackPeriod: 2.1,
-    ebitdaImpact: 1800000,
+    savingsPotential: 0,
+    npv: 6700000, // ₹67,000 Cr
+    irr: 21.5,
+    mirr: 17.2,
+    paybackPeriod: 4.2,
+    ebitdaImpact: 900000,
+    riskLevel: 'high',
+    priorityAlignment: ['1'],
+    businessUnit: 'Green Energy Division',
+    geography: 'Arunachal Pradesh',
+    cashFlows: [
+      { year: 0, amount: -4500000 },
+      { year: 1, amount: 0 },
+      { year: 2, amount: 400000 },
+      { year: 3, amount: 1000000 },
+      { year: 4, amount: 1400000 },
+      { year: 5, amount: 1600000 }
+    ],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: '4',
+    projectId: 'ROAD-004',
+    name: 'Mumbai-Delhi Expressway',
+    category: 'infrastructure',
+    description: '1,350km 8-lane access-controlled expressway connecting Mumbai and Delhi',
+    sponsor: 'Adani Road Transport Team',
+    status: 'ready',
+    initialCapex: 3500000, // ₹35,000 Cr
+    annualOpex: 350000,
+    revenuePotential: 650000,
+    savingsPotential: 200000,
+    npv: 4100000, // ₹41,000 Cr
+    irr: 18.7,
+    mirr: 15.3,
+    paybackPeriod: 5.2,
+    ebitdaImpact: 500000,
     riskLevel: 'medium',
-    priorityAlignment: ['1', '4'],
-    businessUnit: 'Customer Service',
-    geography: 'Global',
+    priorityAlignment: ['2', '3'],
+    businessUnit: 'Adani Road Transport',
+    geography: 'Maharashtra, Delhi',
     cashFlows: [
       { year: 0, amount: -3500000 },
-      { year: 1, amount: 800000 },
-      { year: 2, amount: 1800000 },
-      { year: 3, amount: 2400000 },
-      { year: 4, amount: 2800000 },
-      { year: 5, amount: 3200000 }
+      { year: 1, amount: 100000 },
+      { year: 2, amount: 400000 },
+      { year: 3, amount: 700000 },
+      { year: 4, amount: 900000 },
+      { year: 5, amount: 1100000 }
+    ],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: '5',
+    projectId: 'HYDROGEN-005',
+    name: 'Green Hydrogen Manufacturing',
+    category: 'renewable_energy',
+    description: '1 million tons per annum green hydrogen and ammonia production facility',
+    sponsor: 'Adani New Industries',
+    status: 'evaluation',
+    initialCapex: 3000000, // ₹30,000 Cr
+    annualOpex: 400000,
+    revenuePotential: 1000000,
+    savingsPotential: 0,
+    npv: 4200000, // ₹42,000 Cr
+    irr: 26.8,
+    mirr: 20.1,
+    paybackPeriod: 3.8,
+    ebitdaImpact: 700000,
+    riskLevel: 'high',
+    priorityAlignment: ['1', '4'],
+    businessUnit: 'Adani New Industries',
+    geography: 'Gujarat',
+    cashFlows: [
+      { year: 0, amount: -3000000 },
+      { year: 1, amount: 200000 },
+      { year: 2, amount: 600000 },
+      { year: 3, amount: 1000000 },
+      { year: 4, amount: 1200000 },
+      { year: 5, amount: 1400000 }
+    ],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: '6',
+    projectId: 'AIRPORT-006',
+    name: 'Navi Mumbai International Airport',
+    category: 'infrastructure',
+    description: 'Greenfield airport with initial capacity of 10 million passengers per annum',
+    sponsor: 'Adani Airport Holdings',
+    status: 'ready',
+    initialCapex: 1600000, // ₹16,000 Cr
+    annualOpex: 160000,
+    revenuePotential: 400000,
+    savingsPotential: 0,
+    npv: 2200000, // ₹22,000 Cr
+    irr: 19.5,
+    mirr: 16.2,
+    paybackPeriod: 4.8,
+    ebitdaImpact: 300000,
+    riskLevel: 'medium',
+    priorityAlignment: ['2'],
+    businessUnit: 'Adani Airport Holdings',
+    geography: 'Maharashtra',
+    cashFlows: [
+      { year: 0, amount: -1600000 },
+      { year: 1, amount: 50000 },
+      { year: 2, amount: 200000 },
+      { year: 3, amount: 350000 },
+      { year: 4, amount: 450000 },
+      { year: 5, amount: 550000 }
+    ],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: '7',
+    projectId: 'WIND-007',
+    name: 'Offshore Wind Farm Gujarat',
+    category: 'renewable_energy',
+    description: '5GW offshore wind energy project in Gulf of Khambhat, Gujarat',
+    sponsor: 'Adani Green Energy',
+    status: 'ideation',
+    initialCapex: 4000000, // ₹40,000 Cr
+    annualOpex: 200000,
+    revenuePotential: 1200000,
+    savingsPotential: 0,
+    npv: 5800000, // ₹58,000 Cr
+    irr: 22.3,
+    mirr: 18.9,
+    paybackPeriod: 3.9,
+    ebitdaImpact: 800000,
+    riskLevel: 'high',
+    priorityAlignment: ['1'],
+    businessUnit: 'Green Energy Division',
+    geography: 'Gujarat',
+    cashFlows: [
+      { year: 0, amount: -4000000 },
+      { year: 1, amount: 300000 },
+      { year: 2, amount: 800000 },
+      { year: 3, amount: 1200000 },
+      { year: 4, amount: 1400000 },
+      { year: 5, amount: 1600000 }
+    ],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: '8',
+    projectId: 'COAL-008',
+    name: 'Talwandi Coal Power Plant',
+    category: 'conventional_energy',
+    description: '1,980 MW supercritical thermal power plant in Punjab',
+    sponsor: 'Adani Power',
+    status: 'rejected',
+    initialCapex: 1500000, // ₹15,000 Cr
+    annualOpex: 800000,
+    revenuePotential: 600000,
+    savingsPotential: 0,
+    npv: -200000, // ₹-2,000 Cr (negative)
+    irr: 8.2,
+    mirr: 6.8,
+    paybackPeriod: 8.5,
+    ebitdaImpact: 100000,
+    riskLevel: 'high',
+    priorityAlignment: [],
+    businessUnit: 'Adani Power',
+    geography: 'Punjab',
+    cashFlows: [
+      { year: 0, amount: -1500000 },
+      { year: 1, amount: 100000 },
+      { year: 2, amount: 150000 },
+      { year: 3, amount: 200000 },
+      { year: 4, amount: 200000 },
+      { year: 5, amount: 200000 }
     ],
     createdAt: new Date(),
     updatedAt: new Date()
@@ -447,7 +616,16 @@ export const defaultProjects: Project[] = [
 
 export const defaultSettings = {
   discountRate: 10,
-  currency: 'USD',
-  fiscalYearStart: 1,
-  availableBudget: 125000000
+  currency: 'INR',
+  fiscalYearStart: 4, // Indian fiscal year starts in April
+  availableBudget: 8500000 // ₹85,000 Cr total available budget
+}
+
+// Indian number formatting utility
+export const formatIndianCurrency = (amount: number): string => {
+  const crores = amount / 100000
+  if (crores >= 1000) {
+    return `₹${(crores / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })} L Cr`
+  }
+  return `₹${crores.toLocaleString('en-IN', { maximumFractionDigits: 0 })} Cr`
 }
