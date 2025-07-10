@@ -14,73 +14,9 @@ import { useAllocationData } from '@/hooks/use-allocation-data'
 import { Priority } from '@/lib/data-models'
 import { formatLargeNumber } from '@/lib/utils'
 
-// Mock data for now
-const mockPriorities = [
-  {
-    id: '1',
-    code: 'P1',
-    name: 'Digital Transformation',
-    description: 'Modernize digital infrastructure and capabilities',
-    weight: 30,
-    minThreshold: 15,
-    budgetMin: 20,
-    budgetMax: 50,
-    timeHorizon: 'medium' as const,
-    sponsor: 'John Smith, CTO',
-    color: '#3b82f6'
-  },
-  {
-    id: '2',
-    code: 'P2',
-    name: 'Market Expansion',
-    description: 'Enter new geographical markets and segments',
-    weight: 25,
-    minThreshold: 10,
-    budgetMin: 15,
-    budgetMax: 40,
-    timeHorizon: 'long' as const,
-    sponsor: 'Sarah Johnson, CMO',
-    color: '#10b981'
-  },
-  {
-    id: '3',
-    code: 'P3',
-    name: 'Operational Excellence',
-    description: 'Improve efficiency and reduce operational costs',
-    weight: 20,
-    minThreshold: 12,
-    budgetMin: 10,
-    budgetMax: 30,
-    timeHorizon: 'short' as const,
-    sponsor: 'Mike Davis, COO',
-    color: '#f59e0b'
-  },
-  {
-    id: '4',
-    code: 'P4',
-    name: 'Customer Experience',
-    description: 'Enhance customer satisfaction and retention',
-    weight: 15,
-    minThreshold: 8,
-    budgetMin: 5,
-    budgetMax: 25,
-    timeHorizon: 'medium' as const,
-    sponsor: 'Lisa Chen, CCO',
-    color: '#ef4444'
-  },
-  {
-    id: '5',
-    code: 'P5',
-    name: 'Innovation & R&D',
-    description: 'Invest in future technologies and innovation',
-    weight: 10,
-    minThreshold: 5,
-    budgetMin: 8,
-    budgetMax: 20,
-    timeHorizon: 'long' as const,
-    sponsor: 'Alex Rodriguez, CIO',
-    color: '#8b5cf6'
-  }
+const PRIORITY_COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+  '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
 ]
 
 interface MetricCardProps {
@@ -119,8 +55,8 @@ function MetricCard({ title, value, icon: Icon, color = 'blue', subtitle }: Metr
 }
 
 interface PriorityCardProps {
-  priority: typeof mockPriorities[0]
-  onEdit: (id: string) => void
+  priority: Priority
+  onEdit: (priority: Priority) => void
   onDelete: (id: string) => void
   onWeightChange: (id: string, weight: number) => void
 }
@@ -143,7 +79,7 @@ function PriorityCard({ priority, onEdit, onDelete, onWeightChange }: PriorityCa
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" onClick={() => onEdit(priority.id)}>
+          <Button variant="ghost" size="sm" onClick={() => onEdit(priority)}>
             <Edit className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="sm" onClick={() => onDelete(priority.id)}>
@@ -187,33 +123,244 @@ function PriorityCard({ priority, onEdit, onDelete, onWeightChange }: PriorityCa
   )
 }
 
+interface PriorityFormData {
+  code: string
+  name: string
+  description: string
+  weight: number
+  minThreshold: number
+  budgetMin: number
+  budgetMax: number
+  timeHorizon: 'short' | 'medium' | 'long'
+  sponsor: string
+  kpis: string
+}
+
+function PriorityModal({ 
+  isOpen, 
+  onClose, 
+  priority, 
+  onSave 
+}: {
+  isOpen: boolean
+  onClose: () => void
+  priority?: Priority
+  onSave: (data: PriorityFormData) => void
+}) {
+  const [formData, setFormData] = useState<PriorityFormData>({
+    code: priority?.code || '',
+    name: priority?.name || '',
+    description: priority?.description || '',
+    weight: priority?.weight || 0,
+    minThreshold: priority?.minThreshold || 0,
+    budgetMin: priority?.budgetMin || 0,
+    budgetMax: priority?.budgetMax || 0,
+    timeHorizon: priority?.timeHorizon || 'medium',
+    sponsor: priority?.sponsor || '',
+    kpis: priority?.kpis?.join(', ') || ''
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave(formData)
+    onClose()
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{priority ? 'Edit Priority' : 'Add New Priority'}</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Priority Code</Label>
+              <Input
+                value={formData.code}
+                onChange={(e) => setFormData({...formData, code: e.target.value})}
+                placeholder="P1"
+                className="bg-slate-700 border-slate-600"
+                required
+              />
+            </div>
+            <div>
+              <Label>Priority Name</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="Digital Transformation"
+                className="bg-slate-700 border-slate-600"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Description</Label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              placeholder="Strategic rationale and objectives..."
+              className="bg-slate-700 border-slate-600"
+              rows={3}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label>Weight (%)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={formData.weight}
+                onChange={(e) => setFormData({...formData, weight: parseInt(e.target.value) || 0})}
+                className="bg-slate-700 border-slate-600"
+                required
+              />
+            </div>
+            <div>
+              <Label>Min Threshold (%)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={formData.minThreshold}
+                onChange={(e) => setFormData({...formData, minThreshold: parseInt(e.target.value) || 0})}
+                className="bg-slate-700 border-slate-600"
+              />
+            </div>
+            <div>
+              <Label>Time Horizon</Label>
+              <Select
+                value={formData.timeHorizon}
+                onValueChange={(value: 'short' | 'medium' | 'long') => setFormData({...formData, timeHorizon: value})}
+              >
+                <SelectTrigger className="bg-slate-700 border-slate-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-700 border-slate-600">
+                  <SelectItem value="short">Short (0-2 years)</SelectItem>
+                  <SelectItem value="medium">Medium (2-5 years)</SelectItem>
+                  <SelectItem value="long">Long (5+ years)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Budget Min ($M)</Label>
+              <Input
+                type="number"
+                min="0"
+                value={formData.budgetMin}
+                onChange={(e) => setFormData({...formData, budgetMin: parseFloat(e.target.value) || 0})}
+                className="bg-slate-700 border-slate-600"
+              />
+            </div>
+            <div>
+              <Label>Budget Max ($M)</Label>
+              <Input
+                type="number"
+                min="0"
+                value={formData.budgetMax}
+                onChange={(e) => setFormData({...formData, budgetMax: parseFloat(e.target.value) || 0})}
+                className="bg-slate-700 border-slate-600"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Executive Sponsor</Label>
+            <Input
+              value={formData.sponsor}
+              onChange={(e) => setFormData({...formData, sponsor: e.target.value})}
+              placeholder="John Smith, CFO"
+              className="bg-slate-700 border-slate-600"
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Key Performance Indicators (comma-separated)</Label>
+            <Textarea
+              value={formData.kpis}
+              onChange={(e) => setFormData({...formData, kpis: e.target.value})}
+              placeholder="Revenue growth, Cost reduction, Customer satisfaction"
+              className="bg-slate-700 border-slate-600"
+              rows={2}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              {priority ? 'Update Priority' : 'Add Priority'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function InvestmentPriorities() {
-  const [priorities, setPriorities] = useState(mockPriorities)
+  const { state, addPriority, updatePriority, deletePriority } = useAllocationData()
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingPriority, setEditingPriority] = useState<Priority | undefined>()
   
+  if (!state) {
+    return <div className="p-6 text-center">Loading...</div>
+  }
+
+  const { priorities } = state
   const totalWeight = priorities.reduce((sum, p) => sum + p.weight, 0)
   const totalBudgetMin = priorities.reduce((sum, p) => sum + p.budgetMin, 0)
   const totalBudgetMax = priorities.reduce((sum, p) => sum + p.budgetMax, 0)
   const activeThresholds = priorities.filter(p => p.minThreshold > 0).length
   
-  const handleEdit = (id: string) => {
-    // TODO: Open edit modal
-    console.log('Edit priority:', id)
+  const handleEdit = (priority: Priority) => {
+    setEditingPriority(priority)
+    setModalOpen(true)
   }
   
   const handleDelete = (id: string) => {
-    // TODO: Show confirmation dialog
-    console.log('Delete priority:', id)
+    if (confirm('Are you sure you want to delete this priority?')) {
+      deletePriority(id)
+    }
   }
   
   const handleWeightChange = (id: string, weight: number) => {
-    setPriorities(prev => 
-      prev.map(p => p.id === id ? { ...p, weight } : p)
-    )
+    updatePriority(id, { weight })
   }
   
   const handleAddPriority = () => {
-    // TODO: Open add priority modal
-    console.log('Add new priority')
+    setEditingPriority(undefined)
+    setModalOpen(true)
+  }
+
+  const handleSavePriority = (formData: PriorityFormData) => {
+    const kpis = formData.kpis.split(',').map(kpi => kpi.trim()).filter(Boolean)
+    const colorIndex = priorities.length % PRIORITY_COLORS.length
+    
+    if (editingPriority) {
+      updatePriority(editingPriority.id, {
+        ...formData,
+        kpis
+      })
+    } else {
+      addPriority({
+        ...formData,
+        kpis,
+        color: PRIORITY_COLORS[colorIndex]
+      })
+    }
   }
 
   return (
@@ -370,6 +517,13 @@ export function InvestmentPriorities() {
           </Card>
         </div>
       </div>
+
+      <PriorityModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        priority={editingPriority}
+        onSave={handleSavePriority}
+      />
     </div>
   )
 }
