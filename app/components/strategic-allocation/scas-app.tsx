@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { Header } from './shared/header'
 import { MetricsBar } from './shared/metrics-bar'
 import { TabNavigation } from './shared/tab-navigation'
@@ -11,9 +10,23 @@ import { ScoringAllocation } from './tabs/scoring-allocation'
 import { DataValidation } from './tabs/data-validation'
 import { PortfolioAnalytics } from './tabs/portfolio-analytics'
 import { ScenarioModeling } from './tabs/scenario-modeling'
+import { useAllocationData } from '@/hooks/use-allocation-data'
 
 export function SCASApp() {
-  const [currentTab, setCurrentTab] = useState('priorities')
+  const { state, setCurrentTab } = useAllocationData()
+  
+  if (!state) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading SCAS...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const currentTab = state.currentTab
 
   const renderCurrentTab = () => {
     switch (currentTab) {
