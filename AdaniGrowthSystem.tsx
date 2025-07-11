@@ -180,7 +180,7 @@ export default function AdaniGrowthSystem() {
     { id: 7, label: '7. What-If Analysis', icon: '🎲', description: 'Scenario modeling and sensitivity analysis' }
   ];
 
-  // Calculate summary metrics for nav bar
+  // Calculate summary metrics
   const selectedOpportunities = appState.opportunities.filter(opp => opp.status === 'approved').length;
   const totalPipelineValue = appState.opportunities.reduce((sum, opp) => sum + opp.investmentRange.max, 0);
   const totalAllocatedCapital = appState.investmentPriorities.reduce((sum, pri) => sum + pri.capitalAllocation, 0);
@@ -197,6 +197,40 @@ export default function AdaniGrowthSystem() {
         subtitle="Accelerating $90B Capital Deployment"
       />
       
+      {/* Key Metrics Bar */}
+      <div className="key-metrics-bar">
+        <div className="metrics-container">
+          <div className="metric-card metric-capital">
+            <span className="metric-label">Total Capital</span>
+            <span className="metric-value">{formatCurrency(totalAllocatedCapital)}</span>
+          </div>
+          <div className="metric-card metric-pipeline">
+            <span className="metric-label">Pipeline Value</span>
+            <span className="metric-value">{formatCurrency(totalPipelineValue)}</span>
+          </div>
+          <div className="metric-card metric-projects">
+            <span className="metric-label">Active Projects</span>
+            <span className="metric-value">{selectedOpportunities}</span>
+          </div>
+          <div className="metric-card metric-rate">
+            <span className="metric-label">Conversion Rate</span>
+            <span className="metric-value">{((selectedOpportunities / appState.opportunities.length) * 100).toFixed(1)}%</span>
+          </div>
+          <div className="metric-card metric-irr">
+            <span className="metric-label">Portfolio IRR</span>
+            <span className="metric-value">18.2%</span>
+          </div>
+          <div className="metric-card metric-speed">
+            <span className="metric-label">Target Speed</span>
+            <span className="metric-value">6-9 weeks</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Separator */}
+      <div className="navigation-separator"></div>
+      
+      {/* Tab Navigation */}
       <div className="tab-navigation adani-nav">
         <div className="tab-buttons">
           {tabs.map(tab => (
@@ -210,25 +244,6 @@ export default function AdaniGrowthSystem() {
               <span className="tab-label">{tab.label}</span>
             </button>
           ))}
-        </div>
-        
-        <div className="nav-info adani-nav-info">
-          <div className="nav-metric">
-            <span className="metric-label">Total Capital</span>
-            <span className="metric-value">{formatCurrency(totalAllocatedCapital)}</span>
-          </div>
-          <div className="nav-metric">
-            <span className="metric-label">Pipeline Value</span>
-            <span className="metric-value">{formatCurrency(totalPipelineValue)}</span>
-          </div>
-          <div className="nav-metric">
-            <span className="metric-label">Approved</span>
-            <span className="metric-value">{selectedOpportunities} / {appState.opportunities.length}</span>
-          </div>
-          <div className="nav-metric deployment-speed">
-            <span className="metric-label">Target Speed</span>
-            <span className="metric-value">6-9 weeks</span>
-          </div>
         </div>
       </div>
 

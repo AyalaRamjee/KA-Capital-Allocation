@@ -133,35 +133,6 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
 
   return (
     <div className="tab2-opportunities-clean">
-      {/* Header Stats */}
-      <div className="header-stats-bar">
-        <div className="stat-item">
-          <span className="stat-icon">🔍</span>
-          <span className="stat-value">{totalOpportunities}</span>
-          <span className="stat-label">TOTAL OPPORTUNITIES</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-icon">💰</span>
-          <span className="stat-value">{formatCurrency(totalPipelineValue)}</span>
-          <span className="stat-label">PIPELINE VALUE</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-icon">✅</span>
-          <span className="stat-value">{conversionRate.toFixed(0)}%</span>
-          <span className="stat-label">CONVERSION RATE</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-icon">🎯</span>
-          <span className="stat-value">{(opportunities.reduce((sum, o) => sum + o.strategicFitScore, 0) / totalOpportunities).toFixed(0)}</span>
-          <span className="stat-label">AVG FIT SCORE</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-icon">⚠️</span>
-          <span className="stat-value">{(opportunities.reduce((sum, o) => sum + o.preliminaryRiskScore, 0) / totalOpportunities).toFixed(0)}</span>
-          <span className="stat-label">AVG RISK SCORE</span>
-        </div>
-      </div>
-
       {/* Pipeline Status Bar */}
       <div className="pipeline-status-bar">
         <div className="status-segment new" style={{ width: `${(newOpportunities / totalOpportunities) * 100}%` }}>
