@@ -31,17 +31,23 @@ export const Tab5_EnsureDataQuality: React.FC<Tab5Props> = ({ sharedData, onData
   const [validationRules, setValidationRules] = useState<ValidationRule[]>(sharedData.validationRules);
   const [dataQualityIssues, setDataQualityIssues] = useState<DataQualityIssue[]>(sharedData.dataQualityIssues);
   const [dataQualityMetrics, setDataQualityMetrics] = useState<DataQualityMetrics>(sharedData.dataQualityMetrics);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'financial' | 'completeness' | 'consistency' | 'accuracy' | 'compliance'>('all');
-  const [selectedSeverity, setSelectedSeverity] = useState<'all' | 'critical' | 'warning' | 'info'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'open' | 'resolved' | 'ignored'>('all');
-  const [showRulesModal, setShowRulesModal] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
+  const [selectedSeverity, setSelectedSeverity] = useState<string>('All Severities');
+  const [selectedStatus, setSelectedStatus] = useState<string>('All Status');
 
   // Initialize validation rules if empty
   useEffect(() => {
     if (sharedData.validationRules.length === 0) {
       initializeValidationRules();
     }
+    // Run initial validation after a short delay
+    const timer = setTimeout(() => {
+      runValidation();
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Run validation when data changes
@@ -154,7 +160,7 @@ export const Tab5_EnsureDataQuality: React.FC<Tab5Props> = ({ sharedData, onData
         category: 'consistency',
         severity: 'warning',
         description: 'Sector allocations should match project assignments',
-        checkFunction: 'allocation => true', // Complex check implemented separately
+        checkFunction: 'allocation => true',
         autoFixable: false,
         enabled: true
       },
@@ -198,7 +204,7 @@ export const Tab5_EnsureDataQuality: React.FC<Tab5Props> = ({ sharedData, onData
         category: 'compliance',
         severity: 'critical',
         description: 'Projects must meet minimum investment threshold',
-        checkFunction: 'project => project.capex >= 10000000', // $10M minimum
+        checkFunction: 'project => project.capex >= 10000000',
         autoFixable: false,
         enabled: true
       },
@@ -230,36 +236,36 @@ export const Tab5_EnsureDataQuality: React.FC<Tab5Props> = ({ sharedData, onData
   const runValidation = async () => {
     setIsValidating(true);
     const issues: DataQualityIssue[] = [];
-    
+
     try {
       // Validate priorities
       const priorityIssues = await validatePriorities();
       issues.push(...priorityIssues);
-      
+
       // Validate opportunities
       const opportunityIssues = await validateOpportunities();
       issues.push(...opportunityIssues);
-      
+
       // Validate projects
       const projectIssues = await validateProjects();
       issues.push(...projectIssues);
-      
+
       // Validate sector allocations
       const sectorIssues = await validateSectorAllocations();
       issues.push(...sectorIssues);
-      
+
       // Calculate metrics
       const metrics = calculateDataQualityMetrics(issues);
-      
+
       setDataQualityIssues(issues);
       setDataQualityMetrics(metrics);
-      
+
       onDataUpdate({
         validationRules,
         dataQualityIssues: issues,
         dataQualityMetrics: metrics
       });
-      
+
     } catch (error) {
       console.error('Validation failed:', error);
     } finally {
@@ -531,30 +537,37 @@ export const Tab5_EnsureDataQuality: React.FC<Tab5Props> = ({ sharedData, onData
 
   const calculateDataQualityMetrics = (issues: DataQualityIssue[]): DataQualityMetrics => {
     const totalDataPoints = 
-      sharedData.investmentPriorities.length +
-      sharedData.opportunities.length +
-      sharedData.validatedProjects.length +
-      sharedData.sectorAllocations.length;
-    
-    const criticalIssues = issues.filter(i => i.severity === 'critical').length;
-    const warningIssues = issues.filter(i => i.severity === 'warning').length;
-    const infoIssues = issues.filter(i => i.severity === 'info').length;
+      (sharedData.investmentPriorities?.length || 0) * 5 + // 5 checks per priority
+      (sharedData.opportunities?.length || 0) * 4 + // 4 checks per opportunity
+      (sharedData.validatedProjects?.length || 0) * 8 + // 8 checks per project
+      (sharedData.sectorAllocations?.length || 0) * 3; // 3 checks per allocation
+
+    const openIssues = issues.filter(i => i.status === 'open');
+    const criticalIssues = openIssues.filter(i => i.severity === 'critical').length;
+    const warningIssues = openIssues.filter(i => i.severity === 'warning').length;
+    const infoIssues = openIssues.filter(i => i.severity === 'info').length;
     const resolvedIssues = issues.filter(i => i.status === 'resolved').length;
-    
-    // Calculate overall score (100 - weighted penalty for issues)
-    const criticalPenalty = criticalIssues * 10;
-    const warningPenalty = warningIssues * 5;
-    const infoPenalty = infoIssues * 1;
-    const totalPenalty = criticalPenalty + warningPenalty + infoPenalty;
-    const overallScore = Math.max(0, 100 - totalPenalty);
-    
-    const categoryBreakdown = issues.reduce((acc, issue) => {
+
+    // Calculate overall score - start at 100 and deduct for issues
+    const criticalPenalty = criticalIssues * 15; // 15 points per critical issue
+    const warningPenalty = warningIssues * 5;   // 5 points per warning
+    const infoPenalty = infoIssues * 2;         // 2 points per info
+
+    // Also consider completeness
+    const dataCompleteness = totalDataPoints > 0 ? 
+      ((totalDataPoints - openIssues.length) / totalDataPoints) * 100 : 100;
+
+    // Weighted score: 70% data quality, 30% completeness
+    const qualityScore = Math.max(0, 100 - criticalPenalty - warningPenalty - infoPenalty);
+    const overallScore = Math.max(0, Math.min(100, (qualityScore * 0.7) + (dataCompleteness * 0.3)));
+
+    const categoryBreakdown = openIssues.reduce((acc, issue) => {
       acc[issue.category] = (acc[issue.category] || 0) + 1;
       return acc;
     }, {} as { [key: string]: number });
-    
+
     return {
-      overallScore,
+      overallScore: Math.round(overallScore),
       totalIssues: issues.length,
       criticalIssues,
       warningIssues,
@@ -601,288 +614,699 @@ export const Tab5_EnsureDataQuality: React.FC<Tab5Props> = ({ sharedData, onData
     });
   };
 
-  // Filter issues
-  const filteredIssues = dataQualityIssues.filter(issue => {
-    const categoryMatch = selectedCategory === 'all' || issue.category === selectedCategory;
-    const severityMatch = selectedSeverity === 'all' || issue.severity === selectedSeverity;
-    const statusMatch = selectedStatus === 'all' || issue.status === selectedStatus;
-    
-    return categoryMatch && severityMatch && statusMatch;
-  });
-
   // Get quality score color
   const getQualityScoreColor = (score: number) => {
-    if (score >= 90) return '#00c853';
-    if (score >= 70) return '#ff9800';
-    return '#f44336';
+    if (score >= 85) return '#10b981';
+    if (score >= 70) return '#f59e0b';
+    return '#ef4444';
   };
 
+  // Get severity badge color
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return '#ef4444';
+      case 'warning': return '#f59e0b';
+      case 'info': return '#3b82f6';
+      default: return '#6b7280';
+    }
+  };
+
+  // Get category color
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'financial': return '#3b82f6';
+      case 'completeness': return '#8b5cf6';
+      case 'consistency': return '#10b981';
+      case 'accuracy': return '#f59e0b';
+      case 'compliance': return '#ef4444';
+      default: return '#6b7280';
+    }
+  };
+
+  // Filter issues based on selections
+  const filteredIssues = dataQualityIssues.filter(issue => {
+    if (selectedCategory !== 'All Categories' && issue.category !== selectedCategory.toLowerCase()) return false;
+    if (selectedSeverity !== 'All Severities' && issue.severity !== selectedSeverity.toLowerCase()) return false;
+    if (selectedStatus !== 'All Status' && issue.status !== selectedStatus.toLowerCase()) return false;
+    return true;
+  });
+
   return (
-    <div className="tab5-data-quality">
-      {/* Header Dashboard */}
-      <div className="quality-header">
-        <div className="quality-score-card">
-          <div className="score-container">
-            <div className="score-gauge">
-              <svg width="160" height="160" className="gauge-chart">
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="70"
-                  fill="none"
-                  stroke="#475569"
-                  strokeWidth="8"
-                />
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="70"
-                  fill="none"
-                  stroke={getQualityScoreColor(dataQualityMetrics.overallScore)}
-                  strokeWidth="8"
-                  strokeDasharray={`${(dataQualityMetrics.overallScore / 100) * 440} 440`}
-                  strokeDashoffset="0"
-                  transform="rotate(-90 80 80)"
-                />
-                <text x="80" y="75" textAnchor="middle" className="score-value">
-                  {Math.round(dataQualityMetrics.overallScore)}%
-                </text>
-                <text x="80" y="95" textAnchor="middle" className="score-label">
-                  {dataQualityMetrics.overallScore >= 90 ? 'Excellent' : 
-                   dataQualityMetrics.overallScore >= 70 ? 'Good' : 'Poor'}
-                </text>
-              </svg>
-            </div>
-            <div className="score-title">Overall Data Quality Score</div>
+    <div className="tab5-data-quality" style={{
+      padding: '1.5rem',
+      background: '#0a0e27',
+      minHeight: 'calc(100vh - 100px)',
+      color: '#e2e8f0'
+    }}>
+      {/* Header */}
+      <div style={{
+        marginBottom: '2rem'
+      }}>
+        <h1 style={{
+          fontSize: '1.75rem',
+          fontWeight: '600',
+          color: '#ffffff',
+          marginBottom: '0.5rem'
+        }}>Data Quality Management</h1>
+        <p style={{
+          color: '#94a3b8',
+          fontSize: '0.875rem'
+        }}>Ensure data integrity and compliance across all investment data</p>
+      </div>
+
+      {/* Score Summary */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '200px 1fr',
+        gap: '2rem',
+        marginBottom: '2rem'
+      }}>
+        {/* Overall Score Card */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+          borderRadius: '16px',
+          padding: '2rem',
+          border: '1px solid #334155',
+          textAlign: 'center',
+          position: 'relative'
+        }}>
+          <div style={{
+            width: '120px',
+            height: '120px',
+            borderRadius: '50%',
+            border: `8px solid ${getQualityScoreColor(dataQualityMetrics.overallScore)}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1rem',
+            background: 'rgba(0, 0, 0, 0.3)',
+            position: 'relative'
+          }}>
+            <span style={{
+              fontSize: '2.5rem',
+              fontWeight: '700',
+              color: getQualityScoreColor(dataQualityMetrics.overallScore)
+            }}>
+              {dataQualityMetrics.overallScore}%
+            </span>
           </div>
-          
-          <div className="quality-summary">
-            <div className="summary-item critical">
-              <div className="summary-count">{dataQualityMetrics.criticalIssues}</div>
-              <div className="summary-label">Critical Issues</div>
-            </div>
-            <div className="summary-item warning">
-              <div className="summary-count">{dataQualityMetrics.warningIssues}</div>
-              <div className="summary-label">Warnings</div>
-            </div>
-            <div className="summary-item info">
-              <div className="summary-count">{dataQualityMetrics.infoIssues}</div>
-              <div className="summary-label">Info</div>
-            </div>
-            <div className="summary-item resolved">
-              <div className="summary-count">{dataQualityMetrics.resolvedIssues}</div>
-              <div className="summary-label">Resolved</div>
-            </div>
+          <h3 style={{
+            color: '#94a3b8',
+            fontSize: '0.875rem',
+            fontWeight: '500'
+          }}>Overall Data Quality Score</h3>
+        </div>
+
+        {/* Issue Summary Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '1rem'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            border: '1px solid #334155'
+          }}>
+            <div style={{
+              color: '#94a3b8',
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              marginBottom: '0.5rem',
+              letterSpacing: '0.5px'
+            }}>Critical Issues</div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#ef4444'
+            }}>{dataQualityMetrics.criticalIssues}</div>
+          </div>
+
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            border: '1px solid #334155'
+          }}>
+            <div style={{
+              color: '#94a3b8',
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              marginBottom: '0.5rem',
+              letterSpacing: '0.5px'
+            }}>Warnings</div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#f59e0b'
+            }}>{dataQualityMetrics.warningIssues}</div>
+          </div>
+
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            border: '1px solid #334155'
+          }}>
+            <div style={{
+              color: '#94a3b8',
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              marginBottom: '0.5rem',
+              letterSpacing: '0.5px'
+            }}>Info</div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#3b82f6'
+            }}>{dataQualityMetrics.infoIssues}</div>
+          </div>
+
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            border: '1px solid #334155'
+          }}>
+            <div style={{
+              color: '#94a3b8',
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              marginBottom: '0.5rem',
+              letterSpacing: '0.5px'
+            }}>Resolved</div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#10b981'
+            }}>{dataQualityMetrics.resolvedIssues}</div>
           </div>
         </div>
-        
-        <div className="quality-actions">
-          <button 
-            className="btn btn-primary"
+      </div>
+
+      {/* Actions and Filters */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '1.5rem',
+        gap: '1rem'
+      }}>
+        <div style={{
+          display: 'flex',
+          gap: '1rem',
+          alignItems: 'center'
+        }}>
+          <button
             onClick={runValidation}
             disabled={isValidating}
+            style={{
+              background: '#3b82f6',
+              color: 'white',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: isValidating ? 'not-allowed' : 'pointer',
+              fontWeight: '600',
+              opacity: isValidating ? 0.6 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
           >
             {isValidating ? 'Validating...' : 'Run Validation'}
           </button>
-          <button 
-            className="btn btn-secondary"
+
+          <button
             onClick={() => setShowRulesModal(true)}
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: '#e2e8f0',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
           >
             Manage Rules
           </button>
         </div>
+
+        <div style={{
+          display: 'flex',
+          gap: '1rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Category:</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={{
+                background: '#1e293b',
+                color: '#e2e8f0',
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: '1px solid #334155',
+                cursor: 'pointer'
+              }}
+            >
+              <option>All Categories</option>
+              <option>Financial</option>
+              <option>Completeness</option>
+              <option>Consistency</option>
+              <option>Accuracy</option>
+              <option>Compliance</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Severity:</label>
+            <select
+              value={selectedSeverity}
+              onChange={(e) => setSelectedSeverity(e.target.value)}
+              style={{
+                background: '#1e293b',
+                color: '#e2e8f0',
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: '1px solid #334155',
+                cursor: 'pointer'
+              }}
+            >
+              <option>All Severities</option>
+              <option>Critical</option>
+              <option>Warning</option>
+              <option>Info</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Status:</label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              style={{
+                background: '#1e293b',
+                color: '#e2e8f0',
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: '1px solid #334155',
+                cursor: 'pointer'
+              }}
+            >
+              <option>All Status</option>
+              <option>Open</option>
+              <option>Resolved</option>
+              <option>Ignored</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="quality-filters">
-        <div className="filter-group">
-          <label>Category:</label>
-          <select 
-            value={selectedCategory} 
-            onChange={(e) => setSelectedCategory(e.target.value as any)}
-            className="filter-select"
-          >
-            <option value="all">All Categories</option>
-            <option value="financial">Financial</option>
-            <option value="completeness">Completeness</option>
-            <option value="consistency">Consistency</option>
-            <option value="accuracy">Accuracy</option>
-            <option value="compliance">Compliance</option>
-          </select>
+      {/* Data Quality Issues Table */}
+      <div style={{
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        borderRadius: '16px',
+        border: '1px solid #334155',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          padding: '1.5rem',
+          borderBottom: '1px solid #334155'
+        }}>
+          <h2 style={{
+            color: '#ffffff',
+            fontSize: '1.125rem',
+            fontWeight: '600'
+          }}>Data Quality Issues ({filteredIssues.length})</h2>
         </div>
-        
-        <div className="filter-group">
-          <label>Severity:</label>
-          <select 
-            value={selectedSeverity} 
-            onChange={(e) => setSelectedSeverity(e.target.value as any)}
-            className="filter-select"
-          >
-            <option value="all">All Severities</option>
-            <option value="critical">Critical</option>
-            <option value="warning">Warning</option>
-            <option value="info">Info</option>
-          </select>
-        </div>
-        
-        <div className="filter-group">
-          <label>Status:</label>
-          <select 
-            value={selectedStatus} 
-            onChange={(e) => setSelectedStatus(e.target.value as any)}
-            className="filter-select"
-          >
-            <option value="all">All Status</option>
-            <option value="open">Open</option>
-            <option value="resolved">Resolved</option>
-            <option value="ignored">Ignored</option>
-          </select>
-        </div>
-      </div>
 
-      {/* Issues Table */}
-      <div className="issues-table">
-        <div className="table-header">
-          <h3>Data Quality Issues ({filteredIssues.length})</h3>
-        </div>
-        
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Issue Type</th>
-              <th>Description</th>
-              <th>Severity</th>
-              <th>Affected Items</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredIssues.map(issue => (
-              <tr key={issue.id}>
-                <td>
-                  <div className="issue-type">
-                    <div className={`issue-icon ${issue.severity}`}>
-                      {issue.severity === 'critical' ? '🔴' : 
-                       issue.severity === 'warning' ? '🟡' : '🔵'}
-                    </div>
-                    <span>{issue.title}</span>
-                  </div>
-                </td>
-                <td className="issue-description">
-                  {issue.description}
-                  {issue.autoFixSuggestion && (
-                    <div className="auto-fix-suggestion">
-                      💡 {issue.autoFixSuggestion}
-                    </div>
-                  )}
-                </td>
-                <td>
-                  <span className={`severity-badge ${issue.severity}`}>
-                    {issue.severity}
-                  </span>
-                </td>
-                <td>
-                  <span className="affected-count">
-                    {issue.affectedItems.length} items
-                  </span>
-                </td>
-                <td>
-                  <span className={`category-badge ${issue.category}`}>
-                    {issue.category}
-                  </span>
-                </td>
-                <td>
-                  <span className={`status-badge ${issue.status}`}>
-                    {issue.status}
-                  </span>
-                </td>
-                <td>
-                  <div className="issue-actions">
-                    {issue.status === 'open' && (
-                      <>
-                        <button 
-                          className="btn btn-sm btn-success"
-                          onClick={() => handleIssueResolution(issue.id, 'resolved')}
-                        >
-                          Resolve
-                        </button>
-                        <button 
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => handleIssueResolution(issue.id, 'ignored')}
-                        >
-                          Ignore
-                        </button>
-                      </>
-                    )}
-                    <button className="btn btn-sm btn-primary">
-                      Details
-                    </button>
-                  </div>
-                </td>
+        <div style={{
+          overflowX: 'auto'
+        }}>
+          <table style={{
+            width: '100%',
+            borderCollapse: 'collapse'
+          }}>
+            <thead>
+              <tr style={{
+                background: '#0f172a'
+              }}>
+                <th style={{
+                  padding: '1rem',
+                  textAlign: 'left',
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid #334155'
+                }}>Issue Type</th>
+                <th style={{
+                  padding: '1rem',
+                  textAlign: 'left',
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid #334155'
+                }}>Description</th>
+                <th style={{
+                  padding: '1rem',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid #334155'
+                }}>Severity</th>
+                <th style={{
+                  padding: '1rem',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid #334155'
+                }}>Affected Items</th>
+                <th style={{
+                  padding: '1rem',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid #334155'
+                }}>Category</th>
+                <th style={{
+                  padding: '1rem',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid #334155'
+                }}>Status</th>
+                <th style={{
+                  padding: '1rem',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid #334155'
+                }}>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredIssues.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{
+                    padding: '3rem',
+                    textAlign: 'center',
+                    color: '#64748b'
+                  }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.5 }}>✅</div>
+                    No issues found matching the selected filters
+                  </td>
+                </tr>
+              ) : (
+                filteredIssues.map((issue) => (
+                  <tr key={issue.id} style={{
+                    borderBottom: '1px solid #334155',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    <td style={{
+                      padding: '1rem',
+                      color: '#e2e8f0',
+                      fontSize: '0.875rem',
+                      verticalAlign: 'middle'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: getSeverityColor(issue.severity)
+                        }} />
+                        <span style={{ fontWeight: '500' }}>{issue.title}</span>
+                      </div>
+                    </td>
+                    <td style={{
+                      padding: '1rem',
+                      color: '#94a3b8',
+                      fontSize: '0.875rem',
+                      verticalAlign: 'middle'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <span>{issue.description}</span>
+                        {issue.autoFixSuggestion && (
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: '#3b82f6',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}>
+                            💡 {issue.autoFixSuggestion}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{
+                      padding: '1rem',
+                      textAlign: 'center',
+                      verticalAlign: 'middle'
+                    }}>
+                      <span style={{
+                        background: issue.severity === 'critical' ? 'rgba(239, 68, 68, 0.1)' :
+                                    issue.severity === 'warning' ? 'rgba(245, 158, 11, 0.1)' :
+                                    'rgba(59, 130, 246, 0.1)',
+                        color: getSeverityColor(issue.severity),
+                        padding: '0.375rem 0.75rem',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        textTransform: 'uppercase'
+                      }}>
+                        {issue.severity}
+                      </span>
+                    </td>
+                    <td style={{
+                      padding: '1rem',
+                      textAlign: 'center',
+                      color: '#e2e8f0',
+                      fontSize: '0.875rem',
+                      verticalAlign: 'middle',
+                      fontWeight: '500'
+                    }}>
+                      {issue.affectedItems.length} items
+                    </td>
+                    <td style={{
+                      padding: '1rem',
+                      textAlign: 'center',
+                      verticalAlign: 'middle'
+                    }}>
+                      <span style={{
+                        color: getCategoryColor(issue.category),
+                        textTransform: 'uppercase',
+                        fontSize: '0.75rem',
+                        fontWeight: '600'
+                      }}>
+                        {issue.category}
+                      </span>
+                    </td>
+                    <td style={{
+                      padding: '1rem',
+                      textAlign: 'center',
+                      verticalAlign: 'middle'
+                    }}>
+                      <span style={{
+                        textTransform: 'uppercase',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        color: issue.status === 'open' ? '#e2e8f0' : '#10b981'
+                      }}>
+                        {issue.status}
+                      </span>
+                    </td>
+                    <td style={{
+                      padding: '1rem',
+                      textAlign: 'center',
+                      verticalAlign: 'middle'
+                    }}>
+                      {issue.status === 'open' && (
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                          <button
+                            onClick={() => handleIssueResolution(issue.id, 'resolved')}
+                            style={{
+                              background: '#10b981',
+                              color: 'white',
+                              padding: '0.375rem 0.75rem',
+                              borderRadius: '6px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem',
+                              fontWeight: '600'
+                            }}
+                          >
+                            Resolve
+                          </button>
+                          <button
+                            onClick={() => handleIssueResolution(issue.id, 'ignored')}
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              color: '#94a3b8',
+                              padding: '0.375rem 0.75rem',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem',
+                              fontWeight: '600'
+                            }}
+                          >
+                            Ignore
+                          </button>
+                          <button
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              color: '#94a3b8',
+                              padding: '0.375rem 0.75rem',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem',
+                              fontWeight: '600'
+                            }}
+                          >
+                            Details
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Validation Rules Modal */}
       {showRulesModal && (
-        <div className="modal-overlay" onClick={() => setShowRulesModal(false)}>
-          <div className="modal-content rules-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Manage Validation Rules</h2>
-              <button className="modal-close" onClick={() => setShowRulesModal(false)}>×</button>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#1e293b',
+            borderRadius: '16px',
+            padding: '2rem',
+            maxWidth: '900px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            border: '1px solid #334155',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '2rem'
+            }}>
+              <h2 style={{ color: '#ffffff', fontSize: '1.5rem', fontWeight: '600' }}>Manage Validation Rules</h2>
+              <button 
+                onClick={() => setShowRulesModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer'
+                }}
+              >×</button>
             </div>
             
-            <div className="modal-body">
-              <div className="rules-table">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Enabled</th>
-                      <th>Rule Name</th>
-                      <th>Category</th>
-                      <th>Severity</th>
-                      <th>Description</th>
-                      <th>Auto-fixable</th>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #334155' }}>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#94a3b8', fontSize: '0.75rem', fontWeight: '600' }}>ENABLED</th>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#94a3b8', fontSize: '0.75rem', fontWeight: '600' }}>RULE NAME</th>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#94a3b8', fontSize: '0.75rem', fontWeight: '600' }}>CATEGORY</th>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#94a3b8', fontSize: '0.75rem', fontWeight: '600' }}>SEVERITY</th>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#94a3b8', fontSize: '0.75rem', fontWeight: '600' }}>DESCRIPTION</th>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#94a3b8', fontSize: '0.75rem', fontWeight: '600' }}>AUTO-FIXABLE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {validationRules.map(rule => (
+                    <tr key={rule.id} style={{ borderBottom: '1px solid #334155' }}>
+                      <td style={{ padding: '0.75rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={rule.enabled}
+                          onChange={() => toggleValidationRule(rule.id)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </td>
+                      <td style={{ padding: '0.75rem', color: '#e2e8f0' }}>
+                        {rule.name}
+                      </td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <span style={{
+                          color: getCategoryColor(rule.category),
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          textTransform: 'uppercase'
+                        }}>
+                          {rule.category}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <span style={{
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.375rem',
+                          fontSize: '0.625rem',
+                          fontWeight: '600',
+                          background: rule.severity === 'critical' ? 'rgba(239, 68, 68, 0.1)' : 
+                                     rule.severity === 'warning' ? 'rgba(245, 158, 11, 0.1)' : 
+                                     'rgba(59, 130, 246, 0.1)',
+                          color: getSeverityColor(rule.severity),
+                          textTransform: 'uppercase'
+                        }}>
+                          {rule.severity}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem', color: '#94a3b8', fontSize: '0.875rem' }}>
+                        {rule.description}
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        {rule.autoFixable && (
+                          <span style={{ color: '#10b981' }}>✅</span>
+                        )}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {validationRules.map(rule => (
-                      <tr key={rule.id}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={rule.enabled}
-                            onChange={() => toggleValidationRule(rule.id)}
-                          />
-                        </td>
-                        <td>
-                          <span className="rule-name">{rule.name}</span>
-                        </td>
-                        <td>
-                          <span className={`category-badge ${rule.category}`}>
-                            {rule.category}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`severity-badge ${rule.severity}`}>
-                            {rule.severity}
-                          </span>
-                        </td>
-                        <td>{rule.description}</td>
-                        <td>
-                          {rule.autoFixable && (
-                            <span className="auto-fix-indicator">✅</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
