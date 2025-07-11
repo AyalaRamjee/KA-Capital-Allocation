@@ -13,477 +13,969 @@ interface Tab6Props {
 }
 
 export const Tab6_MonitorPortfolio: React.FC<Tab6Props> = ({ sharedData, onDataUpdate }) => {
-  const [selectedTimeframe, setSelectedTimeframe] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
-  const [selectedView, setSelectedView] = useState<'overview' | 'performance' | 'geography'>('overview');
-  const [selectedSector, setSelectedSector] = useState<string | null>(null);
+  const [selectedQuadrant, setSelectedQuadrant] = useState<'velocity' | 'returns' | 'risk' | 'strategic' | null>(null);
+  const [deploymentAnimation, setDeploymentAnimation] = useState(true);
+  const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'dashboard' | 'geographic' | 'timeline'>('dashboard');
 
   // Filter active projects (Grade A and B)
   const activeProjects = sharedData.validatedProjects.filter(
     p => p.investmentGrade === 'A' || p.investmentGrade === 'B'
   );
 
-  // Calculate deployment metrics
+  // Calculate key metrics
   const totalDeployedCapital = activeProjects.reduce((sum, p) => sum + p.capex, 0);
-  const targetMonthly = 1500000000; // $1.5B target per month
-  const targetTotal = 90000000000; // $90B total target
-  const deploymentProgress = (totalDeployedCapital / targetTotal) * 100;
+  const targetMonthly = 1500000000; // $1.5B per month
+  const targetTotal = 90000000000; // $90B total
   const currentMonthlyRate = totalDeployedCapital / 12; // Assuming 12 months
   const deploymentVelocity = (currentMonthlyRate / targetMonthly) * 100;
-
-  // Calculate portfolio IRR (weighted average)
+  
+  // Portfolio IRR (weighted average)
   const portfolioIRR = activeProjects.length > 0 
     ? activeProjects.reduce((sum, p) => sum + (p.irr * p.capex), 0) / totalDeployedCapital
     : 0;
 
-  // Calculate sector distribution
-  const sectorData = sharedData.adaniSectors.map(sector => {
-    const sectorProjects = activeProjects.filter(p => 
-      p.businessUnit.toLowerCase().includes(sector.name.toLowerCase()) ||
-      (sector.name === 'Renewable Energy' && (p.businessUnit.includes('Green') || p.businessUnit.includes('Solar') || p.businessUnit.includes('Wind')))
-    );
-    const sectorCapital = sectorProjects.reduce((sum, p) => sum + p.capex, 0);
-    return {
-      id: sector.id,
-      name: sector.name,
-      value: sectorCapital,
-      percentage: totalDeployedCapital > 0 ? (sectorCapital / totalDeployedCapital) * 100 : 0,
-      projects: sectorProjects.length,
-      color: sector.color
-    };
-  }).filter(s => s.value > 0);
+  // Calculate actual vs expected returns
+  const expectedReturns = activeProjects.reduce((sum, p) => sum + (p.npv), 0);
+  const actualReturns = expectedReturns * (0.85 + Math.random() * 0.3); // Simulate actual performance
+  const returnsVariance = ((actualReturns - expectedReturns) / expectedReturns) * 100;
 
-  // Calculate risk distribution
+  // Risk exposure calculation
   const riskDistribution = {
-    low: activeProjects.filter(p => p.riskScore <= 30).length,
-    medium: activeProjects.filter(p => p.riskScore > 30 && p.riskScore <= 60).length,
-    high: activeProjects.filter(p => p.riskScore > 60).length
+    low: activeProjects.filter(p => p.riskScore <= 30),
+    medium: activeProjects.filter(p => p.riskScore > 30 && p.riskScore <= 60),
+    high: activeProjects.filter(p => p.riskScore > 60)
   };
+  
+  const portfolioRiskScore = activeProjects.length > 0
+    ? activeProjects.reduce((sum, p) => sum + (p.riskScore * p.capex), 0) / totalDeployedCapital
+    : 0;
 
-  // Generate monthly deployment data
-  const monthlyDeploymentData = Array.from({ length: 12 }, (_, i) => {
-    const month = new Date(2024, i).toLocaleString('default', { month: 'short' });
-    const deployed = totalDeployedCapital * (0.05 + Math.random() * 0.15); // Simulate monthly variation
-    return {
-      month,
-      deployed,
-      target: targetMonthly,
-      cumulative: deployed * (i + 1)
-    };
+  // Strategic alignment score
+  const strategicScore = activeProjects.length > 0
+    ? activeProjects.reduce((sum, p) => sum + p.compositeScore, 0) / activeProjects.length
+    : 0;
+
+  // Days ahead/behind schedule
+  const daysVariance = Math.floor((totalDeployedCapital / targetTotal) * 1825 - 365); // 5 years = 1825 days
+
+  // Top/Bottom performers
+  const sortedByPerformance = [...activeProjects].sort((a, b) => {
+    const aPerf = (a.irr - 15) * (100 - a.riskScore) / 100;
+    const bPerf = (b.irr - 15) * (100 - b.riskScore) / 100;
+    return bPerf - aPerf;
   });
+  
+  const topPerformers = sortedByPerformance.slice(0, 5);
+  const bottomPerformers = sortedByPerformance.slice(-5).reverse();
 
-  // Geographic distribution (India states)
+  // Geographic data with actual Indian states
   const geographicData = [
-    { state: 'Gujarat', projects: 15, investment: 18000000000, x: 320, y: 280 },
-    { state: 'Maharashtra', projects: 12, investment: 14000000000, x: 340, y: 250 },
-    { state: 'Rajasthan', projects: 8, investment: 12000000000, x: 280, y: 220 },
-    { state: 'Odisha', projects: 10, investment: 8000000000, x: 420, y: 260 },
-    { state: 'Jharkhand', projects: 6, investment: 6000000000, x: 430, y: 240 },
-    { state: 'Tamil Nadu', projects: 5, investment: 4000000000, x: 360, y: 380 },
-    { state: 'Karnataka', projects: 4, investment: 3000000000, x: 340, y: 350 }
+    { 
+      state: 'Gujarat', 
+      projects: activeProjects.filter(p => p.businessUnit.includes('Gujarat')).length || 12,
+      investment: 22000000000,
+      avgROI: 18.5,
+      coordinates: { x: 72.1, y: 22.2 },
+      mapX: 250,
+      mapY: 280
+    },
+    { 
+      state: 'Maharashtra', 
+      projects: activeProjects.filter(p => p.businessUnit.includes('Maharashtra')).length || 10,
+      investment: 18000000000,
+      avgROI: 16.2,
+      coordinates: { x: 75.7, y: 19.7 },
+      mapX: 280,
+      mapY: 320
+    },
+    { 
+      state: 'Rajasthan', 
+      projects: activeProjects.filter(p => p.businessUnit.includes('Rajasthan')).length || 8,
+      investment: 14000000000,
+      avgROI: 19.8,
+      coordinates: { x: 74.2, y: 27.0 },
+      mapX: 220,
+      mapY: 240
+    },
+    { 
+      state: 'Odisha', 
+      projects: activeProjects.filter(p => p.businessUnit.includes('Odisha')).length || 6,
+      investment: 9000000000,
+      avgROI: 15.5,
+      coordinates: { x: 85.8, y: 20.9 },
+      mapX: 420,
+      mapY: 300
+    },
+    { 
+      state: 'Tamil Nadu', 
+      projects: activeProjects.filter(p => p.businessUnit.includes('Tamil')).length || 5,
+      investment: 7000000000,
+      avgROI: 17.2,
+      coordinates: { x: 78.6, y: 10.8 },
+      mapX: 340,
+      mapY: 420
+    },
+    { 
+      state: 'Karnataka', 
+      projects: activeProjects.filter(p => p.businessUnit.includes('Karnataka')).length || 4,
+      investment: 5000000000,
+      avgROI: 20.1,
+      coordinates: { x: 75.7, y: 15.3 },
+      mapX: 290,
+      mapY: 380
+    }
   ];
 
-  // Performance comparison data
-  const performanceData = activeProjects.map(project => ({
-    ...project,
-    actualIRR: project.irr * (0.85 + Math.random() * 0.3), // Simulate actual performance
-    variance: function() { return this.actualIRR - project.irr; }
-  }));
+  // Deployment flow animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDeploymentAnimation(prev => !prev);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Quadrant data
+  const quadrantData = {
+    velocity: {
+      title: 'Deployment Velocity',
+      icon: '🚀',
+      metric: `${formatCurrency(currentMonthlyRate)}/mo`,
+      trend: deploymentVelocity >= 100 ? 'positive' : 'negative',
+      trendValue: `${deploymentVelocity >= 100 ? '+' : ''}${(deploymentVelocity - 100).toFixed(1)}%`,
+      subtitle: `Target: ${formatCurrency(targetMonthly)}/mo`,
+      color: '#3b82f6'
+    },
+    returns: {
+      title: 'Returns Performance',
+      icon: '📈',
+      metric: `${portfolioIRR.toFixed(1)}%`,
+      trend: returnsVariance >= 0 ? 'positive' : 'negative',
+      trendValue: `${returnsVariance >= 0 ? '+' : ''}${returnsVariance.toFixed(1)}%`,
+      subtitle: `NPV: ${formatCurrency(actualReturns)}`,
+      color: '#10b981'
+    },
+    risk: {
+      title: 'Risk Exposure',
+      icon: '⚡',
+      metric: portfolioRiskScore.toFixed(0),
+      trend: portfolioRiskScore <= 50 ? 'positive' : 'negative',
+      trendValue: `${riskDistribution.high.length} high-risk`,
+      subtitle: `${riskDistribution.low.length}L / ${riskDistribution.medium.length}M / ${riskDistribution.high.length}H`,
+      color: '#f59e0b'
+    },
+    strategic: {
+      title: 'Strategic Alignment',
+      icon: '🎯',
+      metric: `${strategicScore.toFixed(0)}%`,
+      trend: strategicScore >= 70 ? 'positive' : 'negative',
+      trendValue: daysVariance >= 0 ? `${daysVariance} days ahead` : `${Math.abs(daysVariance)} days behind`,
+      subtitle: 'Portfolio alignment score',
+      color: '#8b5cf6'
+    }
+  };
+
+  const containerStyle = {
+    padding: '2rem',
+    background: '#0a0e27',
+    minHeight: '100vh',
+    color: '#e2e8f0'
+  };
+
+  const headerStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2rem'
+  };
+
+  const titleStyle = {
+    fontSize: '2rem',
+    background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    fontWeight: 700
+  };
+
+  const viewControlsStyle = {
+    display: 'flex',
+    gap: '1rem'
+  };
+
+  const viewBtnStyle = (isActive: boolean) => ({
+    background: isActive ? '#3b82f6' : 'rgba(255, 255, 255, 0.1)',
+    border: isActive ? '1px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.2)',
+    color: isActive ? 'white' : '#94a3b8',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    fontWeight: 600,
+    transition: 'all 0.3s ease'
+  });
+
+  const quadrantStyle = (color: string, isSelected: boolean) => ({
+    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    border: `2px solid ${isSelected ? color : '#334155'}`,
+    borderRadius: '20px',
+    padding: '2rem',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+    boxShadow: isSelected ? `0 0 30px ${color}40` : 'none'
+  });
 
   return (
-    <div className="tab6-monitor-portfolio">
-      {/* Header Stats Cards */}
-      <div className="portfolio-header">
-        <div className="header-stats">
-          <div className="stat-card deployed">
-            <div className="stat-icon">💰</div>
-            <div className="stat-content">
-              <div className="stat-value">{formatCurrency(totalDeployedCapital)}</div>
-              <div className="stat-label">Deployed Capital</div>
-              <div className="stat-trend positive">↑ {deploymentProgress.toFixed(1)}%</div>
-            </div>
-          </div>
-          
-          <div className="stat-card velocity">
-            <div className="stat-icon">🚀</div>
-            <div className="stat-content">
-              <div className="stat-value">{formatCurrency(currentMonthlyRate)}/mo</div>
-              <div className="stat-label">Deployment Rate</div>
-              <div className={`stat-trend ${deploymentVelocity >= 100 ? 'positive' : 'negative'}`}>
-                {deploymentVelocity >= 100 ? '↑' : '↓'} {Math.abs(deploymentVelocity - 100).toFixed(1)}%
-              </div>
-            </div>
-          </div>
-          
-          <div className="stat-card performance">
-            <div className="stat-icon">📊</div>
-            <div className="stat-content">
-              <div className="stat-value">{portfolioIRR.toFixed(1)}%</div>
-              <div className="stat-label">Portfolio IRR</div>
-              <div className="stat-trend positive">↑ 0.5%</div>
-            </div>
-          </div>
-          
-          <div className="stat-card projects">
-            <div className="stat-icon">🏗️</div>
-            <div className="stat-content">
-              <div className="stat-value">{activeProjects.length}</div>
-              <div className="stat-label">Active Projects</div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="header-controls">
-          <div className="view-selector">
-            <button 
-              className={`view-btn ${selectedView === 'overview' ? 'active' : ''}`}
-              onClick={() => setSelectedView('overview')}
-            >
-              Overview
-            </button>
-            <button 
-              className={`view-btn ${selectedView === 'performance' ? 'active' : ''}`}
-              onClick={() => setSelectedView('performance')}
-            >
-              Performance
-            </button>
-            <button 
-              className={`view-btn ${selectedView === 'geography' ? 'active' : ''}`}
-              onClick={() => setSelectedView('geography')}
-            >
-              Geography
-            </button>
-          </div>
-          
-          <div className="timeframe-selector">
-            <select 
-              value={selectedTimeframe} 
-              onChange={(e) => setSelectedTimeframe(e.target.value as any)}
-              className="timeframe-select"
-            >
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="yearly">Yearly</option>
-            </select>
-          </div>
+    <div className="tab6-portfolio-command" style={containerStyle}>
+      {/* View Mode Selector */}
+      <div className="command-header" style={headerStyle}>
+        <h1 style={titleStyle}>Portfolio Command Center</h1>
+        <div className="view-controls" style={viewControlsStyle}>
+          <button 
+            className="view-btn"
+            style={viewBtnStyle(viewMode === 'dashboard')}
+            onClick={() => setViewMode('dashboard')}
+          >
+            <span style={{ fontSize: '1.25rem' }}>📊</span>
+            CEO Dashboard
+          </button>
+          <button 
+            className="view-btn"
+            style={viewBtnStyle(viewMode === 'geographic')}
+            onClick={() => setViewMode('geographic')}
+          >
+            <span style={{ fontSize: '1.25rem' }}>🗺️</span>
+            Geographic View
+          </button>
+          <button 
+            className="view-btn"
+            style={viewBtnStyle(viewMode === 'timeline')}
+            onClick={() => setViewMode('timeline')}
+          >
+            <span style={{ fontSize: '1.25rem' }}>📅</span>
+            Timeline View
+          </button>
         </div>
       </div>
 
-      {/* Main Dashboard Content */}
-      <div className="dashboard-content">
-        {selectedView === 'overview' && (
-          <>
-            {/* Section 1: Deployment Velocity Chart */}
-            <div className="dashboard-section deployment-velocity">
-              <h3>Capital Deployment Velocity</h3>
-              <div className="velocity-chart">
-                <svg width="100%" height="300" viewBox="0 0 800 300">
-                  {/* Grid lines */}
-                  {Array.from({ length: 6 }, (_, i) => (
-                    <line
-                      key={i}
-                      x1={60}
-                      y1={50 + i * 40}
-                      x2={750}
-                      y2={50 + i * 40}
-                      stroke="#374151"
-                      strokeWidth="1"
-                      opacity="0.3"
-                    />
-                  ))}
-                  
-                  {/* Target line */}
-                  <line
-                    x1={60}
-                    y1={130}
-                    x2={750}
-                    y2={130}
-                    stroke="#10b981"
-                    strokeWidth="2"
-                    strokeDasharray="5,5"
-                  />
-                  <text x={60} y={125} fill="#10b981" fontSize="12">Target: $1.5B/mo</text>
-                  
-                  {/* Deployment line */}
-                  <polyline
-                    points={monthlyDeploymentData.map((d, i) => 
-                      `${60 + i * 55},${250 - (d.deployed / targetMonthly) * 150}`
-                    ).join(' ')}
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="3"
-                  />
-                  
-                  {/* Data points */}
-                  {monthlyDeploymentData.map((d, i) => (
-                    <g key={i}>
-                      <circle
-                        cx={60 + i * 55}
-                        cy={250 - (d.deployed / targetMonthly) * 150}
-                        r="4"
-                        fill="#3b82f6"
+      {viewMode === 'dashboard' && (
+        <>
+          {/* CEO Dashboard - 4 Quadrants */}
+          <div className="ceo-dashboard" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '1.5rem',
+            marginBottom: '2rem'
+          }}>
+            {Object.entries(quadrantData).map(([key, data]) => (
+              <div 
+                key={key}
+                className="quadrant"
+                onClick={() => setSelectedQuadrant(selectedQuadrant === key ? null : key as any)}
+                style={quadrantStyle(data.color, selectedQuadrant === key)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '2rem' }}>{data.icon}</span>
+                  <h3 style={{ fontSize: '1rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {data.title}
+                  </h3>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '2.5rem', fontWeight: 700, color: data.color }}>
+                    {data.metric}
+                  </span>
+                  <span style={{ fontSize: '1rem', fontWeight: 600, color: data.trend === 'positive' ? '#10b981' : '#ef4444' }}>
+                    {data.trend === 'positive' ? '↑' : '↓'} {data.trendValue}
+                  </span>
+                </div>
+                
+                <div style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                  {data.subtitle}
+                </div>
+                
+                {/* Mini visualization for each quadrant */}
+                <div style={{ height: '60px', marginTop: '1rem' }}>
+                  {key === 'velocity' && (
+                    <svg width="100%" height="60" viewBox="0 0 200 60">
+                      <rect x="0" y="20" width="200" height="20" rx="10" fill="#1e293b" />
+                      <rect 
+                        x="0" 
+                        y="20" 
+                        width={`${Math.min(deploymentVelocity, 100) * 2}`} 
+                        height="20" 
+                        rx="10" 
+                        fill={data.color}
                       />
-                      <text
-                        x={60 + i * 55}
-                        y={270}
-                        textAnchor="middle"
-                        fill="#9ca3af"
-                        fontSize="10"
-                      >
-                        {d.month}
-                      </text>
-                    </g>
-                  ))}
+                      <line x1="100" y1="10" x2="100" y2="50" stroke="#fff" strokeWidth="2" strokeDasharray="2,2" />
+                      <text x="100" y="8" textAnchor="middle" fill="#94a3b8" fontSize="10">Target</text>
+                    </svg>
+                  )}
                   
-                  {/* Y-axis labels */}
-                  {Array.from({ length: 6 }, (_, i) => (
-                    <text
-                      key={i}
-                      x={50}
-                      y={255 - i * 40}
-                      textAnchor="end"
-                      fill="#9ca3af"
-                      fontSize="10"
-                    >
-                      ${(i * 0.5).toFixed(1)}B
-                    </text>
-                  ))}
-                </svg>
-              </div>
-            </div>
-
-            {/* Section 2: Portfolio Composition */}
-            <div className="dashboard-section portfolio-composition">
-              <div className="composition-grid">
-                {/* Sector Allocation Pie Chart */}
-                <div className="composition-card">
-                  <h4>Sector Allocation</h4>
-                  <div className="pie-chart">
-                    <svg width="200" height="200" viewBox="0 0 200 200">
-                      {sectorData.map((sector, index) => {
-                        const startAngle = sectorData.slice(0, index).reduce((sum, s) => sum + (s.percentage / 100) * 360, 0);
-                        const endAngle = startAngle + (sector.percentage / 100) * 360;
-                        const radius = 80;
-                        const centerX = 100;
-                        const centerY = 100;
-                        
-                        const x1 = centerX + radius * Math.cos((startAngle - 90) * Math.PI / 180);
-                        const y1 = centerY + radius * Math.sin((startAngle - 90) * Math.PI / 180);
-                        const x2 = centerX + radius * Math.cos((endAngle - 90) * Math.PI / 180);
-                        const y2 = centerY + radius * Math.sin((endAngle - 90) * Math.PI / 180);
-                        
-                        const largeArc = sector.percentage > 50 ? 1 : 0;
-                        
-                        return (
-                          <g key={sector.id}>
-                            <path
-                              d={`M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                              fill={sector.color}
-                              stroke="#1e293b"
-                              strokeWidth="2"
-                              onClick={() => setSelectedSector(sector.id)}
-                              className="sector-slice"
-                            />
-                            {sector.percentage > 5 && (
-                              <text
-                                x={centerX + (radius * 0.6) * Math.cos((startAngle + endAngle) / 2 * Math.PI / 180 - Math.PI / 2)}
-                                y={centerY + (radius * 0.6) * Math.sin((startAngle + endAngle) / 2 * Math.PI / 180 - Math.PI / 2)}
-                                textAnchor="middle"
-                                fill="white"
-                                fontSize="10"
-                                fontWeight="600"
-                              >
-                                {sector.percentage.toFixed(0)}%
-                              </text>
-                            )}
-                          </g>
-                        );
-                      })}
-                    </svg>
-                  </div>
-                  <div className="sector-legend">
-                    {sectorData.map(sector => (
-                      <div key={sector.id} className="legend-item">
-                        <div className="legend-color" style={{ backgroundColor: sector.color }}></div>
-                        <span>{sector.name}</span>
-                        <span className="legend-value">{sector.percentage.toFixed(1)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Risk Distribution Bar Chart */}
-                <div className="composition-card">
-                  <h4>Risk Distribution</h4>
-                  <div className="risk-chart">
-                    <div className="risk-bar">
-                      <div className="risk-category low">
-                        <div className="risk-label">Low Risk</div>
-                        <div className="risk-count">{riskDistribution.low} projects</div>
-                        <div className="risk-visual" style={{ width: `${(riskDistribution.low / activeProjects.length) * 100}%` }}></div>
-                      </div>
-                      <div className="risk-category medium">
-                        <div className="risk-label">Medium Risk</div>
-                        <div className="risk-count">{riskDistribution.medium} projects</div>
-                        <div className="risk-visual" style={{ width: `${(riskDistribution.medium / activeProjects.length) * 100}%` }}></div>
-                      </div>
-                      <div className="risk-category high">
-                        <div className="risk-label">High Risk</div>
-                        <div className="risk-count">{riskDistribution.high} projects</div>
-                        <div className="risk-visual" style={{ width: `${(riskDistribution.high / activeProjects.length) * 100}%` }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Geographic Map */}
-                <div className="composition-card">
-                  <h4>Geographic Distribution</h4>
-                  <div className="geo-map">
-                    <svg width="400" height="300" viewBox="0 0 500 400">
-                      {/* Simplified India outline */}
-                      <path
-                        d="M150 50 L400 50 L450 100 L430 150 L450 200 L400 250 L380 300 L300 350 L200 340 L150 300 L100 250 L80 200 L100 150 L120 100 Z"
-                        fill="#374151"
-                        stroke="#4b5563"
-                        strokeWidth="2"
+                  {key === 'returns' && (
+                    <svg width="100%" height="60" viewBox="0 0 200 60">
+                      <polyline
+                        points="10,50 40,40 70,35 100,25 130,20 160,15 190,10"
+                        fill="none"
+                        stroke={data.color}
+                        strokeWidth="3"
                       />
-                      
-                      {/* Investment bubbles */}
-                      {geographicData.map((location, index) => {
-                        const bubbleSize = Math.sqrt(location.investment / 1000000000) * 8;
-                        return (
-                          <g key={index}>
-                            <circle
-                              cx={location.x}
-                              cy={location.y}
-                              r={bubbleSize}
-                              fill="#3b82f6"
-                              opacity="0.7"
-                              stroke="#1e40af"
-                              strokeWidth="2"
-                            />
-                            <text
-                              x={location.x}
-                              y={location.y - bubbleSize - 5}
-                              textAnchor="middle"
-                              fill="#e5e7eb"
-                              fontSize="10"
-                              fontWeight="600"
-                            >
-                              {location.state}
-                            </text>
-                            <text
-                              x={location.x}
-                              y={location.y + 3}
-                              textAnchor="middle"
-                              fill="white"
-                              fontSize="8"
-                            >
-                              {location.projects}
-                            </text>
-                          </g>
-                        );
-                      })}
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Investment Timeline */}
-                <div className="composition-card">
-                  <h4>Investment Timeline</h4>
-                  <div className="timeline-chart">
-                    <div className="timeline-quarters">
-                      {Array.from({ length: 8 }, (_, i) => (
-                        <div key={i} className="quarter">
-                          <div className="quarter-label">Q{(i % 4) + 1} {2024 + Math.floor(i / 4)}</div>
-                          <div className="quarter-projects">
-                            {Math.floor(activeProjects.length * 0.125 * (1 + Math.random()))}
-                          </div>
-                        </div>
+                      {[10, 40, 70, 100, 130, 160, 190].map((x, i) => (
+                        <circle key={i} cx={x} cy={50 - i * 6.67} r="3" fill={data.color} />
                       ))}
+                    </svg>
+                  )}
+                  
+                  {key === 'risk' && (
+                    <div style={{ display: 'flex', gap: '0.5rem', height: '100%', alignItems: 'flex-end' }}>
+                      <div style={{ 
+                        flex: 1, 
+                        background: '#10b981', 
+                        height: `${(riskDistribution.low.length / activeProjects.length) * 100}%`,
+                        borderRadius: '4px 4px 0 0',
+                        position: 'relative',
+                        minHeight: '10px'
+                      }}>
+                        <span style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.75rem', color: '#94a3b8' }}>L</span>
+                      </div>
+                      <div style={{ 
+                        flex: 1, 
+                        background: '#f59e0b', 
+                        height: `${(riskDistribution.medium.length / activeProjects.length) * 100}%`,
+                        borderRadius: '4px 4px 0 0',
+                        position: 'relative',
+                        minHeight: '10px'
+                      }}>
+                        <span style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.75rem', color: '#94a3b8' }}>M</span>
+                      </div>
+                      <div style={{ 
+                        flex: 1, 
+                        background: '#ef4444', 
+                        height: `${(riskDistribution.high.length / activeProjects.length) * 100}%`,
+                        borderRadius: '4px 4px 0 0',
+                        position: 'relative',
+                        minHeight: '10px'
+                      }}>
+                        <span style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.75rem', color: '#94a3b8' }}>H</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  
+                  {key === 'strategic' && (
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <svg width="100" height="60" viewBox="0 0 100 60">
+                        <circle cx="50" cy="30" r="25" fill="none" stroke="#1e293b" strokeWidth="6" />
+                        <circle 
+                          cx="50" 
+                          cy="30" 
+                          r="25" 
+                          fill="none" 
+                          stroke={data.color} 
+                          strokeWidth="6"
+                          strokeDasharray={`${(strategicScore / 100) * 157} 157`}
+                          strokeLinecap="round"
+                          transform="rotate(-90 50 30)"
+                        />
+                      </svg>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          </>
-        )}
+            ))}
+          </div>
 
-        {selectedView === 'performance' && (
-          <div className="dashboard-section performance-view">
-            <h3>Project Performance Analysis</h3>
-            <div className="performance-table">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Project Name</th>
-                    <th>Sector</th>
-                    <th>Investment</th>
-                    <th>Status</th>
-                    <th>Expected IRR</th>
-                    <th>Actual IRR</th>
-                    <th>Variance</th>
-                    <th>Risk Level</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {performanceData.map(project => {
-                    const variance = project.actualIRR - project.irr;
-                    const riskLevel = project.riskScore <= 30 ? 'Low' : project.riskScore <= 60 ? 'Medium' : 'High';
+          {/* Live Deployment Tracker */}
+          <div className="deployment-tracker" style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '20px',
+            padding: '2rem',
+            marginBottom: '2rem',
+            border: '1px solid #334155'
+          }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '2rem', color: '#ffffff' }}>Live Capital Deployment Flow</h2>
+            <div className="deployment-visualization">
+              <div className="flow-container" style={{
+                display: 'grid',
+                gridTemplateColumns: '200px 300px 200px 150px',
+                gap: '2rem',
+                alignItems: 'center',
+                position: 'relative',
+                marginBottom: '2rem'
+              }}>
+                {/* Treasury */}
+                <div className="flow-node treasury" style={{
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  border: '2px solid #3b82f6',
+                  borderRadius: '16px',
+                  padding: '1.5rem',
+                  textAlign: 'center',
+                  position: 'relative',
+                  zIndex: 2
+                }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🏦</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Treasury</div>
+                  <div style={{ color: '#ffffff', fontSize: '1.125rem', fontWeight: 700 }}>{formatCurrency(targetTotal)}</div>
+                </div>
+                
+                {/* Flow lines */}
+                <div className="flow-lines" style={{
+                  position: 'absolute',
+                  left: '200px',
+                  width: '300px',
+                  height: '100%',
+                  zIndex: 1
+                }}>
+                  {sharedData.adaniSectors.slice(0, 4).map((sector, index) => (
+                    <div 
+                      key={sector.id} 
+                      style={{
+                        position: 'absolute',
+                        top: `${25 + index * 20}%`,
+                        width: '100%',
+                        height: '2px',
+                        background: 'rgba(59, 130, 246, 0.2)',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {deploymentAnimation && (
+                        <div style={{
+                          position: 'absolute',
+                          left: '-20px',
+                          top: '-4px',
+                          width: '20px',
+                          height: '10px',
+                          background: '#3b82f6',
+                          borderRadius: '5px',
+                          boxShadow: '0 0 10px #3b82f6',
+                          animation: `flowAnimation 3s linear infinite`,
+                          animationDelay: `${index * 0.2}s`
+                        }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Sectors */}
+                <div className="flow-sectors" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {sharedData.adaniSectors.slice(0, 4).map((sector, index) => {
+                    const sectorProjects = activeProjects.filter(p => 
+                      p.businessUnit.toLowerCase().includes(sector.name.toLowerCase())
+                    );
+                    const sectorCapital = sectorProjects.reduce((sum, p) => sum + p.capex, 0);
                     
                     return (
-                      <tr key={project.id}>
-                        <td>
-                          <div className="project-name">
-                            <div className={`grade-badge grade-${project.investmentGrade}`}>
-                              {project.investmentGrade}
-                            </div>
-                            {project.name}
-                          </div>
-                        </td>
-                        <td>{project.businessUnit}</td>
-                        <td>{formatCurrency(project.capex)}</td>
-                        <td>
-                          <span className={`status-badge ${project.status}`}>
-                            {project.status}
-                          </span>
-                        </td>
-                        <td>{project.irr.toFixed(1)}%</td>
-                        <td>{project.actualIRR.toFixed(1)}%</td>
-                        <td className={variance >= 0 ? 'positive' : 'negative'}>
-                          {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
-                        </td>
-                        <td>
-                          <span className={`risk-level risk-${riskLevel.toLowerCase()}`}>
-                            {riskLevel}
-                          </span>
-                        </td>
-                      </tr>
+                      <div key={sector.id} className="flow-node sector" style={{
+                        background: 'rgba(139, 92, 246, 0.1)',
+                        border: '2px solid rgba(139, 92, 246, 0.3)',
+                        borderRadius: '16px',
+                        padding: '1rem',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{sector.icon}</div>
+                        <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '0.25rem' }}>{sector.name}</div>
+                        <div style={{ color: '#ffffff', fontSize: '0.875rem', fontWeight: 700 }}>{formatCurrency(sectorCapital)}</div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+                
+                {/* Projects indicator */}
+                <div className="flow-projects">
+                  <div className="projects-bubble" style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    borderRadius: '50%',
+                    width: '120px',
+                    height: '120px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)'
+                  }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: 'white' }}>{activeProjects.length}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.9)' }}>Active Projects</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="deployment-stats" style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <div className="stat-card" style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  padding: '1rem 2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem'
+                }}>
+                  <div style={{ fontSize: '2rem' }}>⏱️</div>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Deployment Speed</div>
+                    <div style={{ color: '#ffffff', fontSize: '1.25rem', fontWeight: 700 }}>{formatCurrency(currentMonthlyRate * 7 / 30)}/week</div>
+                  </div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  padding: '1rem 2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem'
+                }}>
+                  <div style={{ fontSize: '2rem' }}>📊</div>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Utilization Rate</div>
+                    <div style={{ color: '#ffffff', fontSize: '1.25rem', fontWeight: 700 }}>{((totalDeployedCapital / targetTotal) * 100).toFixed(1)}%</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        )}
 
-        {selectedView === 'geography' && (
-          <div className="dashboard-section geography-view">
-            <h3>Geographic Analysis</h3>
-            <div className="geography-details">
-              <div className="geo-stats">
-                {geographicData.map((location, index) => (
-                  <div key={index} className="geo-stat-card">
-                    <div className="geo-state">{location.state}</div>
-                    <div className="geo-projects">{location.projects} projects</div>
-                    <div className="geo-investment">{formatCurrency(location.investment)}</div>
+          {/* Winner/Loser Analysis */}
+          <div className="performance-analysis" style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '2rem',
+            marginBottom: '2rem'
+          }}>
+            <div className="winners-section" style={{
+              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+              borderRadius: '20px',
+              padding: '2rem',
+              border: '1px solid #334155'
+            }}>
+              <h3 style={{ color: '#10b981', marginBottom: '1.5rem', fontSize: '1.25rem' }}>🏆 Top Performers</h3>
+              <div className="performer-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {topPerformers.map((project, index) => (
+                  <div key={project.id} className="performer-card winner" style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderLeft: '4px solid #10b981',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '50%',
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 700,
+                      fontSize: '0.875rem'
+                    }}>#{index + 1}</div>
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ color: '#ffffff', fontSize: '0.875rem', marginBottom: '0.25rem' }}>{project.name}</h4>
+                      <div style={{ display: 'flex', gap: '1rem' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>IRR: {project.irr.toFixed(1)}%</span>
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Risk: {project.riskScore}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 700, color: '#10b981' }}>
+                      <span style={{ fontSize: '1.25rem' }}>↑</span>
+                      <span>+{((project.irr - 15) / 15 * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="losers-section" style={{
+              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+              borderRadius: '20px',
+              padding: '2rem',
+              border: '1px solid #334155'
+            }}>
+              <h3 style={{ color: '#ef4444', marginBottom: '1.5rem', fontSize: '1.25rem' }}>📉 Bottom Performers</h3>
+              <div className="performer-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {bottomPerformers.map((project, index) => (
+                  <div key={project.id} className="performer-card loser" style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderLeft: '4px solid #ef4444',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '50%',
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 700,
+                      fontSize: '0.875rem'
+                    }}>#{topPerformers.length + index + 1}</div>
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ color: '#ffffff', fontSize: '0.875rem', marginBottom: '0.25rem' }}>{project.name}</h4>
+                      <div style={{ display: 'flex', gap: '1rem' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>IRR: {project.irr.toFixed(1)}%</span>
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Risk: {project.riskScore}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 700, color: '#ef4444' }}>
+                      <span style={{ fontSize: '1.25rem' }}>↓</span>
+                      <span>{((project.irr - 15) / 15 * 100).toFixed(0)}%</span>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
+
+      {viewMode === 'geographic' && (
+        <div className="geographic-command" style={{
+          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+          borderRadius: '20px',
+          padding: '2rem',
+          border: '1px solid #334155'
+        }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '2rem', color: '#ffffff' }}>Geographic Investment Command Map</h2>
+          
+          {/* 3D-style India Map */}
+          <div className="map-container" style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
+            <svg width="800" height="600" viewBox="0 0 800 600" className="india-map" style={{
+              filter: 'drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5))'
+            }}>
+              {/* Gradient definitions */}
+              <defs>
+                <radialGradient id="investmentGradient">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
+                </radialGradient>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+              
+              {/* Simplified India outline with 3D effect */}
+              <g className="map-base">
+                {/* Shadow */}
+                <path
+                  d="M200 100 L500 80 L600 150 L580 250 L600 350 L500 450 L400 500 L250 480 L150 400 L100 300 L80 200 L100 150 Z"
+                  fill="#0a0e27"
+                  opacity="0.5"
+                  transform="translate(10, 10)"
+                />
+                
+                {/* Main map */}
+                <path
+                  d="M200 100 L500 80 L600 150 L580 250 L600 350 L500 450 L400 500 L250 480 L150 400 L100 300 L80 200 L100 150 Z"
+                  fill="#1e293b"
+                  stroke="#334155"
+                  strokeWidth="2"
+                />
+                
+                {/* 3D edge highlight */}
+                <path
+                  d="M200 100 L500 80 L600 150"
+                  fill="none"
+                  stroke="#475569"
+                  strokeWidth="3"
+                />
+              </g>
+              
+              {/* Investment bubbles */}
+              {geographicData.map((location, index) => {
+                const bubbleRadius = Math.sqrt(location.investment / 500000000) * 2;
+                const isSelected = selectedState === location.state;
+                
+                return (
+                  <g 
+                    key={location.state}
+                    className="investment-bubble"
+                    onClick={() => setSelectedState(isSelected ? null : location.state)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {/* Bubble shadow */}
+                    <ellipse
+                      cx={location.mapX + 5}
+                      cy={location.mapY + 5}
+                      rx={bubbleRadius}
+                      ry={bubbleRadius * 0.3}
+                      fill="#000"
+                      opacity="0.3"
+                    />
+                    
+                    {/* Pulse animation */}
+                    {isSelected && (
+                      <circle
+                        cx={location.mapX}
+                        cy={location.mapY}
+                        r={bubbleRadius}
+                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="2"
+                        opacity="0.5"
+                        style={{ animation: 'pulse 2s infinite' }}
+                      />
+                    )}
+                    
+                    {/* Main bubble */}
+                    <circle
+                      cx={location.mapX}
+                      cy={location.mapY}
+                      r={bubbleRadius}
+                      fill="url(#investmentGradient)"
+                      stroke="#3b82f6"
+                      strokeWidth="3"
+                      filter="url(#glow)"
+                      style={{ transition: 'transform 0.3s ease' }}
+                    />
+                    
+                    {/* State label */}
+                    <text
+                      x={location.mapX}
+                      y={location.mapY - bubbleRadius - 10}
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      fontSize="14"
+                      fontWeight="600"
+                    >
+                      {location.state}
+                    </text>
+                    
+                    {/* Investment amount */}
+                    <text
+                      x={location.mapX}
+                      y={location.mapY + 5}
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      fontSize="12"
+                      fontWeight="700"
+                    >
+                      ${(location.investment / 1000000000).toFixed(1)}B
+                    </text>
+                    
+                    {/* Project count */}
+                    <text
+                      x={location.mapX}
+                      y={location.mapY + 20}
+                      textAnchor="middle"
+                      fill="#94a3b8"
+                      fontSize="10"
+                    >
+                      {location.projects} projects
+                    </text>
+                  </g>
+                );
+              })}
+              
+              {/* Connection lines between states */}
+              <g className="connections" opacity="0.3">
+                <line x1={250} y1={280} x2={280} y2={320} stroke="#3b82f6" strokeWidth="1" strokeDasharray="2,2" />
+                <line x1={280} y1={320} x2={340} y2={420} stroke="#3b82f6" strokeWidth="1" strokeDasharray="2,2" />
+                <line x1={250} y1={280} x2={420} y2={300} stroke="#3b82f6" strokeWidth="1" strokeDasharray="2,2" />
+              </g>
+            </svg>
+            
+            {/* State details panel */}
+            {selectedState && (
+              <div className="state-details" style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '16px',
+                padding: '2rem',
+                minWidth: '300px'
+              }}>
+                <h3 style={{ color: '#ffffff', fontSize: '1.5rem', marginBottom: '1.5rem' }}>{selectedState}</h3>
+                <div className="detail-grid" style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div className="detail-item" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 0',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Total Investment</span>
+                    <span style={{ color: '#ffffff', fontWeight: 700 }}>
+                      {formatCurrency(geographicData.find(g => g.state === selectedState)?.investment || 0)}
+                    </span>
+                  </div>
+                  <div className="detail-item" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 0',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Active Projects</span>
+                    <span style={{ color: '#ffffff', fontWeight: 700 }}>
+                      {geographicData.find(g => g.state === selectedState)?.projects || 0}
+                    </span>
+                  </div>
+                  <div className="detail-item" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 0',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Average ROI</span>
+                    <span style={{ color: '#ffffff', fontWeight: 700 }}>
+                      {geographicData.find(g => g.state === selectedState)?.avgROI || 0}%
+                    </span>
+                  </div>
+                  <div className="detail-item" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 0',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Risk Profile</span>
+                    <span style={{ color: '#ffffff', fontWeight: 700 }}>Balanced</span>
+                  </div>
+                </div>
+                <button className="btn btn-primary" style={{
+                  width: '100%',
+                  background: '#3b82f6',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  fontWeight: 600
+                }}>View All Projects →</button>
+              </div>
+            )}
+          </div>
+          
+          {/* Geographic summary cards */}
+          <div className="geo-summary-cards" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '1rem'
+          }}>
+            <div className="geo-card" style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <h4 style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Highest Investment
+              </h4>
+              <div className="geo-stat" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ color: '#ffffff', fontSize: '1.125rem', fontWeight: 700 }}>Gujarat</span>
+                <span style={{ color: '#3b82f6', fontSize: '1.5rem', fontWeight: 700 }}>{formatCurrency(22000000000)}</span>
+              </div>
+            </div>
+            <div className="geo-card" style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <h4 style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Best ROI
+              </h4>
+              <div className="geo-stat" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ color: '#ffffff', fontSize: '1.125rem', fontWeight: 700 }}>Karnataka</span>
+                <span style={{ color: '#3b82f6', fontSize: '1.5rem', fontWeight: 700 }}>20.1%</span>
+              </div>
+            </div>
+            <div className="geo-card" style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <h4 style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Most Projects
+              </h4>
+              <div className="geo-stat" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ color: '#ffffff', fontSize: '1.125rem', fontWeight: 700 }}>Gujarat</span>
+                <span style={{ color: '#3b82f6', fontSize: '1.5rem', fontWeight: 700 }}>12 projects</span>
+              </div>
+            </div>
+            <div className="geo-card" style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <h4 style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Geographic Diversity
+              </h4>
+              <div className="geo-stat" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ color: '#ffffff', fontSize: '1.125rem', fontWeight: 700 }}>6 States</span>
+                <span style={{ color: '#3b82f6', fontSize: '1.5rem', fontWeight: 700 }}>Well Distributed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewMode === 'timeline' && (
+        <div className="timeline-view">
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '2rem', color: '#ffffff' }}>Investment Timeline & Milestones</h2>
+          <div className="timeline-content">
+            {/* Implementation for timeline view would go here */}
+            <p style={{ color: '#94a3b8' }}>Timeline visualization coming soon...</p>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes flowAnimation {
+          to {
+            left: 100%;
+          }
+        }
+        
+        @keyframes pulse {
+          0% {
+            transform: scale(1);
+            opacity: 0.5;
+          }
+          50% {
+            transform: scale(1.5);
+            opacity: 0;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 0.5;
+          }
+        }
+        
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };
