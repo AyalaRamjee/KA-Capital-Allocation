@@ -12,461 +12,1110 @@ interface Tab7Props {
   onDataUpdate: (data: any) => void;
 }
 
-interface ScenarioSettings {
-  id: string;
-  name: string;
-  riskThreshold: number;
-  returnThreshold: number;
-  timeHorizon: number;
-  requireSynergies: boolean;
+interface PortfolioMetrics {
+  projectCount: number;
+  totalCapital: number;
+  averageIRR: number;
+  averageRisk: number;
+  deploymentMonths: number;
+  riskDistribution: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+  sectorBreakdown: { [key: string]: number };
+  quarterlyDeployment: { quarter: string; amount: number }[];
 }
 
 export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpdate }) => {
-  // Current threshold settings
-  const [riskThreshold, setRiskThreshold] = useState(50);
-  const [returnThreshold, setReturnThreshold] = useState(15);
-  const [timeHorizon, setTimeHorizon] = useState(8);
-  const [requireSynergies, setRequireSynergies] = useState(true);
-  
-  // Scenario management
-  const [savedScenarios, setSavedScenarios] = useState<ScenarioSettings[]>([
-    { id: 'conservative', name: 'Conservative', riskThreshold: 40, returnThreshold: 20, timeHorizon: 6, requireSynergies: true },
-    { id: 'balanced', name: 'Balanced', riskThreshold: 60, returnThreshold: 15, timeHorizon: 8, requireSynergies: true },
-    { id: 'aggressive', name: 'Aggressive', riskThreshold: 80, returnThreshold: 12, timeHorizon: 10, requireSynergies: false }
-  ]);
-  
-  const [selectedScenario, setSelectedScenario] = useState<string>('balanced');
-  const [compareScenarios, setCompareScenarios] = useState<string[]>([]);
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [newScenarioName, setNewScenarioName] = useState('');
+  const [riskThreshold, setRiskThreshold] = useState(65);
+  const [showProjectDetails, setShowProjectDetails] = useState(false);
+  const [animateChanges, setAnimateChanges] = useState(false);
 
-  // Base portfolio (current qualifying projects)
-  const baseProjects = sharedData.validatedProjects.filter(p => 
-    p.investmentGrade === 'A' || p.investmentGrade === 'B'
+  // Filter projects based on risk threshold
+  const qualifyingProjects = sharedData.validatedProjects.filter(
+    project => project.riskScore <= riskThreshold
   );
 
-  // Filter projects based on current thresholds
-  const filterProjects = (risk: number, returnRate: number, horizon: number, synergies: boolean) => {
-    return sharedData.validatedProjects.filter(project => {
-      const meetsRisk = project.riskScore <= risk;
-      const meetsReturn = project.irr >= returnRate;
-      const meetsHorizon = project.duration <= horizon * 12; // Convert years to months
-      const meetsSynergies = !synergies || (project.businessPlan?.synergies?.length || 0) > 0;
-      
-      return meetsRisk && meetsReturn && meetsHorizon && meetsSynergies;
+  const excludedProjects = sharedData.validatedProjects.filter(
+    project => project.riskScore > riskThreshold
+  );
+
+  // Calculate portfolio metrics
+  const calculatePortfolioMetrics = (): PortfolioMetrics => {
+    if (qualifyingProjects.length === 0) {
+      return {
+        projectCount: 0,
+        totalCapital: 0,
+        averageIRR: 0,
+        averageRisk: 0,
+        deploymentMonths: 0,
+        riskDistribution: { low: 0, medium: 0, high: 0 },
+        sectorBreakdown: {},
+        quarterlyDeployment: []
+      };
+    }
+
+    const totalCapital = qualifyingProjects.reduce((sum, p) => sum + p.capex, 0);
+    const weightedIRR = qualifyingProjects.reduce((sum, p) => sum + (p.irr * p.capex), 0) / totalCapital;
+    const averageRisk = qualifyingProjects.reduce((sum, p) => sum + p.riskScore, 0) / qualifyingProjects.length;
+
+    // Risk distribution
+    const lowRisk = qualifyingProjects.filter(p => p.riskScore <= 30).length;
+    const mediumRisk = qualifyingProjects.filter(p => p.riskScore > 30 && p.riskScore <= 60).length;
+    const highRisk = qualifyingProjects.filter(p => p.riskScore > 60).length;
+
+    // Sector breakdown
+    const sectorBreakdown: { [key: string]: number } = {};
+    qualifyingProjects.forEach(project => {
+      const sector = project.businessUnit.split(' ')[0]; // Get first word as sector
+      sectorBreakdown[sector] = (sectorBreakdown[sector] || 0) + project.capex;
     });
-  };
 
-  // Current filtered projects
-  const currentProjects = filterProjects(riskThreshold, returnThreshold, timeHorizon, requireSynergies);
-
-  // Calculate impact for each threshold change
-  const calculateImpact = (newRisk: number, newReturn: number, newHorizon: number, newSynergies: boolean) => {
-    const newProjects = filterProjects(newRisk, newReturn, newHorizon, newSynergies);
-    const oldProjects = filterProjects(riskThreshold, returnThreshold, timeHorizon, requireSynergies);
+    // Quarterly deployment schedule
+    const targetMonthlyDeployment = 1500000000; // $1.5B per month
+    const deploymentMonths = Math.ceil(totalCapital / targetMonthlyDeployment);
+    const quarterlyDeployment = [];
     
+    for (let i = 0; i < Math.min(20, Math.ceil(deploymentMonths / 3)); i++) {
+      const quarter = `Q${(i % 4) + 1} ${2025 + Math.floor(i / 4)}`;
+      const quarterlyAmount = Math.min(targetMonthlyDeployment * 3, totalCapital - (i * targetMonthlyDeployment * 3));
+      if (quarterlyAmount > 0) {
+        quarterlyDeployment.push({
+          quarter,
+          amount: quarterlyAmount
+        });
+      }
+    }
+
     return {
-      projectDelta: newProjects.length - oldProjects.length,
-      capitalDelta: newProjects.reduce((sum, p) => sum + p.capex, 0) - oldProjects.reduce((sum, p) => sum + p.capex, 0),
-      irrDelta: (newProjects.reduce((sum, p) => sum + p.irr, 0) / newProjects.length || 0) - (oldProjects.reduce((sum, p) => sum + p.irr, 0) / oldProjects.length || 0)
+      projectCount: qualifyingProjects.length,
+      totalCapital,
+      averageIRR: weightedIRR,
+      averageRisk,
+      deploymentMonths,
+      riskDistribution: { low: lowRisk, medium: mediumRisk, high: highRisk },
+      sectorBreakdown,
+      quarterlyDeployment
     };
   };
 
-  // Calculate individual threshold impacts
-  const riskImpact = calculateImpact(riskThreshold, returnThreshold, timeHorizon, requireSynergies);
-  const returnImpact = calculateImpact(50, returnThreshold, timeHorizon, requireSynergies); // Compare to baseline 50%
-  const timeImpact = calculateImpact(riskThreshold, returnThreshold, timeHorizon, requireSynergies);
-  const synergyImpact = calculateImpact(riskThreshold, returnThreshold, timeHorizon, requireSynergies);
+  const portfolioMetrics = calculatePortfolioMetrics();
 
-  // Base portfolio metrics
-  const baseCapital = baseProjects.reduce((sum, p) => sum + p.capex, 0);
-  const currentCapital = currentProjects.reduce((sum, p) => sum + p.capex, 0);
-  const currentAvgIRR = currentProjects.reduce((sum, p) => sum + p.irr, 0) / currentProjects.length || 0;
-  const currentAvgRisk = currentProjects.reduce((sum, p) => sum + p.riskScore, 0) / currentProjects.length || 0;
+  // Animation trigger
+  useEffect(() => {
+    setAnimateChanges(true);
+    const timer = setTimeout(() => setAnimateChanges(false), 500);
+    return () => clearTimeout(timer);
+  }, [riskThreshold]);
 
-  // Waterfall chart data
-  const waterfallData = [
-    { name: 'Base Portfolio', value: baseCapital, type: 'base' },
-    { name: 'Risk Adjustment', value: riskImpact.capitalDelta, type: riskImpact.capitalDelta >= 0 ? 'positive' : 'negative' },
-    { name: 'Return Adjustment', value: returnImpact.capitalDelta, type: returnImpact.capitalDelta >= 0 ? 'positive' : 'negative' },
-    { name: 'Time Adjustment', value: timeImpact.capitalDelta, type: timeImpact.capitalDelta >= 0 ? 'positive' : 'negative' },
-    { name: 'Synergy Adjustment', value: synergyImpact.capitalDelta, type: synergyImpact.capitalDelta >= 0 ? 'positive' : 'negative' },
-    { name: 'Final Portfolio', value: currentCapital, type: 'final' }
-  ];
-
-  // Project comparison - added vs removed
-  const addedProjects = currentProjects.filter(p => !baseProjects.some(bp => bp.id === p.id));
-  const removedProjects = baseProjects.filter(p => !currentProjects.some(cp => cp.id === p.id));
-  const unchangedProjects = currentProjects.filter(p => baseProjects.some(bp => bp.id === p.id));
-
-  // Load scenario
-  const loadScenario = (scenarioId: string) => {
-    const scenario = savedScenarios.find(s => s.id === scenarioId);
-    if (scenario) {
-      setRiskThreshold(scenario.riskThreshold);
-      setReturnThreshold(scenario.returnThreshold);
-      setTimeHorizon(scenario.timeHorizon);
-      setRequireSynergies(scenario.requireSynergies);
-      setSelectedScenario(scenarioId);
-    }
+  // Get risk level label
+  const getRiskLevel = (score: number): string => {
+    if (score <= 30) return 'Low';
+    if (score <= 60) return 'Medium';
+    return 'High';
   };
 
-  // Save current settings as scenario
-  const saveScenario = () => {
-    if (newScenarioName.trim()) {
-      const newScenario: ScenarioSettings = {
-        id: Date.now().toString(),
-        name: newScenarioName,
-        riskThreshold,
-        returnThreshold,
-        timeHorizon,
-        requireSynergies
-      };
-      setSavedScenarios([...savedScenarios, newScenario]);
-      setShowSaveModal(false);
-      setNewScenarioName('');
-    }
+  // Get risk level color
+  const getRiskColor = (score: number): string => {
+    if (score <= 30) return '#10b981';
+    if (score <= 60) return '#f59e0b';
+    return '#ef4444';
   };
+
+  // Calculate improvement metrics
+  const totalProjectsAvailable = sharedData.validatedProjects.length;
+  const totalCapitalAvailable = sharedData.validatedProjects.reduce((sum, p) => sum + p.capex, 0);
+  const utilizationRate = (portfolioMetrics.totalCapital / totalCapitalAvailable) * 100;
+  const targetCapital = 90000000000; // $90B
+  const targetAchievement = (portfolioMetrics.totalCapital / targetCapital) * 100;
 
   return (
     <div className="tab7-whatif-analysis">
-      {/* Control Panel */}
-      <div className="control-panel">
-        <h3>Investment Threshold Controls</h3>
-        
-        <div className="threshold-controls">
-          {/* Risk Threshold */}
-          <div className="threshold-control">
-            <div className="control-header">
-              <label>Risk Threshold</label>
-              <span className="threshold-value">{riskThreshold}%</span>
-            </div>
-            <input
-              type="range"
-              min="10"
-              max="100"
-              value={riskThreshold}
-              onChange={(e) => setRiskThreshold(Number(e.target.value))}
-              className="threshold-slider"
-            />
-            <div className="threshold-impact">
-              Currently: {baseProjects.length} projects | 
-              With {riskThreshold}%: {filterProjects(riskThreshold, 15, 8, true).length} projects 
-              ({filterProjects(riskThreshold, 15, 8, true).length - baseProjects.length >= 0 ? '+' : ''}
-              {filterProjects(riskThreshold, 15, 8, true).length - baseProjects.length})
-            </div>
+      {/* Risk Threshold Control Header */}
+      <div className="risk-control-header">
+        <div className="control-section">
+          <div className="control-title">
+            <h2>Portfolio Risk Tolerance</h2>
+            <p>Adjust risk threshold to see immediate impact on available investment opportunities</p>
           </div>
-
-          {/* Return Threshold */}
-          <div className="threshold-control">
-            <div className="control-header">
-              <label>Return Threshold</label>
-              <span className="threshold-value">{returnThreshold}%</span>
+          
+          <div className="risk-slider-container">
+            <div className="slider-labels">
+              <span className="label-conservative">Conservative</span>
+              <span className="label-balanced">Balanced</span>
+              <span className="label-aggressive">Aggressive</span>
             </div>
-            <input
-              type="range"
-              min="8"
-              max="25"
-              value={returnThreshold}
-              onChange={(e) => setReturnThreshold(Number(e.target.value))}
-              className="threshold-slider"
-            />
-            <div className="threshold-impact">
-              Currently: {baseProjects.length} projects | 
-              With {returnThreshold}%: {filterProjects(50, returnThreshold, 8, true).length} projects 
-              ({filterProjects(50, returnThreshold, 8, true).length - baseProjects.length >= 0 ? '+' : ''}
-              {filterProjects(50, returnThreshold, 8, true).length - baseProjects.length})
-            </div>
-          </div>
-
-          {/* Time Horizon */}
-          <div className="threshold-control">
-            <div className="control-header">
-              <label>Time Horizon</label>
-              <span className="threshold-value">{timeHorizon} years</span>
-            </div>
-            <input
-              type="range"
-              min="3"
-              max="15"
-              value={timeHorizon}
-              onChange={(e) => setTimeHorizon(Number(e.target.value))}
-              className="threshold-slider"
-            />
-            <div className="threshold-impact">
-              Currently: {baseProjects.length} projects | 
-              With {timeHorizon} years: {filterProjects(50, 15, timeHorizon, true).length} projects 
-              ({filterProjects(50, 15, timeHorizon, true).length - baseProjects.length >= 0 ? '+' : ''}
-              {filterProjects(50, 15, timeHorizon, true).length - baseProjects.length})
-            </div>
-          </div>
-
-          {/* Synergy Requirements */}
-          <div className="threshold-control">
-            <div className="control-header">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={requireSynergies}
-                  onChange={(e) => setRequireSynergies(e.target.checked)}
+            
+            <div className="slider-wrapper">
+              <input
+                type="range"
+                min="20"
+                max="90"
+                value={riskThreshold}
+                onChange={(e) => setRiskThreshold(Number(e.target.value))}
+                className="risk-threshold-slider"
+              />
+              <div className="slider-track">
+                <div 
+                  className="slider-fill"
+                  style={{ width: `${((riskThreshold - 20) / 70) * 100}%` }}
                 />
-                Require Synergies
-              </label>
-            </div>
-            <div className="threshold-impact">
-              Currently: {filterProjects(50, 15, 8, true).length} projects | 
-              If {requireSynergies ? 'unchecked' : 'checked'}: {filterProjects(50, 15, 8, !requireSynergies).length} projects 
-              ({filterProjects(50, 15, 8, !requireSynergies).length - filterProjects(50, 15, 8, true).length >= 0 ? '+' : ''}
-              {filterProjects(50, 15, 8, !requireSynergies).length - filterProjects(50, 15, 8, true).length})
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Impact Visualization */}
-      <div className="impact-visualization">
-        <div className="impact-left">
-          <h4>Portfolio Impact Analysis</h4>
-          
-          {/* Summary Cards */}
-          <div className="impact-summary">
-            <div className="impact-card">
-              <div className="impact-label">Projects</div>
-              <div className="impact-value">{currentProjects.length}</div>
-              <div className={`impact-delta ${currentProjects.length - baseProjects.length >= 0 ? 'positive' : 'negative'}`}>
-                {currentProjects.length - baseProjects.length >= 0 ? '+' : ''}
-                {currentProjects.length - baseProjects.length}
               </div>
             </div>
             
-            <div className="impact-card">
-              <div className="impact-label">Capital</div>
-              <div className="impact-value">{formatCurrency(currentCapital)}</div>
-              <div className={`impact-delta ${currentCapital - baseCapital >= 0 ? 'positive' : 'negative'}`}>
-                {formatCurrency(currentCapital - baseCapital)}
+            <div className="threshold-display">
+              <div className="threshold-value">
+                <span className="threshold-number">{riskThreshold}%</span>
+                <span className="threshold-label">Risk Threshold</span>
               </div>
-            </div>
-            
-            <div className="impact-card">
-              <div className="impact-label">Avg IRR</div>
-              <div className="impact-value">{currentAvgIRR.toFixed(1)}%</div>
-              <div className={`impact-delta ${currentAvgIRR - 15 >= 0 ? 'positive' : 'negative'}`}>
-                {currentAvgIRR - 15 >= 0 ? '+' : ''}{(currentAvgIRR - 15).toFixed(1)}%
-              </div>
-            </div>
-            
-            <div className="impact-card">
-              <div className="impact-label">Avg Risk</div>
-              <div className="impact-value">{currentAvgRisk.toFixed(0)}</div>
-              <div className={`impact-delta ${currentAvgRisk - 50 <= 0 ? 'positive' : 'negative'}`}>
-                {currentAvgRisk - 50 >= 0 ? '+' : ''}{(currentAvgRisk - 50).toFixed(0)}
-              </div>
-            </div>
-          </div>
-
-          {/* Waterfall Chart */}
-          <div className="waterfall-chart">
-            <h5>Capital Waterfall Analysis</h5>
-            <svg width="600" height="300" viewBox="0 0 600 300">
-              {waterfallData.map((item, index) => {
-                const barWidth = 80;
-                const barX = 50 + index * 90;
-                const maxValue = Math.max(...waterfallData.map(d => Math.abs(d.value)));
-                const barHeight = Math.abs(item.value) / maxValue * 150;
-                const barY = item.type === 'negative' ? 150 : 150 - barHeight;
-                
-                let barColor = '#64748b';
-                if (item.type === 'positive') barColor = '#10b981';
-                if (item.type === 'negative') barColor = '#ef4444';
-                if (item.type === 'base') barColor = '#3b82f6';
-                if (item.type === 'final') barColor = '#8b5cf6';
-                
-                return (
-                  <g key={index}>
-                    <rect
-                      x={barX}
-                      y={barY}
-                      width={barWidth}
-                      height={barHeight}
-                      fill={barColor}
-                      stroke="#1e293b"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={barX + barWidth / 2}
-                      y={barY - 10}
-                      textAnchor="middle"
-                      fill="#e5e7eb"
-                      fontSize="10"
-                    >
-                      {formatCurrency(item.value)}
-                    </text>
-                    <text
-                      x={barX + barWidth / 2}
-                      y={280}
-                      textAnchor="middle"
-                      fill="#9ca3af"
-                      fontSize="9"
-                    >
-                      {item.name}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-        </div>
-
-        <div className="impact-right">
-          <h4>Project Changes</h4>
-          
-          <div className="project-changes">
-            {addedProjects.length > 0 && (
-              <div className="change-section added">
-                <h5>Projects Added ({addedProjects.length})</h5>
-                <div className="project-list">
-                  {addedProjects.slice(0, 5).map(project => (
-                    <div key={project.id} className="project-item added">
-                      <div className="project-name">{project.name}</div>
-                      <div className="project-details">
-                        <span className="project-investment">{formatCurrency(project.capex)}</span>
-                        <span className="project-irr">{project.irr.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                  ))}
-                  {addedProjects.length > 5 && (
-                    <div className="project-item more">
-                      +{addedProjects.length - 5} more projects
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {removedProjects.length > 0 && (
-              <div className="change-section removed">
-                <h5>Projects Removed ({removedProjects.length})</h5>
-                <div className="project-list">
-                  {removedProjects.slice(0, 5).map(project => (
-                    <div key={project.id} className="project-item removed">
-                      <div className="project-name">{project.name}</div>
-                      <div className="project-details">
-                        <span className="project-investment">{formatCurrency(project.capex)}</span>
-                        <span className="project-irr">{project.irr.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                  ))}
-                  {removedProjects.length > 5 && (
-                    <div className="project-item more">
-                      +{removedProjects.length - 5} more projects
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            <div className="change-section unchanged">
-              <h5>Projects Unchanged ({unchangedProjects.length})</h5>
-              <div className="unchanged-summary">
-                {unchangedProjects.length} projects remain in the portfolio
+              <div className="threshold-description">
+                {riskThreshold <= 40 ? 'Conservative approach - Only low-risk projects' :
+                 riskThreshold <= 70 ? 'Balanced approach - Mix of risk levels' :
+                 'Aggressive approach - Higher risk, higher returns'}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Scenario Management */}
-      <div className="scenario-management">
-        <div className="scenario-header">
-          <h4>Scenario Management</h4>
-          <div className="scenario-controls">
-            <button 
-              className="btn btn-primary"
-              onClick={() => setShowSaveModal(true)}
-            >
-              Save Current Scenario
-            </button>
-            <select 
-              value={selectedScenario}
-              onChange={(e) => loadScenario(e.target.value)}
-              className="scenario-select"
-            >
-              <option value="">Load Scenario</option>
-              {savedScenarios.map(scenario => (
-                <option key={scenario.id} value={scenario.id}>
-                  {scenario.name}
-                </option>
-              ))}
-            </select>
+      {/* Impact Dashboard */}
+      <div className="impact-dashboard">
+        <div className="dashboard-grid">
+          {/* Primary Metrics */}
+          <div className="metric-card primary">
+            <div className="metric-icon">🎯</div>
+            <div className="metric-content">
+              <div className="metric-value">
+                <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.projectCount}</span>
+                <span className="metric-unit">projects</span>
+              </div>
+              <div className="metric-label">Available for Investment</div>
+              <div className="metric-detail">
+                out of {totalProjectsAvailable} total projects
+              </div>
+            </div>
+          </div>
+
+          <div className="metric-card primary">
+            <div className="metric-icon">💰</div>
+            <div className="metric-content">
+              <div className="metric-value">
+                <span className={animateChanges ? 'animating' : ''}>{formatCurrency(portfolioMetrics.totalCapital)}</span>
+              </div>
+              <div className="metric-label">Total Investment Capital</div>
+              <div className="metric-detail">
+                {targetAchievement.toFixed(1)}% of $90B target
+              </div>
+            </div>
+          </div>
+
+          <div className="metric-card primary">
+            <div className="metric-icon">📈</div>
+            <div className="metric-content">
+              <div className="metric-value">
+                <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.averageIRR.toFixed(1)}%</span>
+              </div>
+              <div className="metric-label">Expected Portfolio IRR</div>
+              <div className="metric-detail">
+                Weighted average return
+              </div>
+            </div>
+          </div>
+
+          <div className="metric-card primary">
+            <div className="metric-icon">⏱️</div>
+            <div className="metric-content">
+              <div className="metric-value">
+                <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.deploymentMonths}</span>
+                <span className="metric-unit">months</span>
+              </div>
+              <div className="metric-label">Deployment Timeline</div>
+              <div className="metric-detail">
+                At $1.5B/month rate
+              </div>
+            </div>
           </div>
         </div>
-        
-        <div className="saved-scenarios">
-          <h5>Saved Scenarios</h5>
-          <div className="scenario-cards">
-            {savedScenarios.map(scenario => (
-              <div key={scenario.id} className="scenario-card">
-                <div className="scenario-name">{scenario.name}</div>
-                <div className="scenario-details">
-                  <div>Risk ≤ {scenario.riskThreshold}%</div>
-                  <div>IRR ≥ {scenario.returnThreshold}%</div>
-                  <div>Time ≤ {scenario.timeHorizon}y</div>
-                  <div>Synergies: {scenario.requireSynergies ? 'Yes' : 'No'}</div>
+
+        {/* Secondary Metrics */}
+        <div className="secondary-metrics">
+          <div className="utilization-card">
+            <h4>Capital Utilization</h4>
+            <div className="utilization-bar">
+              <div 
+                className="utilization-fill"
+                style={{ width: `${utilizationRate}%` }}
+              />
+            </div>
+            <div className="utilization-text">
+              {utilizationRate.toFixed(1)}% of available capital deployed
+            </div>
+          </div>
+
+          <div className="risk-distribution-card">
+            <h4>Portfolio Risk Profile</h4>
+            <div className="risk-bars">
+              <div className="risk-bar">
+                <span className="risk-label">Low Risk</span>
+                <div className="risk-bar-container">
+                  <div 
+                    className="risk-bar-fill low"
+                    style={{ width: `${(portfolioMetrics.riskDistribution.low / portfolioMetrics.projectCount) * 100 || 0}%` }}
+                  />
                 </div>
-                <div className="scenario-actions">
-                  <button 
-                    className="btn btn-sm btn-secondary"
-                    onClick={() => loadScenario(scenario.id)}
-                  >
-                    Load
-                  </button>
+                <span className="risk-count">{portfolioMetrics.riskDistribution.low}</span>
+              </div>
+              <div className="risk-bar">
+                <span className="risk-label">Medium Risk</span>
+                <div className="risk-bar-container">
+                  <div 
+                    className="risk-bar-fill medium"
+                    style={{ width: `${(portfolioMetrics.riskDistribution.medium / portfolioMetrics.projectCount) * 100 || 0}%` }}
+                  />
                 </div>
+                <span className="risk-count">{portfolioMetrics.riskDistribution.medium}</span>
+              </div>
+              <div className="risk-bar">
+                <span className="risk-label">High Risk</span>
+                <div className="risk-bar-container">
+                  <div 
+                    className="risk-bar-fill high"
+                    style={{ width: `${(portfolioMetrics.riskDistribution.high / portfolioMetrics.projectCount) * 100 || 0}%` }}
+                  />
+                </div>
+                <span className="risk-count">{portfolioMetrics.riskDistribution.high}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Deployment Timeline */}
+      <div className="deployment-timeline">
+        <h3>Capital Deployment Schedule</h3>
+        <div className="timeline-chart">
+          <div className="timeline-header">
+            <span>Quarterly Deployment at Current Risk Level</span>
+            <span className="timeline-total">{formatCurrency(portfolioMetrics.totalCapital)} Total</span>
+          </div>
+          <div className="timeline-bars">
+            {portfolioMetrics.quarterlyDeployment.slice(0, 8).map((quarter, index) => (
+              <div key={quarter.quarter} className="timeline-bar">
+                <div 
+                  className="timeline-fill"
+                  style={{ 
+                    height: `${(quarter.amount / Math.max(...portfolioMetrics.quarterlyDeployment.map(q => q.amount))) * 100}%`,
+                    animationDelay: `${index * 100}ms`
+                  }}
+                />
+                <div className="timeline-quarter">{quarter.quarter}</div>
+                <div className="timeline-amount">{formatCurrency(quarter.amount)}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Save Scenario Modal */}
-      {showSaveModal && (
-        <div className="modal-overlay" onClick={() => setShowSaveModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Save Scenario</h3>
-              <button className="modal-close" onClick={() => setShowSaveModal(false)}>×</button>
+      {/* Project Analysis */}
+      <div className="project-analysis">
+        <div className="analysis-header">
+          <h3>Project Portfolio Analysis</h3>
+          <button 
+            className="toggle-details-btn"
+            onClick={() => setShowProjectDetails(!showProjectDetails)}
+          >
+            {showProjectDetails ? 'Hide Details' : 'Show Project Details'}
+          </button>
+        </div>
+
+        <div className="analysis-grid">
+          {/* Qualifying Projects */}
+          <div className="projects-section qualifying">
+            <div className="section-header">
+              <h4>✅ Qualifying Projects ({portfolioMetrics.projectCount})</h4>
+              <span className="section-value">{formatCurrency(portfolioMetrics.totalCapital)}</span>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Scenario Name:</label>
-                <input
-                  type="text"
-                  value={newScenarioName}
-                  onChange={(e) => setNewScenarioName(e.target.value)}
-                  placeholder="Enter scenario name"
-                  className="form-input"
-                />
+            
+            {showProjectDetails && (
+              <div className="project-list">
+                {qualifyingProjects.slice(0, 10).map(project => (
+                  <div key={project.id} className="project-item qualifying">
+                    <div className="project-header">
+                      <span className="project-name">{project.name}</span>
+                      <span className="project-investment">{formatCurrency(project.capex)}</span>
+                    </div>
+                    <div className="project-details">
+                      <span className="project-irr">IRR: {project.irr.toFixed(1)}%</span>
+                      <span 
+                        className="project-risk"
+                        style={{ color: getRiskColor(project.riskScore) }}
+                      >
+                        Risk: {project.riskScore} ({getRiskLevel(project.riskScore)})
+                      </span>
+                      <span className="project-grade">Grade {project.investmentGrade}</span>
+                    </div>
+                  </div>
+                ))}
+                {qualifyingProjects.length > 10 && (
+                  <div className="project-item more">
+                    +{qualifyingProjects.length - 10} more projects...
+                  </div>
+                )}
               </div>
-              <div className="scenario-preview">
-                <h4>Current Settings:</h4>
-                <ul>
-                  <li>Risk Threshold: {riskThreshold}%</li>
-                  <li>Return Threshold: {returnThreshold}%</li>
-                  <li>Time Horizon: {timeHorizon} years</li>
-                  <li>Require Synergies: {requireSynergies ? 'Yes' : 'No'}</li>
-                </ul>
+            )}
+          </div>
+
+          {/* Excluded Projects */}
+          <div className="projects-section excluded">
+            <div className="section-header">
+              <h4>❌ Excluded Projects ({excludedProjects.length})</h4>
+              <span className="section-value">{formatCurrency(excludedProjects.reduce((sum, p) => sum + p.capex, 0))}</span>
+            </div>
+            
+            {showProjectDetails && (
+              <div className="project-list">
+                {excludedProjects.slice(0, 5).map(project => (
+                  <div key={project.id} className="project-item excluded">
+                    <div className="project-header">
+                      <span className="project-name">{project.name}</span>
+                      <span className="project-investment">{formatCurrency(project.capex)}</span>
+                    </div>
+                    <div className="project-details">
+                      <span className="project-irr">IRR: {project.irr.toFixed(1)}%</span>
+                      <span 
+                        className="project-risk"
+                        style={{ color: getRiskColor(project.riskScore) }}
+                      >
+                        Risk: {project.riskScore} ({getRiskLevel(project.riskScore)})
+                      </span>
+                      <span className="exclusion-reason">
+                        Exceeds {riskThreshold}% risk threshold
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {excludedProjects.length > 5 && (
+                  <div className="project-item more">
+                    +{excludedProjects.length - 5} more excluded...
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowSaveModal(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={saveScenario}>
-                Save Scenario
-              </button>
-            </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Scenario Comparison */}
+      <div className="scenario-comparison">
+        <h3>Risk Threshold Impact Comparison</h3>
+        <div className="comparison-grid">
+          {[40, 50, 60, 70, 80].map(threshold => {
+            const scenarioProjects = sharedData.validatedProjects.filter(p => p.riskScore <= threshold);
+            const scenarioCapital = scenarioProjects.reduce((sum, p) => sum + p.capex, 0);
+            const scenarioIRR = scenarioProjects.length > 0 
+              ? scenarioProjects.reduce((sum, p) => sum + (p.irr * p.capex), 0) / scenarioCapital 
+              : 0;
+            const isCurrentThreshold = threshold === riskThreshold;
+            
+            return (
+              <div 
+                key={threshold}
+                className={`scenario-card ${isCurrentThreshold ? 'current' : ''}`}
+                onClick={() => setRiskThreshold(threshold)}
+              >
+                <div className="scenario-threshold">{threshold}% Risk</div>
+                <div className="scenario-projects">{scenarioProjects.length} projects</div>
+                <div className="scenario-capital">{formatCurrency(scenarioCapital)}</div>
+                <div className="scenario-irr">{scenarioIRR.toFixed(1)}% IRR</div>
+                {isCurrentThreshold && <div className="current-indicator">Current</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <style jsx>{`
+        .tab7-whatif-analysis {
+          padding: 1.5rem;
+          background: #0a0e27;
+          color: #e2e8f0;
+          min-height: 100vh;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Risk Control Header */
+        .risk-control-header {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+          border: 1px solid #334155;
+          border-radius: 16px;
+          padding: 1.75rem 2rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .control-title h2 {
+          font-size: 1.625rem;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0 0 0.375rem 0;
+          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          line-height: 1.2;
+        }
+
+        .control-title p {
+          color: #94a3b8;
+          margin: 0 0 1.75rem 0;
+          font-size: 0.9375rem;
+          line-height: 1.4;
+        }
+
+        .slider-labels {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 0.875rem;
+          color: #94a3b8;
+          font-size: 0.8125rem;
+          font-weight: 500;
+        }
+
+        .slider-wrapper {
+          position: relative;
+          margin-bottom: 1.25rem;
+        }
+
+        .risk-threshold-slider {
+          width: 100%;
+          height: 8px;
+          background: transparent;
+          outline: none;
+          opacity: 0;
+          position: relative;
+          z-index: 2;
+          cursor: pointer;
+        }
+
+        .slider-track {
+          position: absolute;
+          top: 50%;
+          left: 0;
+          right: 0;
+          height: 8px;
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 4px;
+          transform: translateY(-50%);
+        }
+
+        .slider-fill {
+          height: 100%;
+          background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #ef4444 100%);
+          border-radius: 4px;
+          transition: width 0.3s ease;
+        }
+
+        .threshold-display {
+          display: flex;
+          align-items: center;
+          gap: 1.75rem;
+        }
+
+        .threshold-value {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          min-width: 120px;
+        }
+
+        .threshold-number {
+          font-size: 2.25rem;
+          font-weight: 700;
+          color: #3b82f6;
+          line-height: 1;
+          margin-bottom: 0.25rem;
+        }
+
+        .threshold-label {
+          color: #94a3b8;
+          font-size: 0.8125rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          font-weight: 500;
+        }
+
+        .threshold-description {
+          color: #e2e8f0;
+          font-size: 0.9375rem;
+          font-weight: 500;
+          line-height: 1.4;
+        }
+
+        /* Impact Dashboard */
+        .impact-dashboard {
+          margin-bottom: 1.5rem;
+        }
+
+        .dashboard-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1.25rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+          border: 1px solid #334155;
+          border-radius: 12px;
+          padding: 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 0.875rem;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .metric-card:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .metric-card.primary {
+          border-left: 3px solid #3b82f6;
+        }
+
+        .metric-icon {
+          font-size: 2rem;
+          opacity: 0.8;
+          flex-shrink: 0;
+        }
+
+        .metric-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .metric-value {
+          display: flex;
+          align-items: baseline;
+          gap: 0.375rem;
+          margin-bottom: 0.375rem;
+        }
+
+        .metric-value span:first-child {
+          font-size: 1.75rem;
+          font-weight: 700;
+          color: #ffffff;
+          transition: transform 0.3s ease;
+          line-height: 1;
+        }
+
+        .metric-value .animating {
+          transform: scale(1.05);
+          color: #3b82f6;
+        }
+
+        .metric-unit {
+          font-size: 0.875rem;
+          color: #94a3b8;
+          font-weight: 500;
+        }
+
+        .metric-label {
+          color: #94a3b8;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          margin-bottom: 0.1875rem;
+          line-height: 1.3;
+        }
+
+        .metric-detail {
+          color: #64748b;
+          font-size: 0.6875rem;
+          line-height: 1.3;
+        }
+
+        /* Secondary Metrics */
+        .secondary-metrics {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1.25rem;
+        }
+
+        .utilization-card,
+        .risk-distribution-card {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+          border: 1px solid #334155;
+          border-radius: 12px;
+          padding: 1.25rem;
+        }
+
+        .utilization-card h4,
+        .risk-distribution-card h4 {
+          color: #ffffff;
+          margin: 0 0 0.875rem 0;
+          font-size: 1rem;
+          font-weight: 600;
+          line-height: 1.3;
+        }
+
+        .utilization-bar {
+          height: 10px;
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 5px;
+          overflow: hidden;
+          margin-bottom: 0.625rem;
+        }
+
+        .utilization-fill {
+          height: 100%;
+          background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+          border-radius: 5px;
+          transition: width 0.5s ease;
+        }
+
+        .utilization-text {
+          color: #94a3b8;
+          font-size: 0.8125rem;
+          line-height: 1.3;
+        }
+
+        .risk-bars {
+          display: flex;
+          flex-direction: column;
+          gap: 0.625rem;
+        }
+
+        .risk-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.875rem;
+        }
+
+        .risk-label {
+          color: #e2e8f0;
+          font-size: 0.8125rem;
+          min-width: 75px;
+          font-weight: 500;
+        }
+
+        .risk-bar-container {
+          flex: 1;
+          height: 6px;
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 3px;
+          overflow: hidden;
+        }
+
+        .risk-bar-fill {
+          height: 100%;
+          border-radius: 3px;
+          transition: width 0.5s ease;
+        }
+
+        .risk-bar-fill.low { background: #10b981; }
+        .risk-bar-fill.medium { background: #f59e0b; }
+        .risk-bar-fill.high { background: #ef4444; }
+
+        .risk-count {
+          color: #94a3b8;
+          font-size: 0.8125rem;
+          min-width: 25px;
+          text-align: right;
+          font-weight: 500;
+        }
+
+        /* Deployment Timeline */
+        .deployment-timeline {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+          border: 1px solid #334155;
+          border-radius: 12px;
+          padding: 1.25rem 1.5rem 1rem 1.5rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .deployment-timeline h3 {
+          color: #ffffff;
+          margin: 0 0 0.625rem 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          line-height: 1.3;
+        }
+
+        .timeline-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.75rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .timeline-header span:first-child {
+          color: #94a3b8;
+          font-size: 0.8125rem;
+          font-weight: 500;
+        }
+
+        .timeline-total {
+          color: #3b82f6;
+          font-size: 1rem;
+          font-weight: 700;
+        }
+
+        .timeline-bars {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          height: 80px;
+          overflow-x: auto;
+          padding: 0.25rem 0 0.5rem 0;
+          width: 100%;
+        }
+
+        .timeline-bar {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          flex: 1;
+          max-width: 120px;
+          min-width: 90px;
+        }
+
+        .timeline-fill {
+          width: 32px;
+          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+          border-radius: 3px 3px 0 0;
+          margin-bottom: 0.375rem;
+          animation: growUp 0.6s ease-out;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .timeline-quarter {
+          color: #94a3b8;
+          font-size: 0.6875rem;
+          margin-bottom: 0.125rem;
+          font-weight: 500;
+          text-align: center;
+        }
+
+        .timeline-amount {
+          color: #e2e8f0;
+          font-size: 0.625rem;
+          font-weight: 600;
+          text-align: center;
+          line-height: 1.2;
+        }
+
+        @keyframes growUp {
+          from { height: 0; }
+          to { height: 100%; }
+        }
+
+        /* Project Analysis */
+        .project-analysis {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+          border: 1px solid #334155;
+          border-radius: 12px;
+          padding: 1.5rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .analysis-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.125rem;
+          padding-bottom: 0.75rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .analysis-header h3 {
+          color: #ffffff;
+          margin: 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          line-height: 1.3;
+        }
+
+        .toggle-details-btn {
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #e2e8f0;
+          padding: 0.4375rem 0.875rem;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.8125rem;
+          font-weight: 500;
+          transition: all 0.3s ease;
+        }
+
+        .toggle-details-btn:hover {
+          background: rgba(255, 255, 255, 0.15);
+          transform: translateY(-1px);
+        }
+
+        .analysis-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1.25rem;
+        }
+
+        .projects-section {
+          background: rgba(255, 255, 255, 0.025);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 8px;
+          padding: 1.125rem;
+        }
+
+        .projects-section.qualifying {
+          border-left: 3px solid #10b981;
+        }
+
+        .projects-section.excluded {
+          border-left: 3px solid #ef4444;
+        }
+
+        .section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.875rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .section-header h4 {
+          color: #ffffff;
+          margin: 0;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          line-height: 1.3;
+        }
+
+        .section-value {
+          color: #3b82f6;
+          font-size: 0.8125rem;
+          font-weight: 700;
+        }
+
+        .project-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.625rem;
+          max-height: 280px;
+          overflow-y: auto;
+          padding-right: 0.25rem;
+        }
+
+        .project-list::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .project-list::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 2px;
+        }
+
+        .project-list::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 2px;
+        }
+
+        .project-item {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 6px;
+          padding: 0.875rem;
+          transition: background 0.2s ease;
+        }
+
+        .project-item:hover {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .project-item.qualifying {
+          border-left: 2px solid #10b981;
+        }
+
+        .project-item.excluded {
+          border-left: 2px solid #ef4444;
+          opacity: 0.75;
+        }
+
+        .project-item.more {
+          text-align: center;
+          color: #94a3b8;
+          font-style: italic;
+          border: 1px dashed rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.015);
+        }
+
+        .project-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.375rem;
+        }
+
+        .project-name {
+          color: #e2e8f0;
+          font-weight: 500;
+          flex: 1;
+          font-size: 0.8125rem;
+          line-height: 1.3;
+        }
+
+        .project-investment {
+          color: #3b82f6;
+          font-weight: 600;
+          font-size: 0.8125rem;
+        }
+
+        .project-details {
+          display: flex;
+          gap: 0.875rem;
+          font-size: 0.6875rem;
+          line-height: 1.3;
+        }
+
+        .project-details span {
+          color: #94a3b8;
+        }
+
+        .exclusion-reason {
+          color: #ef4444 !important;
+          font-weight: 500;
+        }
+
+        /* Scenario Comparison */
+        .scenario-comparison {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+          border: 1px solid #334155;
+          border-radius: 12px;
+          padding: 1.5rem;
+        }
+
+        .scenario-comparison h3 {
+          color: #ffffff;
+          margin: 0 0 1.125rem 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          line-height: 1.3;
+        }
+
+        .comparison-grid {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 0.875rem;
+        }
+
+        .scenario-card {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 8px;
+          padding: 1.125rem;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          position: relative;
+        }
+
+        .scenario-card:hover {
+          background: rgba(255, 255, 255, 0.08);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .scenario-card.current {
+          border: 2px solid #3b82f6;
+          background: rgba(59, 130, 246, 0.08);
+        }
+
+        .scenario-threshold {
+          color: #3b82f6;
+          font-size: 1rem;
+          font-weight: 700;
+          margin-bottom: 0.375rem;
+          line-height: 1.2;
+        }
+
+        .scenario-projects {
+          color: #e2e8f0;
+          font-size: 0.8125rem;
+          margin-bottom: 0.1875rem;
+          font-weight: 500;
+        }
+
+        .scenario-capital {
+          color: #10b981;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          margin-bottom: 0.1875rem;
+        }
+
+        .scenario-irr {
+          color: #94a3b8;
+          font-size: 0.6875rem;
+          font-weight: 500;
+        }
+
+        .current-indicator {
+          position: absolute;
+          top: -6px;
+          right: -6px;
+          background: #3b82f6;
+          color: white;
+          padding: 0.1875rem 0.4375rem;
+          border-radius: 3px;
+          font-size: 0.5625rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+          .dashboard-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+          }
+          
+          .comparison-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+          
+          .tab7-whatif-analysis {
+            padding: 1.25rem;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .dashboard-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .analysis-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .secondary-metrics {
+            grid-template-columns: 1fr;
+          }
+          
+          .comparison-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          
+          .tab7-whatif-analysis {
+            padding: 1rem;
+          }
+          
+          .threshold-display {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+          }
+        }
+      `}</style>
     </div>
   );
 };
