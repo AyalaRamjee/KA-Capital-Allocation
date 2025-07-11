@@ -1,5 +1,6 @@
-import { SCASApp } from './components/strategic-allocation/scas-app'
+// app/page.tsx - Next.js App Router entry point
+import CapitalAllocationSystem from '../page';
 
-export default function Home() {
-  return <SCASApp />
+export default function AppPage() {
+  return <CapitalAllocationSystem />;
 }

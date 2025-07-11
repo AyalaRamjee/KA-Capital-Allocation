@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "../styles.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SCAS - Strategic Capital Allocation System",
-  description: "Enterprise web application for strategic capital allocation and investment portfolio management",
+  title: "Capital Allocation System",
+  description: "Enterprise web application for strategic capital allocation and investment portfolio management across business domains",
 };
 
 export default function RootLayout({
