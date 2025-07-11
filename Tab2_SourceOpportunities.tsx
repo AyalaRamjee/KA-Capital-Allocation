@@ -1365,7 +1365,7 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
           width: 120px;
           height: 120px;
           border-radius: 50%;
-          background: conic-gradient(#ef4444 0deg, #ef4444 ${selectedOpportunity?.preliminaryRiskScore * 3.6 || 0}deg, rgba(255, 255, 255, 0.1) ${selectedOpportunity?.preliminaryRiskScore * 3.6 || 0}deg);
+          background: conic-gradient(#ef4444 0deg, #ef4444 ${(selectedOpportunity?.preliminaryRiskScore ?? 0) * 3.6}deg, rgba(255, 255, 255, 0.1) ${(selectedOpportunity?.preliminaryRiskScore ?? 0) * 3.6}deg);
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -1542,7 +1542,7 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
           width: 120px;
           height: 120px;
           border-radius: 50%;
-          background: conic-gradient(#3b82f6 0deg, #3b82f6 ${selectedOpportunity?.strategicFitScore * 3.6 || 0}deg, rgba(255, 255, 255, 0.1) ${selectedOpportunity?.strategicFitScore * 3.6 || 0}deg);
+          background: conic-gradient(#3b82f6 0deg, #3b82f6 ${(selectedOpportunity?.strategicFitScore ?? 0) * 3.6}deg, rgba(255, 255, 255, 0.1) ${(selectedOpportunity?.strategicFitScore ?? 0) * 3.6}deg);
           display: flex;
           flex-direction: column;
           align-items: center;
