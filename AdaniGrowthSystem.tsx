@@ -444,19 +444,111 @@ export default function AdaniGrowthSystem() {
       {/* Separator */}
       <div className="navigation-separator"></div>
       
-      {/* Tab Navigation */}
-      <div className="tab-navigation adani-nav">
-        <div className="tab-buttons">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-              title={tab.description}
-            >
-              <span className="tab-icon">{tab.icon}</span>
-              <span className="tab-label">{tab.label}</span>
-            </button>
+      {/* PROFESSIONAL Tab Navigation */}
+      <div style={{
+        background: '#1e293b',
+        borderBottom: '1px solid #334155',
+        padding: '0.75rem 2rem',
+        display: 'flex',
+        justifyContent: 'center',
+        minHeight: '60px'
+      }}>
+        <div style={{
+          display: 'flex',
+          gap: '0',
+          background: 'rgba(255, 255, 255, 0.05)',
+          padding: '0.5rem',
+          borderRadius: '12px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          position: 'relative'
+        }}>
+          {tabs.map((tab, index) => (
+            <React.Fragment key={tab.id}>
+              <button
+                onClick={() => setActiveTab(tab.id)}
+                title={tab.description}
+                style={{
+                  padding: '0.75rem 1.25rem',
+                  background: activeTab === tab.id 
+                    ? 'linear-gradient(135deg, #0066cc 0%, #00b8d4 100%)' 
+                    : 'transparent',
+                  border: 'none',
+                  color: activeTab === tab.id ? '#ffffff' : '#94a3b8',
+                  cursor: 'pointer',
+                  borderRadius: '8px',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  fontSize: '0.8125rem',
+                  fontWeight: activeTab === tab.id ? '600' : '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  boxShadow: activeTab === tab.id 
+                    ? '0 4px 12px rgba(0, 102, 204, 0.3)' 
+                    : 'none',
+                  transform: activeTab === tab.id ? 'translateY(-1px)' : 'translateY(0)',
+                  minWidth: '140px',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  if (activeTab !== tab.id) {
+                    e.currentTarget.style.color = '#ffffff';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTab !== tab.id) {
+                    e.currentTarget.style.color = '#94a3b8';
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
+                }}
+              >
+                {/* Active tab glow overlay */}
+                {activeTab === tab.id && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%)',
+                    pointerEvents: 'none'
+                  }} />
+                )}
+                
+                <span style={{
+                  fontSize: '1rem',
+                  filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  {tab.icon}
+                </span>
+                <span style={{
+                  textShadow: activeTab === tab.id ? '0 1px 2px rgba(0, 0, 0, 0.2)' : 'none',
+                  position: 'relative',
+                  zIndex: 1,
+                  fontSize: '0.8125rem',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {tab.label}
+                </span>
+              </button>
+              
+              {/* Semi-transparent separator line */}
+              {index < tabs.length - 1 && (
+                <div style={{
+                  width: '1px',
+                  height: '32px',
+                  background: 'linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.15) 20%, rgba(255, 255, 255, 0.15) 80%, transparent 100%)',
+                  alignSelf: 'center',
+                  margin: '0 0.25rem'
+                }} />
+              )}
+            </React.Fragment>
           ))}
         </div>
       </div>
