@@ -7,13 +7,17 @@ interface HeaderProps {
   onFullscreenToggle: () => void;
   currentTheme: 'dark' | 'light';
   isFullscreen: boolean;
+  title?: string;
+  subtitle?: string;
 }
 
 export const AppHeader: React.FC<HeaderProps> = ({ 
   onThemeChange, 
   onFullscreenToggle, 
   currentTheme, 
-  isFullscreen 
+  isFullscreen,
+  title = "Capital Allocation System",
+  subtitle = "Strategic Investment Portfolio Management"
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -27,14 +31,14 @@ export const AppHeader: React.FC<HeaderProps> = ({
       <div className="header-left">
         <div className="company-logo">
           <img 
-            src={currentTheme === 'dark' ? '/TADA_TM-2023_Color-White-Logo.svg' : '/TADA_TM-2023_Color-Logo (1).svg'}
+            src={title.includes('Adani') ? '/Adani_2012_logo.png' : (currentTheme === 'dark' ? '/TADA_TM-2023_Color-White-Logo.svg' : '/TADA_TM-2023_Color-Logo (1).svg')}
             alt="Company Logo" 
             className="logo-image"
           />
         </div>
         <div className="app-title">
-          <h1>Capital Allocation System</h1>
-          <span className="app-subtitle">Strategic Investment Portfolio Management</span>
+          <h1>{title}</h1>
+          <span className="app-subtitle">{subtitle}</span>
         </div>
       </div>
 

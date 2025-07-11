@@ -16,7 +16,9 @@
       "Bash(do sed -i 's|@/lib/utils|../../lib/utils|g' \"$file\")",
       "Bash(done)",
       "Bash(grep:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(npm run lint)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }
