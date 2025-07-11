@@ -28,6 +28,7 @@ body.light-theme {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .app-container.light-theme {
@@ -56,12 +57,12 @@ body.light-theme {
 /* ===== APP HEADER ===== */
 .app-header {
   background: #1e293b;
-  border-bottom: 1px solid #334155;
-  padding: 1rem 2rem;
+  border-bottom: 1px solid #1e293b;
+  padding: 0.75rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 80px;
+  min-height: 60px;
 }
 
 .header-left {
@@ -242,12 +243,12 @@ body.light-theme {
 /* ===== TAB NAVIGATION ===== */
 .tab-navigation {
   background: #1e293b;
-  border-bottom: 1px solid #334155;
-  padding: 0 2rem;
+  border-bottom: 1px solid #1e293b;
+  padding: 0.5rem 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 60px;
+  min-height: 50px;
 }
 
 .tab-buttons {
@@ -280,6 +281,7 @@ body.light-theme {
 .tab-container {
   flex: 1;
   overflow: hidden;
+  width: 100%;
 }
 
 /* ===== SHARED COMPONENTS ===== */
@@ -334,7 +336,7 @@ body.light-theme {
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
 }
 
 .modal-content h2 {
@@ -415,9 +417,8 @@ body.light-theme {
 
 /* ===== TAB 1 - BUSINESS DOMAINS ===== */
 .tab-business-domains {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
 }
 
 .tab-header {
@@ -457,7 +458,7 @@ body.light-theme {
 
 .summary-card {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 1.5rem;
   display: flex;
@@ -492,7 +493,7 @@ body.light-theme {
   gap: 2rem;
   align-items: center;
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 1rem;
 }
@@ -518,21 +519,28 @@ body.light-theme {
   color: #ffffff;
 }
 
+.input-unit {
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 350px;
   gap: 2rem;
 }
 
 .domains-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
 .domain-card {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 1.5rem;
   transition: all 0.2s ease;
@@ -762,7 +770,7 @@ input:checked + .slider:before {
 
 .budget-chart {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 1.5rem;
   display: flex;
@@ -783,7 +791,7 @@ input:checked + .slider:before {
 
 .domain-legend {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 1.5rem;
 }
@@ -822,14 +830,13 @@ input:checked + .slider:before {
 
 /* ===== TAB 2 - PROJECT REPOSITORY ===== */
 .tab-project-repository {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
 }
 
 .project-filters {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 1rem;
   margin-bottom: 2rem;
@@ -873,7 +880,7 @@ input:checked + .slider:before {
 
 .domain-section {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   overflow: hidden;
 }
@@ -916,13 +923,13 @@ input:checked + .slider:before {
 
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
 }
 
 .project-card {
   background: #0f172a;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 1rem;
   transition: all 0.2s ease;
@@ -1059,8 +1066,8 @@ input:checked + .slider:before {
 /* ===== TAB 3 - PORTFOLIO BUILDER ===== */
 .tab-portfolio-builder {
   display: grid;
-  grid-template-columns: 250px 1fr 250px;
-  height: calc(100vh - 60px);
+  grid-template-columns: 280px 1fr 320px;
+  height: calc(100vh - 110px);
   overflow: hidden;
 }
 
@@ -1229,8 +1236,8 @@ input:checked + .slider:before {
 
 /* ===== TAB 4 - BUDGET ALLOCATION ===== */
 .tab-budget-allocation {
-  padding: 1rem;
-  height: calc(100vh - 60px);
+  padding: 1.5rem;
+  height: calc(100vh - 110px);
   overflow: hidden;
 }
 
@@ -1333,9 +1340,8 @@ input:checked + .slider:before {
 
 /* ===== TAB 5 - DATA VALIDATION ===== */
 .tab-data-validation {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
 }
 
 .validation-dashboard {
@@ -1660,21 +1666,21 @@ input:checked + .slider:before {
 /* ===== TAB 3 - PORTFOLIO BUILDER ===== */
 .tab-portfolio-builder {
   display: grid;
-  grid-template-columns: 300px 1fr 300px;
-  height: calc(100vh - 140px);
+  grid-template-columns: 320px 1fr 320px;
+  height: calc(100vh - 110px);
   overflow: hidden;
 }
 
 .left-panel, .right-panel {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   padding: 1.5rem;
   overflow-y: auto;
 }
 
 .center-panel {
   background: #0f172a;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   padding: 1.5rem;
   overflow-y: auto;
 }
@@ -1718,7 +1724,7 @@ input:checked + .slider:before {
 
 .domain-info {
   background: #0f172a;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.375rem;
   padding: 1rem;
 }
@@ -1758,7 +1764,7 @@ input:checked + .slider:before {
 
 .project-item {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.375rem;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -1944,7 +1950,7 @@ input:checked + .slider:before {
 .portfolio-metrics {
   margin-top: 2rem;
   background: #0f172a;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.375rem;
   padding: 1.5rem;
 }
@@ -1989,9 +1995,8 @@ input:checked + .slider:before {
 
 /* ===== TAB 4 - BUDGET ALLOCATION ===== */
 .tab-budget-allocation {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
 }
 
 .allocation-controls {
@@ -1999,7 +2004,7 @@ input:checked + .slider:before {
   justify-content: space-between;
   align-items: center;
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 1rem;
   margin-bottom: 2rem;
@@ -2045,7 +2050,7 @@ input:checked + .slider:before {
 
 .budget-grid-container {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   overflow: hidden;
   margin-bottom: 2rem;
@@ -2260,7 +2265,7 @@ input:checked + .slider:before {
 
 .cash-flow-visualization {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 2rem;
 }
@@ -2274,7 +2279,7 @@ input:checked + .slider:before {
 
 .chart-container {
   background: #0f172a;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.375rem;
   padding: 1rem;
 }
@@ -2291,9 +2296,8 @@ input:checked + .slider:before {
 
 /* ===== TAB 5 - DATA VALIDATION ===== */
 .tab-data-validation {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
 }
 
 .validation-dashboard {
@@ -2305,7 +2309,7 @@ input:checked + .slider:before {
 
 .dashboard-card {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 1.5rem;
   text-align: center;
@@ -2397,7 +2401,7 @@ input:checked + .slider:before {
 
 .issues-section {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 2rem;
 }
@@ -2439,10 +2443,10 @@ input:checked + .slider:before {
 
 .issue-item {
   background: #0f172a;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.375rem;
   padding: 1rem;
-  border-left: 4px solid #334155;
+  border-left: 4px solid #1e293b;
 }
 
 .issue-item.critical {
@@ -2570,7 +2574,7 @@ input:checked + .slider:before {
 
 .approval-matrix {
   background: #1e293b;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem;
   padding: 2rem;
 }
@@ -2690,6 +2694,20 @@ input:checked + .slider:before {
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
+@media (min-width: 1600px) {
+  .domains-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  }
+  
+  .project-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+  
+  .tab-portfolio-builder {
+    grid-template-columns: 350px 1fr 350px;
+  }
+}
+
 @media (max-width: 1024px) {
   .main-content {
     grid-template-columns: 1fr;
