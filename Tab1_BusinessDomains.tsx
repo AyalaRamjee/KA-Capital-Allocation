@@ -2,7 +2,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { BusinessDomain } from './types';
-import { defaultBusinessDomains, formatCurrency, autoBalanceBudgets, filterProjectsByRisk } from './mockData';
+import { defaultBusinessDomains, formatCurrency, formatPercent, autoBalanceBudgets, filterProjectsByRisk } from './mockData';
 
 interface TabProps {
   sharedData: {
@@ -161,7 +161,7 @@ export const BusinessDomainsTab: React.FC<TabProps> = ({ sharedData, onDataUpdat
     const totalAllocated = domains.reduce((sum, d) => sum + (d.isActive ? d.budgetPercent : 0), 0);
     if (Math.abs(totalAllocated - 100) > 0.1 && budgetMode === 'percentage') {
       // Auto-adjust if significantly off 100%
-      autoBalanceBudgets();
+      autoBalanceDomainsHandler();
     }
   }, [domains.length]);
 

@@ -81,7 +81,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
     
     const npv = calculateNPV(cashFlows);
     const irr = calculateIRR(cashFlows);
-    const paybackMonths = calculatePaybackPeriod(cashFlows);
+    const paybackYears = calculatePaybackPeriod(cashFlows) / 12;
     
     const project: Project = {
       id: `PROJ-${Date.now()}`,
@@ -98,8 +98,9 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
       npv,
       irr,
       mirr: irr * 0.8,
-      paybackMonths,
+      paybackYears: paybackYears,
       riskLevel: newProject.riskLevel || 'medium',
+      risk: (newProject.riskLevel || 'medium') as 'low' | 'medium' | 'high',
       riskScore: newProject.riskScore || 5,
       domain: newProject.domain || domains[0]?.id || 'DOM-001',
       businessUnit: newProject.businessUnit || '',
@@ -209,6 +210,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
               mirr: calculateIRR(cashFlows) * 0.8,
               paybackYears: calculatePaybackPeriod(cashFlows),
               riskLevel: (projectData.riskLevel as any) || 'medium',
+              risk: ((projectData.riskLevel as any) || 'medium') as 'low' | 'medium' | 'high',
               riskScore: parseInt(projectData.riskScore) || 5,
               domain: projectData.domain || domains[0]?.id || 'DOM-001',
               businessUnit: projectData.businessUnit || '',
@@ -238,7 +240,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
   // ===== FILTERING AND SORTING =====
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.projectId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (project.projectId?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
                          project.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDomain = selectedDomain === 'all' || project.domain === selectedDomain;
     const matchesCategory = selectedCategory === 'all' || project.category === selectedCategory;
@@ -326,7 +328,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
         </div>
         <div className="project-metric">
           <span className="project-metric-label">Payback</span>
-          <span className="project-metric-value">{(project.paybackMonths / 12).toFixed(1)}yr</span>
+          <span className="project-metric-value">{project.paybackYears.toFixed(1)}yr</span>
         </div>
       </div>
       

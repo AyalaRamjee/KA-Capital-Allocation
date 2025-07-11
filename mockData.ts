@@ -152,6 +152,7 @@ export const defaultBusinessDomains: BusinessDomain[] = [
     icon: "🏢",
     budget: 70000000, // $70M (7%)
     budgetPercent: 7,
+    remainingBudget: 70000000,
     riskTolerance: "low",
     minIRR: 12,
     maxPayback: 12,
@@ -159,6 +160,7 @@ export const defaultBusinessDomains: BusinessDomain[] = [
     isActive: true,
     projectCount: 6,
     color: "#64748b",
+    projects: [],
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -2734,7 +2736,6 @@ export const defaultQuarterlyLimits: QuarterlyLimit[] = [
 export const defaultRiskReturnProfiles: RiskReturnProfile[] = [
   {
     riskLevel: "low",
-    risk: "low",
     irrRange: [12, 20],
     paybackRange: [3, 12],
     npvMultiplier: 0.20,
@@ -2742,7 +2743,6 @@ export const defaultRiskReturnProfiles: RiskReturnProfile[] = [
   },
   {
     riskLevel: "medium",
-    risk: "medium",
     irrRange: [16, 28],
     paybackRange: [3, 8],
     npvMultiplier: 0.25,
@@ -2750,7 +2750,6 @@ export const defaultRiskReturnProfiles: RiskReturnProfile[] = [
   },
   {
     riskLevel: "high",
-    risk: "high",
     irrRange: [18, 45],
     paybackRange: [1.5, 10],
     npvMultiplier: 0.30,
@@ -2844,7 +2843,18 @@ export const formatCurrency = (amount: number): string => {
   if (amount >= 1000000000) return `$${(amount / 1000000000).toFixed(1)}B`;
   if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
   if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
-  return `$${amount.toFixed(0)}`;
+  return `$${amount.toLocaleString()}`;
+};
+
+export const formatNumber = (num: number): string => {
+  if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toLocaleString();
+};
+
+export const formatPercent = (num: number): string => {
+  return `${num.toFixed(1)}%`;
 };
 
 export const calculateNPV = (cashFlows: { year: number; amount: number }[], discountRate: number = 10): number => {
