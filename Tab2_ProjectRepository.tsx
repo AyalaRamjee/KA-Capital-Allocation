@@ -67,6 +67,21 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
     onDataUpdate({ projects: updatedProjects });
   };
 
+  const updateExistingProject = () => {
+    if (!editingProject || !editingProject.name || !editingProject.projectId) return;
+    
+    const updatedProjects = projects.map(p => {
+      if (p.id === editingProject.id) {
+        return { ...editingProject, updatedAt: new Date() };
+      }
+      return p;
+    });
+    
+    setProjects(updatedProjects);
+    onDataUpdate({ projects: updatedProjects });
+    setEditingProject(null);
+  };
+
   const addNewProject = () => {
     if (!newProject.name || !newProject.projectId) return;
     
@@ -270,12 +285,15 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
     return sortOrder === 'asc' ? comparison : -comparison;
   });
 
-  const projectsByDomain = domains.map(domain => ({
-    domain,
-    projects: selectedDomain === 'all' || selectedDomain === domain.id ? 
-      sortedProjects.filter(p => p.domain === domain.id) : 
-      []
-  }));
+  const projectsByDomain = selectedDomain === 'all' 
+    ? domains.map(domain => ({
+        domain,
+        projects: sortedProjects.filter(p => p.domain === domain.id)
+      }))
+    : domains.filter(domain => domain.id === selectedDomain).map(domain => ({
+        domain,
+        projects: sortedProjects.filter(p => p.domain === domain.id)
+      }));
 
   // ===== EFFECTS SECTION =====
   useEffect(() => {
@@ -415,6 +433,209 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
       </div>
     );
   };
+
+  const EditProjectModal = () => (
+    <div className="modal-overlay" onClick={() => setEditingProject(null)}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <h2>Edit Project</h2>
+        <form onSubmit={(e) => { e.preventDefault(); updateExistingProject(); }}>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Project ID</label>
+              <input
+                type="text"
+                value={editingProject?.projectId || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, projectId: e.target.value} : null)}
+                placeholder="PROJ-001"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Project Name</label>
+              <input
+                type="text"
+                value={editingProject?.name || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, name: e.target.value} : null)}
+                placeholder="Project name"
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              value={editingProject?.description || ''}
+              onChange={(e) => setEditingProject(prev => prev ? {...prev, description: e.target.value} : null)}
+              placeholder="Project description"
+              rows={3}
+            />
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>Domain</label>
+              <select
+                value={editingProject?.domain || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, domain: e.target.value} : null)}
+              >
+                {domains.map(domain => (
+                  <option key={domain.id} value={domain.id}>{domain.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Category</label>
+              <select
+                value={editingProject?.category || 'renewable_energy'}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, category: e.target.value} : null)}
+              >
+                <option value="renewable_energy">Renewable Energy</option>
+                <option value="energy_storage">Energy Storage</option>
+                <option value="geothermal">Geothermal</option>
+                <option value="grid_infrastructure">Grid Infrastructure</option>
+                <option value="hydrogen">Hydrogen</option>
+                <option value="hydroelectric">Hydroelectric</option>
+                <option value="cybersecurity">Cybersecurity</option>
+                <option value="space_technology">Space Technology</option>
+                <option value="unmanned_systems">Unmanned Systems</option>
+                <option value="electronic_warfare">Electronic Warfare</option>
+                <option value="radar_systems">Radar Systems</option>
+                <option value="space_surveillance">Space Surveillance</option>
+                <option value="quantum_technology">Quantum Technology</option>
+                <option value="biotechnology">Biotechnology</option>
+                <option value="medical_ai">Medical AI</option>
+                <option value="medical_robotics">Medical Robotics</option>
+                <option value="genomics">Genomics</option>
+                <option value="diagnostics">Diagnostics</option>
+                <option value="telemedicine">Telemedicine</option>
+                <option value="digital_health">Digital Health</option>
+                <option value="digital_transformation">Digital Transformation</option>
+                <option value="process_improvement">Process Improvement</option>
+                <option value="product_launch">Product Launch</option>
+                <option value="innovation">Innovation</option>
+                <option value="research_development">Research & Development</option>
+                <option value="development">Development</option>
+                <option value="test_facilities">Test Facilities</option>
+                <option value="infrastructure">Infrastructure</option>
+                <option value="sustainability">Sustainability</option>
+                <option value="compliance">Compliance</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>CAPEX ($)</label>
+              <input
+                type="number"
+                value={editingProject?.capex || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, capex: parseFloat(e.target.value) || 0} : null)}
+                min="0"
+                step="1000"
+              />
+            </div>
+            <div className="form-group">
+              <label>Annual Revenue ($)</label>
+              <input
+                type="number"
+                value={editingProject?.revenuePotential || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, revenuePotential: parseFloat(e.target.value) || 0} : null)}
+                min="0"
+                step="1000"
+              />
+            </div>
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>Risk Level</label>
+              <select
+                value={editingProject?.riskLevel || 'medium'}
+                onChange={(e) => {
+                  const riskLevel = e.target.value as 'low' | 'medium' | 'high';
+                  setEditingProject(prev => prev ? {...prev, riskLevel, risk: riskLevel} : null);
+                }}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Risk Score (1-10)</label>
+              <input
+                type="number"
+                value={editingProject?.riskScore || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, riskScore: parseInt(e.target.value) || 5} : null)}
+                min="1"
+                max="10"
+              />
+            </div>
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>Duration (months)</label>
+              <input
+                type="number"
+                value={editingProject?.duration || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, duration: parseInt(e.target.value) || 12} : null)}
+                min="1"
+                max="120"
+              />
+            </div>
+            <div className="form-group">
+              <label>Strategic Fit (1-10)</label>
+              <input
+                type="number"
+                value={editingProject?.strategicFit || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, strategicFit: parseInt(e.target.value) || 5} : null)}
+                min="1"
+                max="10"
+              />
+            </div>
+          </div>
+          
+          <div className="form-group">
+            <label>Sponsor</label>
+            <input
+              type="text"
+              value={editingProject?.sponsor || ''}
+              onChange={(e) => setEditingProject(prev => prev ? {...prev, sponsor: e.target.value} : null)}
+              placeholder="Executive sponsor"
+            />
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>Business Unit</label>
+              <input
+                type="text"
+                value={editingProject?.businessUnit || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, businessUnit: e.target.value} : null)}
+                placeholder="Business unit"
+              />
+            </div>
+            <div className="form-group">
+              <label>Geography</label>
+              <input
+                type="text"
+                value={editingProject?.geography || ''}
+                onChange={(e) => setEditingProject(prev => prev ? {...prev, geography: e.target.value} : null)}
+                placeholder="Location"
+              />
+            </div>
+          </div>
+          
+          <div className="modal-actions">
+            <button type="button" onClick={() => setEditingProject(null)}>Cancel</button>
+            <button type="submit">Update Project</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 
   const AddProjectModal = () => (
     <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
@@ -730,6 +951,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
       </div>
 
       {showAddModal && <AddProjectModal />}
+      {editingProject && <EditProjectModal />}
     </div>
   );
 };
