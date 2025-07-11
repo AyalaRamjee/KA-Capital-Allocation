@@ -197,32 +197,246 @@ export default function AdaniGrowthSystem() {
         subtitle="Accelerating $90B Capital Deployment"
       />
       
-      {/* Key Metrics Bar */}
-      <div className="key-metrics-bar">
-        <div className="metrics-container">
-          <div className="metric-card metric-capital">
-            <span className="metric-label">Total Capital</span>
-            <span className="metric-value">{formatCurrency(totalAllocatedCapital)}</span>
+      {/* OPTIMIZED Key Metrics Bar - Compact & Consistent */}
+      <div style={{
+        background: 'linear-gradient(135deg, #0a0e27 0%, #1e293b 100%)',
+        borderBottom: '1px solid rgba(0, 184, 212, 0.3)',
+        padding: '1rem 2rem'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          maxWidth: '1400px',
+          margin: '0 auto',
+          gap: '0.75rem'
+        }}>
+          {/* TOTAL CAPITAL */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(0, 184, 212, 0.2)',
+            borderLeft: '3px solid #10b981',
+            borderRadius: '10px',
+            padding: '0.875rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flex: '1',
+            minWidth: '0'
+          }}>
+            <div style={{ fontSize: '1.5rem', color: '#10b981', flexShrink: 0 }}>💰</div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.125rem'
+            }}>
+              <span style={{
+                color: '#94a3b8',
+                fontSize: '0.6875rem',
+                fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: 0,
+                lineHeight: 1
+              }}>TOTAL CAPITAL</span>
+              <span style={{
+                color: '#ffffff',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                lineHeight: 1,
+                margin: 0
+              }}>{formatCurrency(totalAllocatedCapital)}</span>
+            </div>
           </div>
-          <div className="metric-card metric-pipeline">
-            <span className="metric-label">Pipeline Value</span>
-            <span className="metric-value">{formatCurrency(totalPipelineValue)}</span>
+
+          {/* PIPELINE VALUE */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(0, 184, 212, 0.2)',
+            borderLeft: '3px solid #3b82f6',
+            borderRadius: '10px',
+            padding: '0.875rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flex: '1',
+            minWidth: '0'
+          }}>
+            <div style={{ fontSize: '1.5rem', color: '#3b82f6', flexShrink: 0 }}>🚀</div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.125rem'
+            }}>
+              <span style={{
+                color: '#94a3b8',
+                fontSize: '0.6875rem',
+                fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: 0,
+                lineHeight: 1
+              }}>PIPELINE VALUE</span>
+              <span style={{
+                color: '#ffffff',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                lineHeight: 1,
+                margin: 0
+              }}>{formatCurrency(totalPipelineValue)}</span>
+            </div>
           </div>
-          <div className="metric-card metric-projects">
-            <span className="metric-label">Active Projects</span>
-            <span className="metric-value">{selectedOpportunities}</span>
+
+          {/* ACTIVE PROJECTS */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(0, 184, 212, 0.2)',
+            borderLeft: '3px solid #8b5cf6',
+            borderRadius: '10px',
+            padding: '0.875rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flex: '1',
+            minWidth: '0'
+          }}>
+            <div style={{ fontSize: '1.5rem', color: '#8b5cf6', flexShrink: 0 }}>📊</div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.125rem'
+            }}>
+              <span style={{
+                color: '#94a3b8',
+                fontSize: '0.6875rem',
+                fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: 0,
+                lineHeight: 1
+              }}>ACTIVE PROJECTS</span>
+              <span style={{
+                color: '#ffffff',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                lineHeight: 1,
+                margin: 0
+              }}>{selectedOpportunities}</span>
+            </div>
           </div>
-          <div className="metric-card metric-rate">
-            <span className="metric-label">Conversion Rate</span>
-            <span className="metric-value">{((selectedOpportunities / appState.opportunities.length) * 100).toFixed(1)}%</span>
+
+          {/* CONVERSION RATE */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(0, 184, 212, 0.2)',
+            borderLeft: '3px solid #f59e0b',
+            borderRadius: '10px',
+            padding: '0.875rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flex: '1',
+            minWidth: '0'
+          }}>
+            <div style={{ fontSize: '1.5rem', color: '#f59e0b', flexShrink: 0 }}>📈</div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.125rem'
+            }}>
+              <span style={{
+                color: '#94a3b8',
+                fontSize: '0.6875rem',
+                fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: 0,
+                lineHeight: 1
+              }}>CONVERSION RATE</span>
+              <span style={{
+                color: '#ffffff',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                lineHeight: 1,
+                margin: 0
+              }}>{((selectedOpportunities / appState.opportunities.length) * 100).toFixed(1)}%</span>
+            </div>
           </div>
-          <div className="metric-card metric-irr">
-            <span className="metric-label">Portfolio IRR</span>
-            <span className="metric-value">18.2%</span>
+
+          {/* PORTFOLIO IRR */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(0, 184, 212, 0.2)',
+            borderLeft: '3px solid #06b6d4',
+            borderRadius: '10px',
+            padding: '0.875rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flex: '1',
+            minWidth: '0'
+          }}>
+            <div style={{ fontSize: '1.5rem', color: '#06b6d4', flexShrink: 0 }}>💎</div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.125rem'
+            }}>
+              <span style={{
+                color: '#94a3b8',
+                fontSize: '0.6875rem',
+                fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: 0,
+                lineHeight: 1
+              }}>PORTFOLIO IRR</span>
+              <span style={{
+                color: '#ffffff',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                lineHeight: 1,
+                margin: 0
+              }}>18.2%</span>
+            </div>
           </div>
-          <div className="metric-card metric-speed">
-            <span className="metric-label">Target Speed</span>
-            <span className="metric-value">6-9 weeks</span>
+
+          {/* TARGET SPEED */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(0, 184, 212, 0.2)',
+            borderLeft: '3px solid #ef4444',
+            borderRadius: '10px',
+            padding: '0.875rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flex: '1',
+            minWidth: '0'
+          }}>
+            <div style={{ fontSize: '1.5rem', color: '#ef4444', flexShrink: 0 }}>⚡</div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.125rem'
+            }}>
+              <span style={{
+                color: '#94a3b8',
+                fontSize: '0.6875rem',
+                fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: 0,
+                lineHeight: 1
+              }}>TARGET SPEED</span>
+              <span style={{
+                color: '#ffffff',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                lineHeight: 1,
+                margin: 0
+              }}>6-9 weeks</span>
+            </div>
           </div>
         </div>
       </div>

@@ -7019,3 +7019,494 @@ input:checked + .slider:before {
 .dark-theme .navigation-separator {
   background: #334155;
 }
+/* ===== ENHANCED ADANI METRICS BAR ===== */
+.key-metrics-bar {
+  background: linear-gradient(135deg, #0a0e27 0%, #1e293b 100%);
+  border-bottom: 1px solid rgba(0, 184, 212, 0.3);
+  padding: 1.5rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle animated background */
+.key-metrics-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 184, 212, 0.05) 50%, 
+    transparent 100%
+  );
+  animation: shimmer 8s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.metrics-container {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== ENHANCED METRIC CARDS ===== */
+.metric-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 184, 212, 0.2);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hover effects */
+.metric-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 184, 212, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 184, 212, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Individual card accent colors */
+.metric-capital {
+  border-left: 3px solid #10b981;
+}
+
+.metric-capital:hover {
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15);
+}
+
+.metric-pipeline {
+  border-left: 3px solid #3b82f6;
+}
+
+.metric-pipeline:hover {
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15);
+}
+
+.metric-projects {
+  border-left: 3px solid #8b5cf6;
+}
+
+.metric-projects:hover {
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+}
+
+.metric-rate {
+  border-left: 3px solid #f59e0b;
+}
+
+.metric-rate:hover {
+  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.15);
+}
+
+.metric-irr {
+  border-left: 3px solid #06b6d4;
+}
+
+.metric-irr:hover {
+  box-shadow: 0 8px 32px rgba(6, 182, 212, 0.15);
+}
+
+.metric-speed {
+  border-left: 3px solid #ef4444;
+}
+
+.metric-speed:hover {
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.15);
+}
+
+/* ===== METRIC CARD CONTENT ===== */
+.metric-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover .metric-icon {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+/* Specific icon colors */
+.metric-capital .metric-icon { color: #10b981; }
+.metric-pipeline .metric-icon { color: #3b82f6; }
+.metric-projects .metric-icon { color: #8b5cf6; }
+.metric-rate .metric-icon { color: #f59e0b; }
+.metric-irr .metric-icon { color: #06b6d4; }
+.metric-speed .metric-icon { color: #ef4444; }
+
+.metric-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric-label {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.metric-value {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== BIGGER ADANI LOGO ===== */
+.company-logo .logo-image {
+  height: 44px; /* Increased from 40px (10% bigger) */
+  width: auto;
+  transition: all 0.3s ease;
+}
+
+.company-logo:hover .logo-image {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 1200px) {
+  .metrics-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  
+  .metric-card {
+    padding: 1rem 1.25rem;
+  }
+  
+  .metric-icon {
+    font-size: 1.75rem;
+  }
+  
+  .metric-value {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .metrics-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .metric-card {
+    padding: 0.875rem 1rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  
+  .metric-icon {
+    font-size: 1.5rem;
+  }
+  
+  .metric-value {
+    font-size: 1.125rem;
+  }
+  
+  .metric-label {
+    font-size: 0.625rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .metrics-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .key-metrics-bar {
+    padding: 1rem;
+  }
+}
+/* ===== FIXED COMPACT HORIZONTAL METRICS BAR ===== */
+.key-metrics-bar {
+  background: linear-gradient(135deg, #0a0e27 0%, #1e293b 100%);
+  border-bottom: 1px solid rgba(0, 184, 212, 0.3);
+  padding: 1rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle animated background */
+.key-metrics-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 184, 212, 0.05) 50%, 
+    transparent 100%
+  );
+  animation: shimmer 8s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.metrics-container {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== PROPERLY STRUCTURED METRIC CARDS ===== */
+.metric-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 184, 212, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 70px; /* Slightly taller to fit content properly */
+}
+
+/* Hover effects */
+.metric-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0, 184, 212, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 184, 212, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Individual card accent colors */
+.metric-capital {
+  border-left: 3px solid #10b981;
+}
+
+.metric-capital:hover {
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
+}
+
+.metric-pipeline {
+  border-left: 3px solid #3b82f6;
+}
+
+.metric-pipeline:hover {
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+}
+
+.metric-projects {
+  border-left: 3px solid #8b5cf6;
+}
+
+.metric-projects:hover {
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.15);
+}
+
+.metric-rate {
+  border-left: 3px solid #f59e0b;
+}
+
+.metric-rate:hover {
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.15);
+}
+
+.metric-irr {
+  border-left: 3px solid #06b6d4;
+}
+
+.metric-irr:hover {
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.15);
+}
+
+.metric-speed {
+  border-left: 3px solid #ef4444;
+}
+
+.metric-speed:hover {
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
+}
+
+/* ===== PROPERLY SIZED CONTENT ===== */
+.metric-icon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  transition: all 0.3s ease;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-card:hover .metric-icon {
+  transform: scale(1.05);
+  opacity: 1;
+}
+
+/* Specific icon colors */
+.metric-capital .metric-icon { color: #10b981; }
+.metric-pipeline .metric-icon { color: #3b82f6; }
+.metric-projects .metric-icon { color: #8b5cf6; }
+.metric-rate .metric-icon { color: #f59e0b; }
+.metric-irr .metric-icon { color: #06b6d4; }
+.metric-speed .metric-icon { color: #ef4444; }
+
+.metric-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0; /* Allow text to truncate if needed */
+}
+
+.metric-label {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+  line-height: 1;
+  margin: 0;
+}
+
+.metric-value {
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  margin: 0;
+}
+
+/* ===== BIGGER LOGO ===== */
+.company-logo .logo-image {
+  height: 44px; /* 10% bigger than original 40px */
+  width: auto;
+  transition: all 0.3s ease;
+}
+
+.company-logo:hover .logo-image {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 1200px) {
+  .metrics-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .metric-card {
+    padding: 0.875rem;
+    min-height: 65px;
+  }
+  
+  .metric-icon {
+    font-size: 1.5rem;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .metric-value {
+    font-size: 1.125rem;
+  }
+  
+  .metric-label {
+    font-size: 0.6875rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .metrics-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .metric-card {
+    padding: 0.75rem;
+    min-height: 60px;
+  }
+  
+  .metric-icon {
+    font-size: 1.375rem;
+    width: 22px;
+    height: 22px;
+  }
+  
+  .metric-value {
+    font-size: 1rem;
+  }
+  
+  .metric-label {
+    font-size: 0.625rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .metrics-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .key-metrics-bar {
+    padding: 0.75rem 1rem;
+  }
+  
+  .metric-card {
+    min-height: 55px;
+    padding: 0.625rem;
+  }
+  
+  .metric-icon {
+    font-size: 1.25rem;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* ===== NAVIGATION SEPARATOR ===== */
+.navigation-separator {
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 184, 212, 0.3) 20%, 
+    rgba(0, 184, 212, 0.5) 50%, 
+    rgba(0, 184, 212, 0.3) 80%, 
+    transparent 100%
+  );
+}
+
