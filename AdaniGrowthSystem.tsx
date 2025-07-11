@@ -440,9 +440,6 @@ export default function AdaniGrowthSystem() {
           </div>
         </div>
       </div>
-
-      {/* Separator */}
-      <div className="navigation-separator"></div>
       
       {/* PROFESSIONAL Tab Navigation */}
       <div style={{
@@ -553,7 +550,7 @@ export default function AdaniGrowthSystem() {
         </div>
       </div>
 
-      <div className="tab-container adani-tab-container">
+      <div className="tab-container adani-tab-container" style={{ paddingTop: 0, marginTop: 0 }}>
         {activeTab === 1 && (
           <Tab1_SetPriorities
             sharedData={{
