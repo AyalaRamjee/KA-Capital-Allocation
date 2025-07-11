@@ -2,7 +2,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { BusinessDomain, Project } from './types';
-import { formatCurrency, allocationPatterns } from './mockData';
+import { formatCurrency, formatPercent, allocationPatterns } from './mockData';
 
 interface TabProps {
   sharedData: {
@@ -342,7 +342,7 @@ export const BudgetAllocationTab: React.FC<TabProps> = ({ sharedData, onDataUpda
           <div className="stat">
             <span className="stat-label">Avg Utilization:</span>
             <span className="stat-value">
-              {quarterlyTotals.length > 0 ? ((quarterlyTotals.reduce((sum, total) => sum + total, 0) / quarterlyTotals.length) / quarterlyLimit * 100).toFixed(0) : 0}%
+              {quarterlyTotals.length > 0 ? formatPercent(((quarterlyTotals.reduce((sum, total) => sum + total, 0) / quarterlyTotals.length) / quarterlyLimit * 100)) : formatPercent(0)}
             </span>
           </div>
         </div>

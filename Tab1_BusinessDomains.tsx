@@ -203,7 +203,7 @@ export const BusinessDomainsTab: React.FC<TabProps> = ({ sharedData, onDataUpdat
       <div className="domain-budget">
         <div className="budget-display">
           <span className="budget-amount">{formatCurrency(domain.budget)}</span>
-          <span className="budget-percent">{domain.budgetPercent.toFixed(1)}%</span>
+          <span className="budget-percent">{formatPercent(domain.budgetPercent)}</span>
         </div>
         
         {domain.isActive && (
@@ -229,7 +229,7 @@ export const BusinessDomainsTab: React.FC<TabProps> = ({ sharedData, onDataUpdat
         </div>
         <div className="metric">
           <span className="metric-label">Min IRR</span>
-          <span className="metric-value">{domain.minIRR}%</span>
+          <span className="metric-value">{formatPercent(domain.minIRR)}</span>
         </div>
         <div className="metric">
           <span className="metric-label">Projects</span>
@@ -463,7 +463,7 @@ export const BusinessDomainsTab: React.FC<TabProps> = ({ sharedData, onDataUpdat
           <div className="summary-card">
             <span className="summary-label">Allocated</span>
             <span className={`summary-value ${isBalanced ? 'balanced' : 'unbalanced'}`}>
-              {totalAllocatedPercent.toFixed(1)}%
+              {formatPercent(totalAllocatedPercent)}
             </span>
           </div>
           <div className="summary-card">
@@ -505,12 +505,13 @@ export const BusinessDomainsTab: React.FC<TabProps> = ({ sharedData, onDataUpdat
             <label>Total Budget ($):</label>
             <input
               type="number"
-              value={totalBudget}
-              onChange={(e) => setTotalBudget(parseFloat(e.target.value) || 0)}
+              value={totalBudget / 1000000}
+              onChange={(e) => setTotalBudget((parseFloat(e.target.value) || 0) * 1000000)}
               min="0"
-              step="1000000"
+              step="1"
               className="budget-input"
             />
+            <span className="input-unit">M</span>
           </div>
         </div>
       </div>
@@ -534,7 +535,7 @@ export const BusinessDomainsTab: React.FC<TabProps> = ({ sharedData, onDataUpdat
                   style={{ backgroundColor: domain.color }}
                 ></div>
                 <span className="legend-label">{domain.name}</span>
-                <span className="legend-value">{domain.budgetPercent.toFixed(1)}%</span>
+                <span className="legend-value">{formatPercent(domain.budgetPercent)}</span>
               </div>
             ))}
           </div>
@@ -543,7 +544,7 @@ export const BusinessDomainsTab: React.FC<TabProps> = ({ sharedData, onDataUpdat
 
       {!isBalanced && (
         <div className="warning-banner">
-          ⚠️ Budget allocation is {totalAllocatedPercent.toFixed(1)}%. Please adjust to 100%.
+          ⚠️ Budget allocation is {formatPercent(totalAllocatedPercent)}. Please adjust to 100%.
         </div>
       )}
 

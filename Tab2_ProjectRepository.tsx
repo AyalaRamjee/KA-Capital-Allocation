@@ -2,7 +2,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { BusinessDomain, Project } from './types';
-import { defaultProjects, formatCurrency, calculateNPV, calculateIRR } from './mockData';
+import { defaultProjects, formatCurrency, formatPercent, calculateNPV, calculateIRR } from './mockData';
 
 interface TabProps {
   sharedData: {
@@ -28,7 +28,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
   const [newProject, setNewProject] = useState<Partial<Project>>({
     name: '',
     projectId: '',
-    category: 'technology',
+    category: 'renewable_energy',
     description: '',
     sponsor: '',
     status: 'available',
@@ -125,7 +125,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
     setNewProject({
       name: '',
       projectId: '',
-      category: 'technology',
+      category: 'renewable_energy',
       description: '',
       sponsor: '',
       status: 'available',
@@ -244,7 +244,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
                          project.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDomain = selectedDomain === 'all' || project.domain === selectedDomain;
     const matchesCategory = selectedCategory === 'all' || project.category === selectedCategory;
-    const matchesRisk = selectedRisk === 'all' || project.riskLevel === selectedRisk;
+    const matchesRisk = selectedRisk === 'all' || project.risk === selectedRisk || project.riskLevel === selectedRisk;
     
     return matchesSearch && matchesDomain && matchesCategory && matchesRisk;
   });
@@ -272,7 +272,9 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
 
   const projectsByDomain = domains.map(domain => ({
     domain,
-    projects: sortedProjects.filter(p => p.domain === domain.id)
+    projects: selectedDomain === 'all' || selectedDomain === domain.id ? 
+      sortedProjects.filter(p => p.domain === domain.id) : 
+      []
   }));
 
   // ===== EFFECTS SECTION =====
@@ -314,12 +316,12 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
         </div>
         <div className="project-metric">
           <span className="project-metric-label">IRR</span>
-          <span className="project-metric-value">{project.irr.toFixed(1)}%</span>
+          <span className="project-metric-value">{formatPercent(project.irr)}</span>
         </div>
         <div className="project-metric">
           <span className="project-metric-label">Risk</span>
-          <span className={`project-metric-value risk-${project.riskLevel}`}>
-            {project.riskLevel}
+          <span className={`project-metric-value risk-${project.risk || project.riskLevel}`}>
+            {project.risk || project.riskLevel}
           </span>
         </div>
         <div className="project-metric">
@@ -328,7 +330,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
         </div>
         <div className="project-metric">
           <span className="project-metric-label">Payback</span>
-          <span className="project-metric-value">{project.paybackYears.toFixed(1)}yr</span>
+          <span className="project-metric-value">{project.paybackYears.toFixed(1)} yr</span>
         </div>
       </div>
       
@@ -390,7 +392,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
           <div className="domain-section-stats">
             <span>{domainStats.totalProjects} projects</span>
             <span>{formatCurrency(domainStats.totalCapex)} CAPEX</span>
-            <span>{domainStats.avgIRR.toFixed(1)}% avg IRR</span>
+            <span>{formatPercent(domainStats.avgIRR)} avg IRR</span>
             <span>{domainStats.selectedCount} selected</span>
           </div>
         </div>
@@ -467,17 +469,39 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
             <div className="form-group">
               <label>Category</label>
               <select
-                value={newProject.category || 'technology'}
+                value={newProject.category || 'renewable_energy'}
                 onChange={(e) => setNewProject({...newProject, category: e.target.value})}
               >
-                <option value="technology">Technology</option>
-                <option value="infrastructure">Infrastructure</option>
                 <option value="renewable_energy">Renewable Energy</option>
-                <option value="healthcare">Healthcare</option>
-                <option value="manufacturing">Manufacturing</option>
-                <option value="finance">Finance</option>
-                <option value="education">Education</option>
-                <option value="defense">Defense</option>
+                <option value="energy_storage">Energy Storage</option>
+                <option value="geothermal">Geothermal</option>
+                <option value="grid_infrastructure">Grid Infrastructure</option>
+                <option value="hydrogen">Hydrogen</option>
+                <option value="hydroelectric">Hydroelectric</option>
+                <option value="cybersecurity">Cybersecurity</option>
+                <option value="space_technology">Space Technology</option>
+                <option value="unmanned_systems">Unmanned Systems</option>
+                <option value="electronic_warfare">Electronic Warfare</option>
+                <option value="radar_systems">Radar Systems</option>
+                <option value="space_surveillance">Space Surveillance</option>
+                <option value="quantum_technology">Quantum Technology</option>
+                <option value="biotechnology">Biotechnology</option>
+                <option value="medical_ai">Medical AI</option>
+                <option value="medical_robotics">Medical Robotics</option>
+                <option value="genomics">Genomics</option>
+                <option value="diagnostics">Diagnostics</option>
+                <option value="telemedicine">Telemedicine</option>
+                <option value="digital_health">Digital Health</option>
+                <option value="digital_transformation">Digital Transformation</option>
+                <option value="process_improvement">Process Improvement</option>
+                <option value="product_launch">Product Launch</option>
+                <option value="innovation">Innovation</option>
+                <option value="research_development">Research & Development</option>
+                <option value="development">Development</option>
+                <option value="test_facilities">Test Facilities</option>
+                <option value="infrastructure">Infrastructure</option>
+                <option value="sustainability">Sustainability</option>
+                <option value="compliance">Compliance</option>
               </select>
             </div>
           </div>
@@ -603,14 +627,36 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
             className="filter-select"
           >
             <option value="all">All Categories</option>
-            <option value="technology">Technology</option>
-            <option value="infrastructure">Infrastructure</option>
             <option value="renewable_energy">Renewable Energy</option>
-            <option value="healthcare">Healthcare</option>
-            <option value="manufacturing">Manufacturing</option>
-            <option value="finance">Finance</option>
-            <option value="education">Education</option>
-            <option value="defense">Defense</option>
+            <option value="energy_storage">Energy Storage</option>
+            <option value="geothermal">Geothermal</option>
+            <option value="grid_infrastructure">Grid Infrastructure</option>
+            <option value="hydrogen">Hydrogen</option>
+            <option value="hydroelectric">Hydroelectric</option>
+            <option value="cybersecurity">Cybersecurity</option>
+            <option value="space_technology">Space Technology</option>
+            <option value="unmanned_systems">Unmanned Systems</option>
+            <option value="electronic_warfare">Electronic Warfare</option>
+            <option value="radar_systems">Radar Systems</option>
+            <option value="space_surveillance">Space Surveillance</option>
+            <option value="quantum_technology">Quantum Technology</option>
+            <option value="biotechnology">Biotechnology</option>
+            <option value="medical_ai">Medical AI</option>
+            <option value="medical_robotics">Medical Robotics</option>
+            <option value="genomics">Genomics</option>
+            <option value="diagnostics">Diagnostics</option>
+            <option value="telemedicine">Telemedicine</option>
+            <option value="digital_health">Digital Health</option>
+            <option value="digital_transformation">Digital Transformation</option>
+            <option value="process_improvement">Process Improvement</option>
+            <option value="product_launch">Product Launch</option>
+            <option value="innovation">Innovation</option>
+            <option value="research_development">Research & Development</option>
+            <option value="development">Development</option>
+            <option value="test_facilities">Test Facilities</option>
+            <option value="infrastructure">Infrastructure</option>
+            <option value="sustainability">Sustainability</option>
+            <option value="compliance">Compliance</option>
           </select>
         </div>
         
@@ -672,7 +718,7 @@ export const ProjectRepositoryTab: React.FC<TabProps> = ({ sharedData, onDataUpd
           </div>
           <div className="summary-card">
             <span className="summary-label">Avg IRR</span>
-            <span className="summary-value">{avgIRR.toFixed(1)}%</span>
+            <span className="summary-value">{formatPercent(avgIRR)}</span>
           </div>
         </div>
       </div>

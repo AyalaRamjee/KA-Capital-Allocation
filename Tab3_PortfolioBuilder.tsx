@@ -2,7 +2,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { BusinessDomain, Project } from './types';
-import { formatCurrency, calculatePortfolioMetrics } from './mockData';
+import { formatCurrency, formatPercent, calculatePortfolioMetrics } from './mockData';
 
 interface TabProps {
   sharedData: {
@@ -213,7 +213,7 @@ export const PortfolioBuilderTab: React.FC<TabProps> = ({ sharedData, onDataUpda
         </div>
         <div className="metric">
           <span className="metric-label">IRR</span>
-          <span className="metric-value">{project.irr.toFixed(1)}%</span>
+          <span className="metric-value">{formatPercent(project.irr)}</span>
         </div>
       </div>
       <div className="project-risk">
@@ -329,7 +329,7 @@ export const PortfolioBuilderTab: React.FC<TabProps> = ({ sharedData, onDataUpda
               <span className="metric-label">Total CAPEX</span>
               <span className="metric-value">{formatCurrency(portfolioMetrics.totalCapex)}</span>
               <span className="metric-subtitle">
-                {((portfolioMetrics.totalCapex / 1000000000) * 100).toFixed(1)}% of $1B
+                {formatPercent((portfolioMetrics.totalCapex / 1000000000) * 100)} of $1B
               </span>
             </div>
             <div className="metric-card">
@@ -340,7 +340,7 @@ export const PortfolioBuilderTab: React.FC<TabProps> = ({ sharedData, onDataUpda
             </div>
             <div className="metric-card">
               <span className="metric-label">Weighted IRR</span>
-              <span className="metric-value">{portfolioMetrics.portfolioIRR.toFixed(1)}%</span>
+              <span className="metric-value">{formatPercent(portfolioMetrics.portfolioIRR)}</span>
             </div>
             <div className="metric-card">
               <span className="metric-label">Avg Payback</span>
@@ -381,7 +381,7 @@ export const PortfolioBuilderTab: React.FC<TabProps> = ({ sharedData, onDataUpda
             <div className="metric-card">
               <span className="metric-label">Budget Efficiency</span>
               <span className="metric-value">
-                {portfolioMetrics.totalCapex > 0 ? (portfolioMetrics.totalNPV / portfolioMetrics.totalCapex * 100).toFixed(1) : 0}%
+                {portfolioMetrics.totalCapex > 0 ? formatPercent(portfolioMetrics.totalNPV / portfolioMetrics.totalCapex * 100) : formatPercent(0)}
               </span>
             </div>
           </div>

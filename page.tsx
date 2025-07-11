@@ -8,7 +8,7 @@ import { PortfolioBuilderTab } from './Tab3_PortfolioBuilder';
 import { BudgetAllocationTab } from './Tab4_BudgetAllocation';
 import { DataValidationTab } from './Tab5_DataValidation';
 import { BusinessDomain, Project, AppState } from './types';
-import { defaultBusinessDomains, defaultProjects, defaultSettings, defaultQuarterlyLimits, defaultRiskReturnProfiles, defaultIndustryMetrics } from './mockData';
+import { defaultBusinessDomains, defaultProjects, defaultSettings, defaultQuarterlyLimits, defaultRiskReturnProfiles, defaultIndustryMetrics, formatCurrency } from './mockData';
 import './styles.css';
 
 export default function CapitalAllocationSystem() {
@@ -145,7 +145,7 @@ export default function CapitalAllocationSystem() {
         
         <div className="nav-info">
           <span className="budget-info">
-            Total Budget: ${(appState.totalBudget / 1000000000).toFixed(1)}B
+            Total Budget: {formatCurrency(appState.totalBudget)}
           </span>
           <span className="projects-info">
             {appState.projects.filter(p => p.status === 'selected').length} / {appState.projects.length} Projects Selected

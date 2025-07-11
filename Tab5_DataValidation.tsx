@@ -2,7 +2,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { BusinessDomain, Project, ValidationIssue, ApprovalStatus } from './types';
-import { formatCurrency, validationRules } from './mockData';
+import { formatCurrency, formatPercent, validationRules } from './mockData';
 
 interface TabProps {
   sharedData: {
@@ -155,7 +155,7 @@ export const DataValidationTab: React.FC<TabProps> = ({ sharedData, onDataUpdate
           id: `warning-${Date.now()}-${domain.id}-risk`,
           severity: 'warning',
           title: `${domain.name}: High Risk Concentration`,
-          description: `${Math.round(riskConcentration * 100)}% of projects are high risk (score ≥7).`,
+          description: `${formatPercent(riskConcentration * 100)} of projects are high risk (score ≥7).`,
           affectedItems: highRiskProjects.map(p => p.id),
           category: 'compliance',
           resolved: false
