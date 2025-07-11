@@ -20,8 +20,8 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
   const [sectorAllocations, setSectorAllocations] = useState<SectorAllocation[]>(sharedData.sectorAllocations);
   const [allocationConstraints, setAllocationConstraints] = useState<AllocationConstraint[]>(sharedData.allocationConstraints);
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
-  const [draggedProject, setDraggedProject] = useState<ValidatedProject | null>(null);
   const [showConstraintsModal, setShowConstraintsModal] = useState(false);
+  const [showProjectsModal, setShowProjectsModal] = useState(false);
 
   // Initialize sector allocations if empty
   useEffect(() => {
@@ -38,7 +38,6 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
   }, [sharedData.adaniSectors]);
 
   const initializeSectorAllocations = () => {
-    // Get Grade A and B projects only
     const investmentGradeProjects = sharedData.validatedProjects.filter(
       p => p.investmentGrade === 'A' || p.investmentGrade === 'B'
     );
@@ -46,7 +45,6 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
     const totalCapital = investmentGradeProjects.reduce((sum, p) => sum + p.capex, 0);
     
     const initialAllocations: SectorAllocation[] = sharedData.adaniSectors.map(sector => {
-      // Auto-assign projects based on their source
       const sectorProjects = investmentGradeProjects.filter(project => 
         project.businessUnit.toLowerCase().includes(sector.name.toLowerCase()) ||
         (sector.name === 'Renewable Energy' && (project.businessUnit.includes('Green') || project.businessUnit.includes('Solar') || project.businessUnit.includes('Wind'))) ||
@@ -83,35 +81,17 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
 
   const initializeConstraints = () => {
     const initialConstraints: AllocationConstraint[] = [
-      // Renewable Energy constraints
       { sectorId: 'SEC-001', constraintType: 'min', value: 25, isHard: true, reason: 'Strategic priority mandate' },
       { sectorId: 'SEC-001', constraintType: 'max', value: 40, isHard: false, reason: 'Diversification requirement' },
-      
-      // Ports & Logistics constraints
       { sectorId: 'SEC-002', constraintType: 'min', value: 15, isHard: true, reason: 'Core business maintenance' },
       { sectorId: 'SEC-002', constraintType: 'max', value: 25, isHard: false, reason: 'Concentration risk' },
-      
-      // New Ventures constraints
       { sectorId: 'SEC-009', constraintType: 'max', value: 5, isHard: true, reason: 'Risk management policy' },
-      
-      // Data Centers constraints
       { sectorId: 'SEC-004', constraintType: 'min', value: 5, isHard: false, reason: 'Growth opportunity' },
       { sectorId: 'SEC-004', constraintType: 'max', value: 15, isHard: false, reason: 'Market maturity' }
     ];
     
     setAllocationConstraints(initialConstraints);
   };
-
-  // Calculate metrics
-  const totalCapital = sectorAllocations.reduce((sum, sa) => sum + sa.allocatedCapital, 0);
-  const largestConcentration = sectorAllocations.reduce((max, sa) => 
-    sa.currentAllocation > max.allocation ? { sector: sa.sector.name, allocation: sa.currentAllocation } : max,
-    { sector: '', allocation: 0 }
-  );
-  const isBalanced = sectorAllocations.every(sa => 
-    Math.abs(sa.currentAllocation - sa.targetAllocation) <= 5
-  );
-  const availableForAllocation = 90000000000 - totalCapital; // $90B total - allocated
 
   // Check constraint violations
   const getConstraintViolations = (allocation: SectorAllocation) => {
@@ -124,15 +104,13 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
           type: 'min',
           constraint,
           current: allocation.currentAllocation,
-          required: constraint.value,
-          limit: constraint.value
+          required: constraint.value
         });
       } else if (constraint.constraintType === 'max' && allocation.currentAllocation > constraint.value) {
         violations.push({
           type: 'max',
           constraint,
           current: allocation.currentAllocation,
-          required: constraint.value,
           limit: constraint.value
         });
       }
@@ -141,96 +119,7 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
     return violations;
   };
 
-  // Handle drag and drop
-  const handleDragStart = (project: ValidatedProject) => {
-    setDraggedProject(project);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent, targetSectorId: string) => {
-    e.preventDefault();
-    
-    if (!draggedProject) return;
-    
-    // Find source and target sectors
-    const sourceSector = sectorAllocations.find(sa => 
-      sa.projects.some(p => p.id === draggedProject.id)
-    );
-    const targetSector = sectorAllocations.find(sa => sa.sectorId === targetSectorId);
-    
-    if (!sourceSector || !targetSector || sourceSector.sectorId === targetSectorId) {
-      setDraggedProject(null);
-      return;
-    }
-    
-    // Move project between sectors
-    const updatedAllocations = sectorAllocations.map(sa => {
-      if (sa.sectorId === sourceSector.sectorId) {
-        // Remove from source
-        const newProjects = sa.projects.filter(p => p.id !== draggedProject.id);
-        const newCapital = sa.allocatedCapital - draggedProject.capex;
-        return {
-          ...sa,
-          projects: newProjects,
-          allocatedCapital: newCapital,
-          currentAllocation: totalCapital > 0 ? (newCapital / totalCapital) * 100 : 0,
-          projectCount: newProjects.length,
-          performance: {
-            ...sa.performance,
-            totalCapital: newCapital,
-            avgIRR: newProjects.reduce((sum, p) => sum + p.irr, 0) / newProjects.length || 0,
-            avgNPV: newProjects.reduce((sum, p) => sum + p.npv, 0) / newProjects.length || 0,
-            avgRisk: newProjects.reduce((sum, p) => sum + p.riskScore, 0) / newProjects.length || 0
-          }
-        };
-      } else if (sa.sectorId === targetSector.sectorId) {
-        // Add to target
-        const newProjects = [...sa.projects, draggedProject];
-        const newCapital = sa.allocatedCapital + draggedProject.capex;
-        return {
-          ...sa,
-          projects: newProjects,
-          allocatedCapital: newCapital,
-          currentAllocation: totalCapital > 0 ? (newCapital / totalCapital) * 100 : 0,
-          projectCount: newProjects.length,
-          performance: {
-            ...sa.performance,
-            totalCapital: newCapital,
-            avgIRR: newProjects.reduce((sum, p) => sum + p.irr, 0) / newProjects.length || 0,
-            avgNPV: newProjects.reduce((sum, p) => sum + p.npv, 0) / newProjects.length || 0,
-            avgRisk: newProjects.reduce((sum, p) => sum + p.riskScore, 0) / newProjects.length || 0
-          }
-        };
-      }
-      return sa;
-    });
-    
-    setSectorAllocations(updatedAllocations);
-    onDataUpdate({ sectorAllocations: updatedAllocations, allocationConstraints });
-    setDraggedProject(null);
-  };
-
-  // Rebalance allocations
-  const rebalanceAllocations = () => {
-    const totalProjectCapital = sectorAllocations.reduce((sum, sa) => sum + sa.allocatedCapital, 0);
-    
-    const rebalancedAllocations = sectorAllocations.map(sa => ({
-      ...sa,
-      currentAllocation: totalProjectCapital > 0 ? (sa.allocatedCapital / totalProjectCapital) * 100 : 0
-    }));
-    
-    setSectorAllocations(rebalancedAllocations);
-    onDataUpdate({ sectorAllocations: rebalancedAllocations, allocationConstraints });
-  };
-
-  const getSectorColor = (sectorId: string) => {
-    const sector = sharedData.adaniSectors.find(s => s.id === sectorId);
-    return sector?.color || '#475569';
-  };
-
+  // Get constraint status
   const getConstraintStatus = (allocation: SectorAllocation) => {
     const violations = getConstraintViolations(allocation);
     if (violations.some(v => v.constraint.isHard)) return 'critical';
@@ -238,386 +127,292 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
     return 'ok';
   };
 
+  // Calculate metrics
+  const totalCapital = sectorAllocations.reduce((sum, sa) => sum + sa.allocatedCapital, 0);
+  const totalProjects = sectorAllocations.reduce((sum, sa) => sum + sa.projectCount, 0);
+  const isBalanced = sectorAllocations.every(sa => 
+    Math.abs(sa.currentAllocation - sa.targetAllocation) <= 5
+  );
+  const constraintViolations = sectorAllocations.filter(sa => {
+    const violations = getConstraintViolations(sa);
+    return violations.length > 0;
+  }).length;
+
+  // Rebalance allocations
+  const rebalanceAllocations = () => {
+    const rebalancedAllocations = sectorAllocations.map(sa => ({
+      ...sa,
+      currentAllocation: sa.targetAllocation
+    }));
+    
+    setSectorAllocations(rebalancedAllocations);
+    onDataUpdate({ sectorAllocations: rebalancedAllocations, allocationConstraints });
+  };
+
+  // Handle allocation adjustment
+  const handleAllocationAdjust = (sectorId: string, newAllocation: number) => {
+    if (newAllocation < 0 || newAllocation > 100) return;
+    
+    const updatedAllocations = sectorAllocations.map(sa => 
+      sa.sectorId === sectorId ? { ...sa, currentAllocation: newAllocation } : sa
+    );
+    
+    setSectorAllocations(updatedAllocations);
+    onDataUpdate({ sectorAllocations: updatedAllocations, allocationConstraints });
+  };
+
+  // Open projects modal
+  const openProjectsModal = (sectorId: string) => {
+    setSelectedSector(sectorId);
+    setShowProjectsModal(true);
+  };
+
   return (
-    <div className="tab4-sector-allocation">
-      {/* Header Stats */}
-      <div className="allocation-header">
-        <div className="header-stats">
-          <div className="stat-card">
-            <div className="stat-icon">🏭</div>
-            <div className="stat-content">
-              <div className="stat-value">{sectorAllocations.length}</div>
-              <div className="stat-label">Active Sectors</div>
+    <div className="tab4-allocate-clean">
+      <div className="main-layout">
+        {/* Left side - Table */}
+        <div className="table-section">
+          <div className="section-header">
+            <h2>Sector Allocation</h2>
+            <div className="header-actions">
+              <span className={`balance-status ${isBalanced ? 'balanced' : 'imbalanced'}`}>
+                {isBalanced ? '✅ Balanced' : '⚠️ Imbalanced'}
+              </span>
+              <button 
+                className="btn-rebalance"
+                onClick={rebalanceAllocations}
+              >
+                Rebalance to Targets
+              </button>
+              <button 
+                className="btn-constraints"
+                onClick={() => setShowConstraintsModal(true)}
+              >
+                Manage Constraints
+              </button>
             </div>
           </div>
-          
-          <div className={`stat-card ${isBalanced ? 'balanced' : 'imbalanced'}`}>
-            <div className="stat-icon">{isBalanced ? '⚖️' : '⚠️'}</div>
-            <div className="stat-content">
-              <div className="stat-value">{isBalanced ? 'Balanced' : 'Imbalanced'}</div>
-              <div className="stat-label">Portfolio Balance</div>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon">🎯</div>
-            <div className="stat-content">
-              <div className="stat-value">{largestConcentration.allocation.toFixed(1)}%</div>
-              <div className="stat-label">Largest Concentration</div>
-              <div className="stat-sublabel">({largestConcentration.sector})</div>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon">💰</div>
-            <div className="stat-content">
-              <div className="stat-value">{formatCurrency(availableForAllocation)}</div>
-              <div className="stat-label">Available for Allocation</div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="header-controls">
-          <button 
-            className="btn btn-primary"
-            onClick={rebalanceAllocations}
-          >
-            Rebalance Portfolio
-          </button>
-          <button 
-            className="btn btn-secondary"
-            onClick={() => setShowConstraintsModal(true)}
-          >
-            Manage Constraints
-          </button>
-        </div>
-      </div>
 
-      {/* Three-Column Layout */}
-      <div className="allocation-layout">
-        {/* Left Panel - Sector List */}
-        <div className="sector-list-panel">
-          <h3>Sectors</h3>
-          <div className="sector-cards">
-            {sectorAllocations.map(allocation => {
-              const violations = getConstraintViolations(allocation);
-              const status = getConstraintStatus(allocation);
-              
-              return (
-                <div 
-                  key={allocation.sectorId}
-                  className={`sector-card ${selectedSector === allocation.sectorId ? 'selected' : ''} ${status}`}
-                  onClick={() => setSelectedSector(allocation.sectorId)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, allocation.sectorId)}
-                >
-                  <div className="sector-header">
-                    <div className="sector-icon">{allocation.sector.icon}</div>
-                    <div className="sector-name">{allocation.sector.name}</div>
-                    {violations.length > 0 && (
-                      <div className={`violation-indicator ${status}`}>
-                        {violations.length}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="sector-metrics">
-                    <div className="metric">
-                      <span className="metric-label">Current:</span>
-                      <span className="metric-value">{allocation.currentAllocation.toFixed(1)}%</span>
-                    </div>
-                    <div className="metric">
-                      <span className="metric-label">Target:</span>
-                      <span className="metric-value">{allocation.targetAllocation.toFixed(1)}%</span>
-                    </div>
-                    <div className="metric">
-                      <span className="metric-label">Capital:</span>
-                      <span className="metric-value">{formatCurrency(allocation.allocatedCapital)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="allocation-progress">
-                    <div className="progress-bar">
-                      <div 
-                        className="progress-fill"
-                        style={{ 
-                          width: `${allocation.currentAllocation}%`,
-                          backgroundColor: getSectorColor(allocation.sectorId)
-                        }}
-                      ></div>
-                      <div 
-                        className="progress-target"
-                        style={{ left: `${allocation.targetAllocation}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div className="sector-summary">
-                    <div className="summary-item">
-                      <span className="summary-label">Projects:</span>
-                      <span className="summary-value">{allocation.projectCount}</span>
-                    </div>
-                    <div className="summary-item">
-                      <span className="summary-label">Avg IRR:</span>
-                      <span className="summary-value">{allocation.performance.avgIRR.toFixed(1)}%</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Center Panel - Interactive Donut Chart */}
-        <div className="donut-chart-panel">
-          <h3>Portfolio Allocation</h3>
-          <div className="donut-container">
-            <svg width="320" height="320" className="allocation-donut">
-              {sectorAllocations.map((allocation, index) => {
-                const startAngle = sectorAllocations.slice(0, index).reduce((sum, sa) => sum + (sa.currentAllocation / 100) * 360, 0);
-                const endAngle = startAngle + (allocation.currentAllocation / 100) * 360;
-                
-                const innerRadius = 80;
-                const outerRadius = 140;
-                const targetRadius = 150;
-                
-                const x1 = 160 + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
-                const y1 = 160 + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
-                const x2 = 160 + outerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
-                const y2 = 160 + outerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
-                const x3 = 160 + outerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
-                const y3 = 160 + outerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
-                const x4 = 160 + innerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
-                const y4 = 160 + innerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
-                
-                const largeArc = allocation.currentAllocation > 50 ? 1 : 0;
-                
-                const pathData = [
-                  `M ${x1} ${y1}`,
-                  `L ${x2} ${y2}`,
-                  `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x3} ${y3}`,
-                  `L ${x4} ${y4}`,
-                  `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1} ${y1}`,
-                  `Z`
-                ].join(' ');
-                
-                // Target allocation ring
-                const targetStart = sectorAllocations.slice(0, index).reduce((sum, sa) => sum + (sa.targetAllocation / 100) * 360, 0);
-                const targetEnd = targetStart + (allocation.targetAllocation / 100) * 360;
-                
-                const tx1 = 160 + targetRadius * Math.cos((targetStart - 90) * Math.PI / 180);
-                const ty1 = 160 + targetRadius * Math.sin((targetStart - 90) * Math.PI / 180);
-                const tx2 = 160 + (targetRadius + 10) * Math.cos((targetStart - 90) * Math.PI / 180);
-                const ty2 = 160 + (targetRadius + 10) * Math.sin((targetStart - 90) * Math.PI / 180);
-                const tx3 = 160 + (targetRadius + 10) * Math.cos((targetEnd - 90) * Math.PI / 180);
-                const ty3 = 160 + (targetRadius + 10) * Math.sin((targetEnd - 90) * Math.PI / 180);
-                const tx4 = 160 + targetRadius * Math.cos((targetEnd - 90) * Math.PI / 180);
-                const ty4 = 160 + targetRadius * Math.sin((targetEnd - 90) * Math.PI / 180);
-                
-                const targetLargeArc = allocation.targetAllocation > 50 ? 1 : 0;
-                
-                const targetPathData = [
-                  `M ${tx1} ${ty1}`,
-                  `L ${tx2} ${ty2}`,
-                  `A ${targetRadius + 10} ${targetRadius + 10} 0 ${targetLargeArc} 1 ${tx3} ${ty3}`,
-                  `L ${tx4} ${ty4}`,
-                  `A ${targetRadius} ${targetRadius} 0 ${targetLargeArc} 0 ${tx1} ${ty1}`,
-                  `Z`
-                ].join(' ');
-                
-                return (
-                  <g key={allocation.sectorId}>
-                    {/* Target allocation (outer ring) */}
-                    <path
-                      d={targetPathData}
-                      fill={getSectorColor(allocation.sectorId)}
-                      opacity={0.3}
-                      stroke="#1e293b"
-                      strokeWidth="1"
-                    />
-                    
-                    {/* Current allocation (inner ring) */}
-                    <path
-                      d={pathData}
-                      fill={getSectorColor(allocation.sectorId)}
-                      opacity={0.8}
-                      stroke="#1e293b"
-                      strokeWidth="2"
-                      className="sector-segment"
-                      onClick={() => setSelectedSector(allocation.sectorId)}
-                    />
-                    
-                    {/* Sector label */}
-                    {allocation.currentAllocation > 5 && (
-                      <text
-                        x={160 + (innerRadius + outerRadius) / 2 * Math.cos((startAngle + endAngle) / 2 * Math.PI / 180 - Math.PI / 2)}
-                        y={160 + (innerRadius + outerRadius) / 2 * Math.sin((startAngle + endAngle) / 2 * Math.PI / 180 - Math.PI / 2)}
-                        textAnchor="middle"
-                        className="sector-label"
-                        fill="#ffffff"
-                        fontSize="12"
-                        fontWeight="600"
-                      >
-                        {allocation.currentAllocation.toFixed(1)}%
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-              
-              {/* Center text */}
-              <text x="160" y="150" textAnchor="middle" className="center-text" fill="#ffffff" fontSize="14" fontWeight="600">
-                Portfolio
-              </text>
-              <text x="160" y="170" textAnchor="middle" className="center-text" fill="#94a3b8" fontSize="12">
-                {formatCurrency(totalCapital)}
-              </text>
-            </svg>
-          </div>
-          
-          <div className="donut-legend">
-            <div className="legend-title">Legend</div>
-            <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#475569', opacity: 0.8 }}></div>
-              <span>Current Allocation</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#475569', opacity: 0.3 }}></div>
-              <span>Target Allocation</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Panel - Sector Details */}
-        <div className="sector-details-panel">
-          <h3>Sector Details</h3>
-          {selectedSector ? (
-            <div className="sector-details">
-              {(() => {
-                const allocation = sectorAllocations.find(sa => sa.sectorId === selectedSector);
-                if (!allocation) return null;
-                
+          <table className="allocation-table-clean">
+            <thead>
+              <tr>
+                <th>SECTOR</th>
+                <th>CURRENT %</th>
+                <th>TARGET %</th>
+                <th>VARIANCE</th>
+                <th>CAPITAL</th>
+                <th>PROJECTS</th>
+                <th>AVG IRR</th>
+                <th>AVG RISK</th>
+                <th>STATUS</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sectorAllocations.map(allocation => {
+                const variance = allocation.currentAllocation - allocation.targetAllocation;
+                const status = getConstraintStatus(allocation);
                 const violations = getConstraintViolations(allocation);
                 
                 return (
-                  <>
-                    <div className="sector-overview">
-                      <div className="sector-title">
+                  <tr key={allocation.sectorId}>
+                    <td>
+                      <div className="sector-info">
                         <span className="sector-icon">{allocation.sector.icon}</span>
                         <span className="sector-name">{allocation.sector.name}</span>
                       </div>
-                      
-                      <div className="sector-metrics-grid">
-                        <div className="metric-card">
-                          <div className="metric-label">Current Allocation</div>
-                          <div className="metric-value">{allocation.currentAllocation.toFixed(1)}%</div>
-                        </div>
-                        <div className="metric-card">
-                          <div className="metric-label">Target Allocation</div>
-                          <div className="metric-value">{allocation.targetAllocation.toFixed(1)}%</div>
-                        </div>
-                        <div className="metric-card">
-                          <div className="metric-label">Total Capital</div>
-                          <div className="metric-value">{formatCurrency(allocation.allocatedCapital)}</div>
-                        </div>
-                        <div className="metric-card">
-                          <div className="metric-label">Project Count</div>
-                          <div className="metric-value">{allocation.projectCount}</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {violations.length > 0 && (
-                      <div className="constraint-violations">
-                        <h4>Constraint Violations</h4>
-                        <div className="violations-list">
-                          {violations.map((violation, index) => (
-                            <div key={index} className={`violation-item ${violation.constraint.isHard ? 'hard' : 'soft'}`}>
-                              <div className="violation-type">
-                                {violation.type === 'min' ? '⬇️' : '⬆️'} 
-                                {violation.constraint.isHard ? ' Hard' : ' Soft'} 
-                                {violation.type === 'min' ? ' Minimum' : ' Maximum'}
-                              </div>
-                              <div className="violation-details">
-                                Current: {violation.current.toFixed(1)}% | 
-                                {violation.type === 'min' ? ' Required: ' : ' Limit: '}
-                                {(violation.type === 'min' ? violation.required : violation.limit || 0).toFixed(1)}%
-                              </div>
-                              <div className="violation-reason">{violation.constraint.reason}</div>
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={allocation.currentAllocation.toFixed(1)}
+                        onChange={(e) => handleAllocationAdjust(allocation.sectorId, parseFloat(e.target.value) || 0)}
+                        className="allocation-input-clean"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                      />
+                    </td>
+                    <td>{allocation.targetAllocation.toFixed(1)}%</td>
+                    <td>
+                      <span className={`variance ${variance > 0 ? 'positive' : variance < 0 ? 'negative' : 'neutral'}`}>
+                        {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td>{formatCurrency(allocation.allocatedCapital)}</td>
+                    <td>
+                      <a 
+                        href="#" 
+                        className="projects-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openProjectsModal(allocation.sectorId);
+                        }}
+                      >
+                        {allocation.projectCount} projects
+                      </a>
+                    </td>
+                    <td>{allocation.performance.avgIRR.toFixed(1)}%</td>
+                    <td>
+                      <span className={`risk-value ${allocation.performance.avgRisk <= 30 ? 'low' : allocation.performance.avgRisk <= 60 ? 'medium' : 'high'}`}>
+                        {allocation.performance.avgRisk.toFixed(0)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`constraint-status ${status}`}>
+                        {status === 'ok' ? '✅ OK' : status === 'warning' ? '⚠️ WARN' : '❌ VIOLATION'}
+                      </span>
+                      {violations.length > 0 && (
+                        <div className="violation-details">
+                          {violations.map((v, i) => (
+                            <div key={i} className="violation-text">
+                              {v.type === 'min' ? `Below min ${v.required}%` : `Above max ${v.limit}%`}
                             </div>
                           ))}
                         </div>
+                      )}
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button 
+                          className="action-btn view-btn"
+                          onClick={() => openProjectsModal(allocation.sectorId)}
+                          title="View Projects"
+                        >
+                          📊
+                        </button>
                       </div>
-                    )}
-                    
-                    <div className="sector-performance">
-                      <h4>Performance Metrics</h4>
-                      <div className="performance-grid">
-                        <div className="performance-item">
-                          <span className="performance-label">Average IRR:</span>
-                          <span className="performance-value">{allocation.performance.avgIRR.toFixed(1)}%</span>
-                        </div>
-                        <div className="performance-item">
-                          <span className="performance-label">Average NPV:</span>
-                          <span className="performance-value">{formatCurrency(allocation.performance.avgNPV)}</span>
-                        </div>
-                        <div className="performance-item">
-                          <span className="performance-label">Average Risk:</span>
-                          <span className="performance-value">{allocation.performance.avgRisk.toFixed(1)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="sector-projects">
-                      <h4>Projects in Sector</h4>
-                      <div className="projects-list">
-                        {allocation.projects.map(project => (
-                          <div 
-                            key={project.id}
-                            className="project-item"
-                            draggable
-                            onDragStart={() => handleDragStart(project)}
-                          >
-                            <div className="project-header">
-                              <div className="project-name">{project.name}</div>
-                              <div className={`project-grade grade-${project.investmentGrade}`}>
-                                {project.investmentGrade}
-                              </div>
-                            </div>
-                            <div className="project-details">
-                              <div className="project-detail">
-                                <span className="detail-label">Investment:</span>
-                                <span className="detail-value">{formatCurrency(project.capex)}</span>
-                              </div>
-                              <div className="project-detail">
-                                <span className="detail-label">IRR:</span>
-                                <span className="detail-value">{project.irr.toFixed(1)}%</span>
-                              </div>
-                              <div className="project-detail">
-                                <span className="detail-label">Risk:</span>
-                                <span className="detail-value">{project.riskScore}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
+                    </td>
+                  </tr>
                 );
-              })()}
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="totals-row">
+                <td>TOTAL</td>
+                <td>{sectorAllocations.reduce((sum, sa) => sum + sa.currentAllocation, 0).toFixed(1)}%</td>
+                <td>100.0%</td>
+                <td>-</td>
+                <td>{formatCurrency(totalCapital)}</td>
+                <td>{totalProjects}</td>
+                <td>{(sectorAllocations.reduce((sum, sa) => sum + sa.performance.avgIRR * sa.projectCount, 0) / totalProjects).toFixed(1)}%</td>
+                <td>{(sectorAllocations.reduce((sum, sa) => sum + sa.performance.avgRisk * sa.projectCount, 0) / totalProjects).toFixed(0)}</td>
+                <td>{constraintViolations} violations</td>
+                <td>-</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {/* Right side - Donut Chart & Summary */}
+        <div className="chart-section">
+          <div className="portfolio-chart-card">
+            <h3>Portfolio Allocation</h3>
+            <div className="donut-chart-container">
+              <svg width="250" height="250" className="allocation-donut">
+                {sectorAllocations.map((allocation, index) => {
+                  const startAngle = sectorAllocations.slice(0, index).reduce((sum, sa) => sum + (sa.currentAllocation / 100) * 360, 0);
+                  const endAngle = startAngle + (allocation.currentAllocation / 100) * 360;
+                  
+                  const innerRadius = 60;
+                  const outerRadius = 100;
+                  
+                  const x1 = 125 + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
+                  const y1 = 125 + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
+                  const x2 = 125 + outerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
+                  const y2 = 125 + outerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
+                  const x3 = 125 + outerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
+                  const y3 = 125 + outerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
+                  const x4 = 125 + innerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
+                  const y4 = 125 + innerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
+                  
+                  const largeArc = allocation.currentAllocation > 50 ? 1 : 0;
+                  
+                  const pathData = [
+                    `M ${x1} ${y1}`,
+                    `L ${x2} ${y2}`,
+                    `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x3} ${y3}`,
+                    `L ${x4} ${y4}`,
+                    `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1} ${y1}`,
+                    `Z`
+                  ].join(' ');
+                  
+                  return allocation.currentAllocation > 0 ? (
+                    <path
+                      key={allocation.sectorId}
+                      d={pathData}
+                      fill={allocation.sector.color}
+                      opacity={0.8}
+                      stroke="#1e293b"
+                      strokeWidth="2"
+                    />
+                  ) : null;
+                })}
+                <text x="125" y="120" textAnchor="middle" fill="#ffffff" fontSize="14" fontWeight="600">
+                  {formatCurrency(totalCapital)}
+                </text>
+                <text x="125" y="135" textAnchor="middle" fill="#94a3b8" fontSize="12">
+                  Total Capital
+                </text>
+              </svg>
             </div>
-          ) : (
-            <div className="no-sector-selected">
-              <div className="placeholder-content">
-                <div className="placeholder-icon">🎯</div>
-                <div className="placeholder-text">Select a sector to view details</div>
+          </div>
+
+          <div className="allocation-summary-card">
+            <h3>Allocation Summary</h3>
+            <div className="summary-item">
+              <span className="summary-label">Total Sectors:</span>
+              <span className="summary-value">{sectorAllocations.length}</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label">Active Sectors:</span>
+              <span className="summary-value">{sectorAllocations.filter(sa => sa.projectCount > 0).length}</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label">Total Projects:</span>
+              <span className="summary-value">{totalProjects}</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label">Portfolio IRR:</span>
+              <span className="summary-value">
+                {totalProjects > 0 
+                  ? (sectorAllocations.reduce((sum, sa) => sum + sa.performance.avgIRR * sa.projectCount, 0) / totalProjects).toFixed(1)
+                  : 0}%
+              </span>
+            </div>
+          </div>
+
+          <div className="constraints-summary-card">
+            <h3>Constraint Violations</h3>
+            {sectorAllocations.filter(sa => getConstraintViolations(sa).length > 0).map(allocation => {
+              const violations = getConstraintViolations(allocation);
+              return (
+                <div key={allocation.sectorId} className="constraint-violation-item">
+                  <div className="violation-sector">
+                    <span className="sector-icon">{allocation.sector.icon}</span>
+                    <span className="sector-name">{allocation.sector.name}</span>
+                  </div>
+                  {violations.map((v, i) => (
+                    <div key={i} className={`violation-detail ${v.constraint.isHard ? 'hard' : 'soft'}`}>
+                      {v.type === 'min' 
+                        ? `Below minimum ${v.required}% (current: ${v.current.toFixed(1)}%)`
+                        : `Above maximum ${v.limit}% (current: ${v.current.toFixed(1)}%)`
+                      }
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+            {constraintViolations === 0 && (
+              <div className="no-violations">
+                ✅ All constraints satisfied
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Constraints Management Modal */}
+      {/* Constraints Modal */}
       {showConstraintsModal && (
         <div className="modal-overlay" onClick={() => setShowConstraintsModal(false)}>
           <div className="modal-content constraints-modal" onClick={(e) => e.stopPropagation()}>
@@ -627,49 +422,93 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
             </div>
             
             <div className="modal-body">
-              <div className="constraints-table">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Sector</th>
-                      <th>Constraint Type</th>
-                      <th>Value (%)</th>
-                      <th>Hard/Soft</th>
-                      <th>Reason</th>
-                      <th>Actions</th>
+              <table className="constraints-table-clean">
+                <thead>
+                  <tr>
+                    <th>SECTOR</th>
+                    <th>TYPE</th>
+                    <th>VALUE (%)</th>
+                    <th>HARD/SOFT</th>
+                    <th>REASON</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allocationConstraints.map((constraint, index) => {
+                    const sector = sharedData.adaniSectors.find(s => s.id === constraint.sectorId);
+                    return (
+                      <tr key={index}>
+                        <td>
+                          <span className="sector-icon">{sector?.icon}</span>
+                          <span className="sector-name">{sector?.name}</span>
+                        </td>
+                        <td>
+                          <span className={`constraint-type ${constraint.constraintType}`}>
+                            {constraint.constraintType.toUpperCase()}
+                          </span>
+                        </td>
+                        <td>{constraint.value}%</td>
+                        <td>
+                          <span className={`constraint-hardness ${constraint.isHard ? 'hard' : 'soft'}`}>
+                            {constraint.isHard ? 'HARD' : 'SOFT'}
+                          </span>
+                        </td>
+                        <td>{constraint.reason}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Projects Modal */}
+      {showProjectsModal && selectedSector && (
+        <div className="modal-overlay" onClick={() => setShowProjectsModal(false)}>
+          <div className="modal-content projects-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>
+                {sectorAllocations.find(sa => sa.sectorId === selectedSector)?.sector.icon}
+                {' '}
+                {sectorAllocations.find(sa => sa.sectorId === selectedSector)?.sector.name} Projects
+              </h2>
+              <button className="modal-close" onClick={() => setShowProjectsModal(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <table className="projects-table-clean">
+                <thead>
+                  <tr>
+                    <th>PROJECT NAME</th>
+                    <th>GRADE</th>
+                    <th>INVESTMENT</th>
+                    <th>IRR</th>
+                    <th>RISK</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sectorAllocations.find(sa => sa.sectorId === selectedSector)?.projects.map(project => (
+                    <tr key={project.id}>
+                      <td>{project.name}</td>
+                      <td>
+                        <span className={`grade-badge-clean grade-${project.investmentGrade.toLowerCase()}`}>
+                          {project.investmentGrade}
+                        </span>
+                      </td>
+                      <td>{formatCurrency(project.capex)}</td>
+                      <td>{project.irr.toFixed(1)}%</td>
+                      <td>{project.riskScore}</td>
+                      <td>
+                        <span className={`status-badge-clean status-${project.status}`}>
+                          {project.status.toUpperCase()}
+                        </span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {allocationConstraints.map((constraint, index) => {
-                      const sector = sharedData.adaniSectors.find(s => s.id === constraint.sectorId);
-                      return (
-                        <tr key={index}>
-                          <td>
-                            <span className="sector-name">
-                              {sector?.icon} {sector?.name}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`constraint-type ${constraint.constraintType}`}>
-                              {constraint.constraintType}
-                            </span>
-                          </td>
-                          <td>{constraint.value}%</td>
-                          <td>
-                            <span className={`constraint-hardness ${constraint.isHard ? 'hard' : 'soft'}`}>
-                              {constraint.isHard ? 'Hard' : 'Soft'}
-                            </span>
-                          </td>
-                          <td>{constraint.reason}</td>
-                          <td>
-                            <button className="btn btn-sm btn-secondary">Edit</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

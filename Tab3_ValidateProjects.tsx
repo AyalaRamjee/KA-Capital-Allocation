@@ -13,28 +13,22 @@ interface Tab3Props {
   onDataUpdate: (data: { validatedProjects: ValidatedProject[] }) => void;
 }
 
-export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }) => {
+const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }) => {
   const [validatedProjects, setValidatedProjects] = useState<ValidatedProject[]>(sharedData.validatedProjects);
   const [selectedProject, setSelectedProject] = useState<ValidatedProject | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalTab, setModalTab] = useState<'summary' | 'financial' | 'risk' | 'alignment' | 'decision'>('summary');
-  const [sortBy, setSortBy] = useState<'score' | 'grade' | 'investment' | 'risk'>('score');
+  const [sortBy, setSortBy] = useState<'score' | 'grade' | 'investment' | 'irr'>('score');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterGrade, setFilterGrade] = useState<'all' | 'A' | 'B' | 'C' | 'Non-Investment'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'in_review' | 'validated' | 'rejected'>('all');
 
-  // Calculate composite score based on your specification
+  // Calculate composite score
   const calculateCompositeScore = (opportunity: Opportunity, priorities: InvestmentPriority[]): number => {
-    // Strategic Alignment (40%)
     const strategicAlignment = opportunity.strategicFitScore;
-    
-    // Financial Score (30%) - normalized
-    const financialScore = Math.min(100, (opportunity.investmentRange.min / 10000000) * 10); // Basic calculation
-    
-    // Risk Adjustment (20%) - inverted risk score
+    const financialScore = Math.min(100, (opportunity.investmentRange.min / 10000000) * 10);
     const riskAdjustment = 100 - opportunity.preliminaryRiskScore;
-    
-    // Synergy Score (10%) - based on source and sponsor
-    const synergyScore = Math.random() * 30 + 50; // Placeholder for now
+    const synergyScore = Math.random() * 30 + 50;
     
     return (
       (strategicAlignment * 0.4) +
@@ -52,7 +46,7 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
     return 'Non-Investment';
   };
 
-  // Convert approved opportunities to validated projects
+  // Convert opportunity to project
   const convertOpportunityToProject = (opportunity: Opportunity): ValidatedProject => {
     const compositeScore = calculateCompositeScore(opportunity, sharedData.priorities);
     const investmentGrade = getInvestmentGrade(compositeScore, opportunity.preliminaryRiskScore);
@@ -65,23 +59,18 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
       sponsor: opportunity.sponsor,
       status: 'planning',
       
-      // Financial
       capex: opportunity.investmentRange.max,
-      opex: opportunity.investmentRange.max * 0.1, // 10% of capex annually
-      revenuePotential: opportunity.investmentRange.max * 1.5, // 1.5x revenue potential
+      opex: opportunity.investmentRange.max * 0.1,
+      revenuePotential: opportunity.investmentRange.max * 1.5,
       
-      // Analysis
-      npv: opportunity.investmentRange.max * 0.3, // 30% NPV
-      irr: 15 + (compositeScore / 10), // IRR based on composite score
-      mirr: 12 + (compositeScore / 15), // MIRR slightly lower
-      paybackYears: 8 - (compositeScore / 25), // Better projects have shorter payback
+      npv: opportunity.investmentRange.max * 0.3,
+      irr: 15 + (compositeScore / 10),
+      mirr: 12 + (compositeScore / 15),
+      paybackYears: 8 - (compositeScore / 25),
       
-      
-      // Scoring
       compositeScore,
       investmentGrade,
       
-      // Metadata
       riskScore: opportunity.preliminaryRiskScore,
       duration: opportunity.duration,
       geography: opportunity.source.includes('Australia') ? 'Australia' : 'India',
@@ -89,17 +78,15 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
       createdAt: new Date(),
       updatedAt: new Date(),
       
-      // Validated Project specific
       validationId: `VAL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       validationStatus: 'pending',
       validationDate: new Date(),
       validatedBy: 'System',
       
-      // Enhanced business plan
       businessPlan: {
         executiveSummary: opportunity.description,
         marketAnalysis: `Market analysis for ${opportunity.name}`,
-        marketSize: opportunity.investmentRange.max * 5, // 5x market size
+        marketSize: opportunity.investmentRange.max * 5,
         competitiveLandscape: `Competitive analysis for ${opportunity.name}`,
         investmentThesis: `Investment thesis: ${opportunity.recommendations}`,
         keySuccessFactors: [
@@ -115,7 +102,6 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
           'Synergies with existing businesses'
         ],
         
-        // 5-year financial projections (quarterly)
         financials: Array.from({ length: 20 }, (_, i) => ({
           year: Math.floor(i / 4) + 1,
           quarter: (i % 4) + 1,
@@ -129,11 +115,9 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
           roic: 12 + i * 0.3
         })),
         
-        // For compatibility with base interface
         financialProjections: [],
         riskMitigation: [],
         
-        // Risk assessment
         risks: [
           {
             id: 'R001',
@@ -161,7 +145,6 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
           }
         ],
         
-        // Synergy analysis
         synergies: [
           {
             id: 'S001',
@@ -186,7 +169,6 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
         ]
       },
       
-      // Scoring breakdown
       scoringBreakdown: {
         strategicAlignment: opportunity.strategicFitScore,
         financialScore: Math.min(100, (opportunity.investmentRange.min / 10000000) * 10),
@@ -197,12 +179,11 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
     };
   };
 
-  // Initialize validated projects from approved opportunities
+  // Initialize validated projects
   useEffect(() => {
     const approvedOpportunities = sharedData.opportunities.filter(opp => opp.status === 'approved');
     const existingProjectIds = sharedData.validatedProjects.map(proj => proj.opportunityId);
     
-    // Create new validated projects for approved opportunities that don't exist yet
     const newProjects = approvedOpportunities
       .filter(opp => !existingProjectIds.includes(opp.id))
       .map(opp => convertOpportunityToProject(opp));
@@ -215,41 +196,54 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
   }, [sharedData.opportunities, sharedData.validatedProjects]);
 
   // Calculate metrics
-  const projectsInValidation = validatedProjects.filter(p => p.validationStatus === 'pending' || p.validationStatus === 'in_review').length;
+  const totalProjects = validatedProjects.length;
   const gradeAProjects = validatedProjects.filter(p => p.investmentGrade === 'A').length;
+  const gradeBProjects = validatedProjects.filter(p => p.investmentGrade === 'B').length;
+  const gradeCProjects = validatedProjects.filter(p => p.investmentGrade === 'C').length;
+  const nonInvestmentProjects = validatedProjects.filter(p => p.investmentGrade === 'Non-Investment').length;
+  const pendingValidation = validatedProjects.filter(p => p.validationStatus === 'pending' || p.validationStatus === 'in_review').length;
   const totalPipelineValue = validatedProjects.reduce((sum, p) => sum + p.capex, 0);
-  const avgCompositeScore = validatedProjects.reduce((sum, p) => sum + p.compositeScore, 0) / validatedProjects.length || 0;
-  const validationSuccessRate = validatedProjects.length > 0 ? (validatedProjects.filter(p => p.investmentGrade !== 'Non-Investment').length / validatedProjects.length) * 100 : 0;
+
+  // Get risk level
+  const getRiskLevel = (riskScore: number): 'Low' | 'Medium' | 'High' => {
+    if (riskScore <= 30) return 'Low';
+    if (riskScore <= 60) return 'Medium';
+    return 'High';
+  };
 
   // Sort and filter projects
-  const sortedProjects = [...validatedProjects]
-    .filter(p => filterGrade === 'all' || p.investmentGrade === filterGrade)
-    .sort((a, b) => {
-      let aVal, bVal;
-      switch (sortBy) {
-        case 'score':
-          aVal = a.compositeScore;
-          bVal = b.compositeScore;
-          break;
-        case 'grade':
-          const gradeOrder = { 'A': 4, 'B': 3, 'C': 2, 'Non-Investment': 1 };
-          aVal = gradeOrder[a.investmentGrade];
-          bVal = gradeOrder[b.investmentGrade];
-          break;
-        case 'investment':
-          aVal = a.capex;
-          bVal = b.capex;
-          break;
-        case 'risk':
-          aVal = a.riskScore;
-          bVal = b.riskScore;
-          break;
-        default:
-          aVal = a.compositeScore;
-          bVal = b.compositeScore;
-      }
-      return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
-    });
+  const filteredProjects = validatedProjects.filter(p => {
+    const gradeMatch = filterGrade === 'all' || p.investmentGrade === filterGrade;
+    const statusMatch = filterStatus === 'all' || p.validationStatus === filterStatus;
+    return gradeMatch && statusMatch;
+  });
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    let aVal, bVal;
+    switch (sortBy) {
+      case 'score':
+        aVal = a.compositeScore;
+        bVal = b.compositeScore;
+        break;
+      case 'grade':
+        const gradeOrder = { 'A': 4, 'B': 3, 'C': 2, 'Non-Investment': 1 };
+        aVal = gradeOrder[a.investmentGrade];
+        bVal = gradeOrder[b.investmentGrade];
+        break;
+      case 'investment':
+        aVal = a.capex;
+        bVal = b.capex;
+        break;
+      case 'irr':
+        aVal = a.irr;
+        bVal = b.irr;
+        break;
+      default:
+        aVal = a.compositeScore;
+        bVal = b.compositeScore;
+    }
+    return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+  });
 
   // Handle validation status update
   const handleValidationStatusUpdate = (projectId: string, newStatus: ValidatedProject['validationStatus']) => {
@@ -262,570 +256,642 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
     onDataUpdate({ validatedProjects: updatedProjects });
   };
 
-  // Open 360° view
-  const open360View = (project: ValidatedProject) => {
+  // Open business plan view
+  const openBusinessPlan = (project: ValidatedProject) => {
     setSelectedProject(project);
     setShowModal(true);
     setModalTab('summary');
   };
 
-  // Close modal
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedProject(null);
+  // Handle sorting
+  const handleSort = (column: typeof sortBy) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('desc');
+    }
   };
 
   // Get grade color
   const getGradeColor = (grade: string) => {
     switch (grade) {
-      case 'A': return '#00c853';
-      case 'B': return '#ff9800';
-      case 'C': return '#f44336';
-      case 'Non-Investment': return '#757575';
-      default: return '#757575';
+      case 'A': return 'grade-a';
+      case 'B': return 'grade-b';
+      case 'C': return 'grade-c';
+      default: return 'grade-non';
     }
   };
 
-  // Get risk level
-  const getRiskLevel = (riskScore: number): 'Low' | 'Medium' | 'High' => {
-    if (riskScore <= 30) return 'Low';
-    if (riskScore <= 60) return 'Medium';
-    return 'High';
-  };
-
   return (
-    <div className="tab3-validate-projects">
-      {/* Header Stats */}
-      <div className="validation-header">
-        <div className="header-stats">
-          <div className="stat-card">
-            <div className="stat-icon">📋</div>
-            <div className="stat-content">
-              <div className="stat-value">{projectsInValidation}</div>
-              <div className="stat-label">Projects in Validation</div>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon">🏆</div>
-            <div className="stat-content">
-              <div className="stat-value">{gradeAProjects}</div>
-              <div className="stat-label">Investment Grade A</div>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon">💰</div>
-            <div className="stat-content">
-              <div className="stat-value">{formatCurrency(totalPipelineValue)}</div>
-              <div className="stat-label">Total Pipeline Value</div>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon">📊</div>
-            <div className="stat-content">
-              <div className="stat-value">{avgCompositeScore.toFixed(0)}%</div>
-              <div className="stat-label">Average Composite Score</div>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon">✅</div>
-            <div className="stat-content">
-              <div className="stat-value">{validationSuccessRate.toFixed(1)}%</div>
-              <div className="stat-label">Validation Success Rate</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters and Controls */}
-      <div className="validation-controls">
-        <div className="filter-section">
-          <div className="filter-group">
-            <label>Investment Grade:</label>
-            <select 
-              value={filterGrade} 
-              onChange={(e) => setFilterGrade(e.target.value as any)}
-              className="filter-select"
-            >
-              <option value="all">All Grades</option>
-              <option value="A">Grade A</option>
-              <option value="B">Grade B</option>
-              <option value="C">Grade C</option>
-              <option value="Non-Investment">Non-Investment</option>
-            </select>
-          </div>
-          
-          <div className="filter-group">
-            <label>Sort By:</label>
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="filter-select"
-            >
-              <option value="score">Composite Score</option>
-              <option value="grade">Investment Grade</option>
-              <option value="investment">Investment Size</option>
-              <option value="risk">Risk Score</option>
-            </select>
-            
-            <button 
-              className="sort-order-btn"
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            >
-              {sortOrder === 'asc' ? '↑' : '↓'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Project Cards Grid */}
-      <div className="projects-grid">
-        {sortedProjects.map(project => (
-          <div key={project.id} className="project-card">
-            <div className="card-header">
-              <div className="project-title">
-                <div 
-                  className="grade-badge"
-                  style={{ backgroundColor: getGradeColor(project.investmentGrade) }}
-                >
-                  {project.investmentGrade}
-                </div>
-                <div>
-                  <h4>{project.name}</h4>
-                  <span className="project-id">ID: {project.id}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="card-content">
-              <div className="investment-info">
-                <div className="metric">
-                  <span className="metric-label">Investment:</span>
-                  <span className="metric-value">{formatCurrency(project.capex)}</span>
-                </div>
-                <div className="metric">
-                  <span className="metric-label">Duration:</span>
-                  <span className="metric-value">{project.duration} months</span>
-                </div>
-              </div>
-              
-              <div className="composite-score">
-                <div className="score-circle">
-                  <svg width="80" height="80" className="score-chart">
-                    <circle
-                      cx="40"
-                      cy="40"
-                      r="35"
-                      fill="none"
-                      stroke="#475569"
-                      strokeWidth="6"
-                    />
-                    <circle
-                      cx="40"
-                      cy="40"
-                      r="35"
-                      fill="none"
-                      stroke={getGradeColor(project.investmentGrade)}
-                      strokeWidth="6"
-                      strokeDasharray={`${(project.compositeScore / 100) * 220} 220`}
-                      strokeDashoffset="0"
-                      transform="rotate(-90 40 40)"
-                    />
-                    <text x="40" y="45" textAnchor="middle" className="score-text">
-                      {Math.round(project.compositeScore)}%
-                    </text>
-                  </svg>
-                </div>
-                <div className="score-label">Composite Score</div>
-              </div>
-              
-              <div className="financial-metrics">
-                <div className="metric">
-                  <span className="metric-label">NPV:</span>
-                  <span className="metric-value">{formatCurrency(project.npv)}</span>
-                </div>
-                <div className="metric">
-                  <span className="metric-label">IRR:</span>
-                  <span className="metric-value">{project.irr.toFixed(1)}%</span>
-                </div>
-                <div className="metric">
-                  <span className="metric-label">Payback:</span>
-                  <span className="metric-value">{project.paybackYears.toFixed(1)} years</span>
-                </div>
-              </div>
-              
-              <div className="risk-assessment">
-                <div className="risk-label">Risk Level:</div>
-                <div className={`risk-level risk-${getRiskLevel(project.riskScore).toLowerCase()}`}>
-                  {getRiskLevel(project.riskScore)}
-                </div>
-                <div className="risk-bar">
-                  <div 
-                    className="risk-fill"
-                    style={{ width: `${project.riskScore}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="card-actions">
-              <button 
-                className="btn btn-primary btn-sm"
-                onClick={() => open360View(project)}
+    <div className="tab3-validate-clean">
+      <div className="main-layout">
+        <div className="table-section">
+          <div className="section-header">
+            <h2>Validated Projects</h2>
+            <div className="header-filters">
+              <select 
+                value={filterGrade} 
+                onChange={(e) => setFilterGrade(e.target.value as any)}
+                className="filter-select-clean"
               >
-                View Plan
-              </button>
+                <option value="all">All Grades</option>
+                <option value="A">Grade A</option>
+                <option value="B">Grade B</option>
+                <option value="C">Grade C</option>
+                <option value="Non-Investment">Non-Investment</option>
+              </select>
               
-              <div className="validation-actions">
-                {project.validationStatus === 'pending' && (
-                  <>
-                    <button 
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleValidationStatusUpdate(project.id, 'in_review')}
+              <select 
+                value={filterStatus} 
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="filter-select-clean"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="in_review">In Review</option>
+                <option value="validated">Validated</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+
+          <table className="projects-table-clean">
+            <thead>
+              <tr>
+                <th onClick={() => handleSort('grade')} className="sortable">
+                  GRADE {sortBy === 'grade' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th>PROJECT NAME</th>
+                <th onClick={() => handleSort('score')} className="sortable">
+                  SCORE {sortBy === 'score' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th onClick={() => handleSort('investment')} className="sortable">
+                  INVESTMENT {sortBy === 'investment' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th>NPV</th>
+                <th onClick={() => handleSort('irr')} className="sortable">
+                  IRR {sortBy === 'irr' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th>PAYBACK</th>
+                <th>RISK</th>
+                <th>STATUS</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedProjects.map(project => (
+                <tr key={project.id}>
+                  <td>
+                    <span className={`grade-badge-clean ${getGradeColor(project.investmentGrade)}`}>
+                      {project.investmentGrade}
+                    </span>
+                  </td>
+                  <td>
+                    <a 
+                      href="#" 
+                      className="project-link"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        openBusinessPlan(project);
+                      }}
                     >
-                      Start Review
-                    </button>
-                  </>
-                )}
-                
-                {project.validationStatus === 'in_review' && (
-                  <>
-                    <button 
-                      className="btn btn-success btn-sm"
-                      onClick={() => handleValidationStatusUpdate(project.id, 'validated')}
-                    >
-                      Validate
-                    </button>
-                    <button 
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleValidationStatusUpdate(project.id, 'rejected')}
-                    >
-                      Reject
-                    </button>
-                  </>
-                )}
+                      {project.name}
+                    </a>
+                    <div className="project-subtitle">{project.businessUnit}</div>
+                  </td>
+                  <td>
+                    <span className="score-value">{Math.round(project.compositeScore)}%</span>
+                  </td>
+                  <td>{formatCurrency(project.capex)}</td>
+                  <td>{formatCurrency(project.npv)}</td>
+                  <td>{project.irr.toFixed(1)}%</td>
+                  <td>{project.paybackYears.toFixed(1)}y</td>
+                  <td>
+                    <span className={`risk-badge-clean risk-${getRiskLevel(project.riskScore).toLowerCase()}`}>
+                      {getRiskLevel(project.riskScore)} ({project.riskScore})
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`validation-status-badge status-${project.validationStatus}`}>
+                      {project.validationStatus.replace('_', ' ').toUpperCase()}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button 
+                        className="action-btn view-btn"
+                        onClick={() => openBusinessPlan(project)}
+                        title="View Business Plan"
+                      >
+                        📄
+                      </button>
+                      {project.validationStatus === 'pending' && (
+                        <button 
+                          className="action-btn review-btn"
+                          onClick={() => handleValidationStatusUpdate(project.id, 'in_review')}
+                          title="Start Review"
+                        >
+                          ▶️
+                        </button>
+                      )}
+                      {project.validationStatus === 'in_review' && (
+                        <>
+                          <button 
+                            className="action-btn approve-btn"
+                            onClick={() => handleValidationStatusUpdate(project.id, 'validated')}
+                            title="Validate"
+                          >
+                            ✅
+                          </button>
+                          <button 
+                            className="action-btn reject-btn"
+                            onClick={() => handleValidationStatusUpdate(project.id, 'rejected')}
+                            title="Reject"
+                          >
+                            ❌
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Right side - Summary */}
+        <div className="summary-section">
+          <div className="summary-card">
+            <h3>Portfolio Summary</h3>
+            <div className="summary-item">
+              <span className="summary-label">Total Projects:</span>
+              <span className="summary-value">{totalProjects}</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label">Total Pipeline:</span>
+              <span className="summary-value">{formatCurrency(totalPipelineValue)}</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label">Pending Validation:</span>
+              <span className="summary-value">{pendingValidation}</span>
+            </div>
+          </div>
+
+          <div className="grade-distribution-card">
+            <h3>Grade Distribution</h3>
+            <div className="grade-chart-container">
+              <svg width="150" height="150" className="grade-donut">
+                {[
+                  { grade: 'A', count: gradeAProjects, color: '#10b981', startAngle: 0 },
+                  { grade: 'B', count: gradeBProjects, color: '#f59e0b', startAngle: (gradeAProjects / totalProjects) * 360 },
+                  { grade: 'C', count: gradeCProjects, color: '#ef4444', startAngle: ((gradeAProjects + gradeBProjects) / totalProjects) * 360 },
+                  { grade: 'Non', count: nonInvestmentProjects, color: '#6b7280', startAngle: ((gradeAProjects + gradeBProjects + gradeCProjects) / totalProjects) * 360 }
+                ].map((item, index) => {
+                  if (item.count === 0) return null;
+                  const angle = (item.count / totalProjects) * 360;
+                  const endAngle = item.startAngle + angle;
+                  const radius = 60;
+                  const centerX = 75;
+                  const centerY = 75;
+                  
+                  const x1 = centerX + radius * Math.cos((item.startAngle - 90) * Math.PI / 180);
+                  const y1 = centerY + radius * Math.sin((item.startAngle - 90) * Math.PI / 180);
+                  const x2 = centerX + radius * Math.cos((endAngle - 90) * Math.PI / 180);
+                  const y2 = centerY + radius * Math.sin((endAngle - 90) * Math.PI / 180);
+                  
+                  const largeArc = angle > 180 ? 1 : 0;
+                  
+                  return (
+                    <path
+                      key={item.grade}
+                      d={`M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                      fill={item.color}
+                      stroke="#1e293b"
+                      strokeWidth="2"
+                    />
+                  );
+                })}
+                <circle cx="75" cy="75" r="30" fill="#0f172a" />
+              </svg>
+            </div>
+            
+            <div className="grade-legend">
+              <div className="grade-item">
+                <div className="grade-color" style={{ backgroundColor: '#10b981' }}></div>
+                <span className="grade-label">Grade A:</span>
+                <span className="grade-count">{gradeAProjects}</span>
+              </div>
+              <div className="grade-item">
+                <div className="grade-color" style={{ backgroundColor: '#f59e0b' }}></div>
+                <span className="grade-label">Grade B:</span>
+                <span className="grade-count">{gradeBProjects}</span>
+              </div>
+              <div className="grade-item">
+                <div className="grade-color" style={{ backgroundColor: '#ef4444' }}></div>
+                <span className="grade-label">Grade C:</span>
+                <span className="grade-count">{gradeCProjects}</span>
+              </div>
+              <div className="grade-item">
+                <div className="grade-color" style={{ backgroundColor: '#6b7280' }}></div>
+                <span className="grade-label">Non-Inv:</span>
+                <span className="grade-count">{nonInvestmentProjects}</span>
               </div>
             </div>
           </div>
-        ))}
+
+          <div className="validation-tips">
+            <h3>Validation Criteria</h3>
+            <div className="tip-item">
+              <span className="tip-icon">🏆</span>
+              <span className="tip-text">Grade A: Score &gt;80%, Risk &lt;30%</span>
+            </div>
+            <div className="tip-item">
+              <span className="tip-icon">✅</span>
+              <span className="tip-text">Grade B: Score 60-80%, Risk 30-50%</span>
+            </div>
+            <div className="tip-item">
+              <span className="tip-icon">⚠️</span>
+              <span className="tip-text">Grade C: Score 40-60%, Risk 50-70%</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 360° Business Plan Modal */}
+      {/* Business Plan Modal */}
       {showModal && selectedProject && (
-        <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content business-plan-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{selectedProject.name} - Business Plan</h2>
-              <button className="modal-close" onClick={closeModal}>×</button>
+              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
             
             <div className="modal-body">
               <div className="modal-tabs">
-                <div className="tab-nav">
-                  <button 
-                    className={`tab-btn ${modalTab === 'summary' ? 'active' : ''}`}
-                    onClick={() => setModalTab('summary')}
-                  >
-                    Executive Summary
-                  </button>
-                  <button 
-                    className={`tab-btn ${modalTab === 'financial' ? 'active' : ''}`}
-                    onClick={() => setModalTab('financial')}
-                  >
-                    Financial Analysis
-                  </button>
-                  <button 
-                    className={`tab-btn ${modalTab === 'risk' ? 'active' : ''}`}
-                    onClick={() => setModalTab('risk')}
-                  >
-                    Risk Assessment
-                  </button>
-                  <button 
-                    className={`tab-btn ${modalTab === 'alignment' ? 'active' : ''}`}
-                    onClick={() => setModalTab('alignment')}
-                  >
-                    Strategic Alignment
-                  </button>
-                  <button 
-                    className={`tab-btn ${modalTab === 'decision' ? 'active' : ''}`}
-                    onClick={() => setModalTab('decision')}
-                  >
-                    Investment Decision
-                  </button>
-                </div>
-                
-                <div className="tab-content">
-                  {modalTab === 'summary' && (
-                    <div className="summary-content">
-                      <div className="summary-grid">
-                        <div className="summary-card">
-                          <h4>Project Overview</h4>
-                          <p>{selectedProject.businessPlan.executiveSummary}</p>
-                        </div>
-                        
-                        <div className="summary-card">
-                          <h4>Investment Thesis</h4>
-                          <p>{selectedProject.businessPlan.investmentThesis}</p>
-                        </div>
-                        
-                        <div className="summary-card">
-                          <h4>Key Success Factors</h4>
-                          <ul>
-                            {selectedProject.businessPlan.keySuccessFactors.map((factor, index) => (
-                              <li key={index}>{factor}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        
-                        <div className="summary-card">
-                          <h4>Expected Outcomes</h4>
-                          <ul>
-                            {selectedProject.businessPlan.expectedOutcomes.map((outcome, index) => (
-                              <li key={index}>{outcome}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {modalTab === 'financial' && (
-                    <div className="financial-content">
-                      <div className="financial-overview">
-                        <div className="metric-card">
-                          <div className="metric-label">Total Investment</div>
-                          <div className="metric-value">{formatCurrency(selectedProject.capex)}</div>
-                        </div>
-                        <div className="metric-card">
-                          <div className="metric-label">NPV</div>
-                          <div className="metric-value">{formatCurrency(selectedProject.npv)}</div>
-                        </div>
-                        <div className="metric-card">
-                          <div className="metric-label">IRR</div>
-                          <div className="metric-value">{selectedProject.irr.toFixed(1)}%</div>
-                        </div>
-                        <div className="metric-card">
-                          <div className="metric-label">Payback</div>
-                          <div className="metric-value">{selectedProject.paybackYears.toFixed(1)} years</div>
-                        </div>
-                      </div>
-                      
-                      <div className="projections-table">
-                        <h4>5-Year Financial Projections</h4>
-                        <table className="data-table">
-                          <thead>
-                            <tr>
-                              <th>Year</th>
-                              <th>Revenue</th>
-                              <th>EBITDA</th>
-                              <th>EBITDA Margin</th>
-                              <th>Cash Flow</th>
-                              <th>ROIC</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedProject.businessPlan.financials
-                              .filter(f => f.quarter === 4) // Show yearly data
-                              .map((financial, index) => (
-                              <tr key={index}>
-                                <td>Year {financial.year}</td>
-                                <td>{formatCurrency(financial.revenue)}</td>
-                                <td>{formatCurrency(financial.ebitda)}</td>
-                                <td>{financial.ebitdaMargin.toFixed(1)}%</td>
-                                <td>{formatCurrency(financial.cashFlow)}</td>
-                                <td>{financial.roic.toFixed(1)}%</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {modalTab === 'risk' && (
-                    <div className="risk-content">
-                      <div className="risk-overview">
-                        <div className="risk-score-display">
-                          <div className="risk-score-large">{selectedProject.riskScore}</div>
-                          <div className="risk-level-large">{getRiskLevel(selectedProject.riskScore)} Risk</div>
-                        </div>
-                      </div>
-                      
-                      <div className="risk-matrix">
-                        <h4>Risk Assessment Matrix</h4>
-                        <div className="risks-table">
-                          <table className="data-table">
-                            <thead>
-                              <tr>
-                                <th>Risk Category</th>
-                                <th>Description</th>
-                                <th>Probability</th>
-                                <th>Impact</th>
-                                <th>Risk Score</th>
-                                <th>Mitigation</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {selectedProject.businessPlan.risks.map((risk, index) => (
-                                <tr key={index}>
-                                  <td>
-                                    <span className={`risk-category ${risk.category}`}>
-                                      {risk.category}
-                                    </span>
-                                  </td>
-                                  <td>{risk.description}</td>
-                                  <td>{risk.probability}%</td>
-                                  <td>{risk.impact}%</td>
-                                  <td>{risk.riskScore}</td>
-                                  <td>{risk.mitigation}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {modalTab === 'alignment' && (
-                    <div className="alignment-content">
-                      <div className="alignment-overview">
-                        <div className="alignment-score">
-                          <div className="score-large">{selectedProject.scoringBreakdown.strategicAlignment.toFixed(0)}</div>
-                          <div className="score-label">Strategic Alignment Score</div>
-                        </div>
-                      </div>
-                      
-                      <div className="scoring-breakdown">
-                        <h4>Scoring Breakdown</h4>
-                        <div className="score-components">
-                          <div className="score-component">
-                            <span className="component-label">Strategic Alignment (40%)</span>
-                            <div className="score-bar">
-                              <div 
-                                className="score-fill"
-                                style={{ width: `${selectedProject.scoringBreakdown.strategicAlignment}%` }}
-                              ></div>
-                            </div>
-                            <span className="component-value">{selectedProject.scoringBreakdown.strategicAlignment.toFixed(0)}</span>
-                          </div>
-                          
-                          <div className="score-component">
-                            <span className="component-label">Financial Score (30%)</span>
-                            <div className="score-bar">
-                              <div 
-                                className="score-fill"
-                                style={{ width: `${selectedProject.scoringBreakdown.financialScore}%` }}
-                              ></div>
-                            </div>
-                            <span className="component-value">{selectedProject.scoringBreakdown.financialScore.toFixed(0)}</span>
-                          </div>
-                          
-                          <div className="score-component">
-                            <span className="component-label">Risk Adjustment (20%)</span>
-                            <div className="score-bar">
-                              <div 
-                                className="score-fill"
-                                style={{ width: `${selectedProject.scoringBreakdown.riskAdjustment}%` }}
-                              ></div>
-                            </div>
-                            <span className="component-value">{selectedProject.scoringBreakdown.riskAdjustment.toFixed(0)}</span>
-                          </div>
-                          
-                          <div className="score-component">
-                            <span className="component-label">Synergy Score (10%)</span>
-                            <div className="score-bar">
-                              <div 
-                                className="score-fill"
-                                style={{ width: `${selectedProject.scoringBreakdown.synergyScore}%` }}
-                              ></div>
-                            </div>
-                            <span className="component-value">{selectedProject.scoringBreakdown.synergyScore.toFixed(0)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="synergies-section">
-                        <h4>Synergy Opportunities</h4>
-                        <div className="synergies-list">
-                          {selectedProject.businessPlan.synergies.map((synergy, index) => (
-                            <div key={index} className="synergy-card">
-                              <div className="synergy-header">
-                                <span className={`synergy-type ${synergy.type}`}>{synergy.type}</span>
-                                <span className="synergy-value">{formatCurrency(synergy.valueEstimate)}</span>
-                              </div>
-                              <div className="synergy-description">{synergy.description}</div>
-                              <div className="synergy-details">
-                                <span>Time to Realize: {synergy.timeToRealize} months</span>
-                                <span className={`confidence ${synergy.confidence}`}>
-                                  {synergy.confidence} confidence
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {modalTab === 'decision' && (
-                    <div className="decision-content">
-                      <div className="decision-summary">
-                        <div className="decision-header">
-                          <div 
-                            className="investment-grade-large"
-                            style={{ backgroundColor: getGradeColor(selectedProject.investmentGrade) }}
-                          >
-                            Investment Grade: {selectedProject.investmentGrade}
-                          </div>
-                          <div className="composite-score-large">
-                            Composite Score: {selectedProject.compositeScore.toFixed(0)}%
-                          </div>
-                        </div>
-                        
-                        <div className="recommendation">
-                          <h4>Final Recommendation</h4>
-                          <p>
-                            {selectedProject.investmentGrade === 'A' && 'Strongly recommend approval. This project meets all investment criteria and offers excellent returns with manageable risk.'}
-                            {selectedProject.investmentGrade === 'B' && 'Recommend approval with conditions. This project offers good returns but requires additional risk mitigation.'}
-                            {selectedProject.investmentGrade === 'C' && 'Conditional approval required. This project needs special consideration and enhanced oversight.'}
-                            {selectedProject.investmentGrade === 'Non-Investment' && 'Do not recommend for investment. This project does not meet minimum investment criteria.'}
-                          </p>
-                        </div>
-                        
-                        <div className="conditions-precedent">
-                          <h4>Conditions Precedent</h4>
-                          <ul>
-                            <li>Final due diligence completion</li>
-                            <li>Regulatory approvals obtained</li>
-                            <li>Financing arrangements finalized</li>
-                            <li>Key personnel assignments confirmed</li>
-                          </ul>
-                        </div>
-                        
-                        <div className="implementation-timeline">
-                          <h4>Implementation Timeline</h4>
-                          <div className="timeline-item">
-                            <strong>Months 1-3:</strong> Project setup and team mobilization
-                          </div>
-                          <div className="timeline-item">
-                            <strong>Months 4-12:</strong> Phase 1 implementation
-                          </div>
-                          <div className="timeline-item">
-                            <strong>Months 13-24:</strong> Phase 2 implementation
-                          </div>
-                          <div className="timeline-item">
-                            <strong>Months 25+:</strong> Operations and optimization
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <button 
+                  className={`modal-tab ${modalTab === 'summary' ? 'active' : ''}`}
+                  onClick={() => setModalTab('summary')}
+                >
+                  Executive Summary
+                </button>
+                <button 
+                  className={`modal-tab ${modalTab === 'financial' ? 'active' : ''}`}
+                  onClick={() => setModalTab('financial')}
+                >
+                  Financial Analysis
+                </button>
+                <button 
+                  className={`modal-tab ${modalTab === 'risk' ? 'active' : ''}`}
+                  onClick={() => setModalTab('risk')}
+                >
+                  Risk Assessment
+                </button>
+                <button 
+                  className={`modal-tab ${modalTab === 'alignment' ? 'active' : ''}`}
+                  onClick={() => setModalTab('alignment')}
+                >
+                  Strategic Alignment
+                </button>
+                <button 
+                  className={`modal-tab ${modalTab === 'decision' ? 'active' : ''}`}
+                  onClick={() => setModalTab('decision')}
+                >
+                  Investment Decision
+                </button>
               </div>
+              
+              {modalTab === 'summary' && (
+                <div className="tab-content">
+                  <div className="content-section">
+                    <h3>Project Overview</h3>
+                    <p>{selectedProject.businessPlan.executiveSummary}</p>
+                  </div>
+                  
+                  <div className="content-section">
+                    <h3>Investment Thesis</h3>
+                    <p>{selectedProject.businessPlan.investmentThesis}</p>
+                  </div>
+                  
+                  <div className="content-grid">
+                    <div className="content-card">
+                      <h4>Key Success Factors</h4>
+                      <ul>
+                        {selectedProject.businessPlan.keySuccessFactors.map((factor, index) => (
+                          <li key={index}>{factor}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div className="content-card">
+                      <h4>Expected Outcomes</h4>
+                      <ul>
+                        {selectedProject.businessPlan.expectedOutcomes.map((outcome, index) => (
+                          <li key={index}>{outcome}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {modalTab === 'financial' && (
+                <div className="tab-content">
+                  <div className="financial-summary">
+                    <div className="metric-card">
+                      <span className="metric-label">Total Investment</span>
+                      <span className="metric-value">{formatCurrency(selectedProject.capex)}</span>
+                    </div>
+                    <div className="metric-card">
+                      <span className="metric-label">NPV</span>
+                      <span className="metric-value">{formatCurrency(selectedProject.npv)}</span>
+                    </div>
+                    <div className="metric-card">
+                      <span className="metric-label">IRR</span>
+                      <span className="metric-value">{selectedProject.irr.toFixed(1)}%</span>
+                    </div>
+                    <div className="metric-card">
+                      <span className="metric-label">Payback</span>
+                      <span className="metric-value">{selectedProject.paybackYears.toFixed(1)} years</span>
+                    </div>
+                  </div>
+                  
+                  <div className="financial-table">
+                    <h3>5-Year Financial Projections</h3>
+                    <table className="projections-table">
+                      <thead>
+                        <tr>
+                          <th>Year</th>
+                          <th>Revenue</th>
+                          <th>EBITDA</th>
+                          <th>EBITDA %</th>
+                          <th>Cash Flow</th>
+                          <th>ROIC</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedProject.businessPlan.financials
+                          .filter(f => f.quarter === 4)
+                          .map((financial, index) => (
+                          <tr key={index}>
+                            <td>Year {financial.year}</td>
+                            <td>{formatCurrency(financial.revenue)}</td>
+                            <td>{formatCurrency(financial.ebitda)}</td>
+                            <td>{financial.ebitdaMargin.toFixed(1)}%</td>
+                            <td>{formatCurrency(financial.cashFlow)}</td>
+                            <td>{financial.roic.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              
+              {modalTab === 'risk' && (
+                <div className="tab-content">
+                  <div className="risk-overview">
+                    <h3>Risk Assessment Overview</h3>
+                    <div className="risk-summary-grid">
+                      <div className="risk-metric-card">
+                        <span className="risk-label">Overall Risk Score</span>
+                        <span className="risk-value">{selectedProject.riskScore}/100</span>
+                        <span className="risk-level">{getRiskLevel(selectedProject.riskScore)}</span>
+                      </div>
+                      <div className="risk-metric-card">
+                        <span className="risk-label">Risk Mitigation Cost</span>
+                        <span className="risk-value">
+                          {formatCurrency(
+                            selectedProject.businessPlan.risks.reduce((sum, r) => sum + r.mitigationCost, 0)
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="risks-table">
+                    <h3>Identified Risks</h3>
+                    <table className="risk-assessment-table">
+                      <thead>
+                        <tr>
+                          <th>Risk Category</th>
+                          <th>Description</th>
+                          <th>Probability</th>
+                          <th>Impact</th>
+                          <th>Score</th>
+                          <th>Mitigation</th>
+                          <th>Cost</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedProject.businessPlan.risks.map((risk) => (
+                          <tr key={risk.id}>
+                            <td>
+                              <span className={`risk-category ${risk.category}`}>
+                                {risk.category.toUpperCase()}
+                              </span>
+                            </td>
+                            <td>{risk.description}</td>
+                            <td>{risk.probability}%</td>
+                            <td>{risk.impact}%</td>
+                            <td>
+                              <span className={`risk-score ${risk.riskScore > 50 ? 'high' : risk.riskScore > 25 ? 'medium' : 'low'}`}>
+                                {risk.riskScore}
+                              </span>
+                            </td>
+                            <td>{risk.mitigation}</td>
+                            <td>{formatCurrency(risk.mitigationCost)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              
+              {modalTab === 'alignment' && (
+                <div className="tab-content">
+                  <div className="alignment-overview">
+                    <h3>Strategic Alignment Scoring</h3>
+                    <div className="scoring-breakdown">
+                      <div className="score-component">
+                        <div className="score-header">
+                          <span className="score-label">Strategic Alignment</span>
+                          <span className="score-value">{selectedProject.scoringBreakdown.strategicAlignment.toFixed(1)}%</span>
+                        </div>
+                        <div className="score-bar">
+                          <div 
+                            className="score-fill strategic"
+                            style={{ width: `${selectedProject.scoringBreakdown.strategicAlignment}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div className="score-component">
+                        <div className="score-header">
+                          <span className="score-label">Financial Score</span>
+                          <span className="score-value">{selectedProject.scoringBreakdown.financialScore.toFixed(1)}%</span>
+                        </div>
+                        <div className="score-bar">
+                          <div 
+                            className="score-fill financial"
+                            style={{ width: `${selectedProject.scoringBreakdown.financialScore}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div className="score-component">
+                        <div className="score-header">
+                          <span className="score-label">Risk Adjustment</span>
+                          <span className="score-value">{selectedProject.scoringBreakdown.riskAdjustment.toFixed(1)}%</span>
+                        </div>
+                        <div className="score-bar">
+                          <div 
+                            className="score-fill risk"
+                            style={{ width: `${selectedProject.scoringBreakdown.riskAdjustment}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div className="score-component">
+                        <div className="score-header">
+                          <span className="score-label">Synergy Score</span>
+                          <span className="score-value">{selectedProject.scoringBreakdown.synergyScore.toFixed(1)}%</span>
+                        </div>
+                        <div className="score-bar">
+                          <div 
+                            className="score-fill synergy"
+                            style={{ width: `${selectedProject.scoringBreakdown.synergyScore}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div className="score-component total">
+                        <div className="score-header">
+                          <span className="score-label">Composite Score</span>
+                          <span className="score-value">{selectedProject.scoringBreakdown.compositeScore.toFixed(1)}%</span>
+                        </div>
+                        <div className="score-bar">
+                          <div 
+                            className="score-fill composite"
+                            style={{ width: `${selectedProject.scoringBreakdown.compositeScore}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="synergies-section">
+                    <h3>Business Synergies</h3>
+                    <div className="synergies-grid">
+                      {selectedProject.businessPlan.synergies.map((synergy) => (
+                        <div key={synergy.id} className="synergy-card">
+                          <div className="synergy-header">
+                            <span className={`synergy-type ${synergy.type}`}>
+                              {synergy.type.toUpperCase()}
+                            </span>
+                            <span className="synergy-value">{formatCurrency(synergy.valueEstimate)}</span>
+                          </div>
+                          <p className="synergy-description">{synergy.description}</p>
+                          <div className="synergy-details">
+                            <span>Timeline: {synergy.timeToRealize} months</span>
+                            <span className={`confidence ${synergy.confidence}`}>
+                              {synergy.confidence.toUpperCase()} confidence
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {modalTab === 'decision' && (
+                <div className="tab-content">
+                  <div className="decision-summary">
+                    <h3>Investment Decision Summary</h3>
+                    
+                    <div className="decision-grid">
+                      <div className="decision-card">
+                        <h4>Investment Grade</h4>
+                        <div className={`grade-display ${getGradeColor(selectedProject.investmentGrade)}`}>
+                          {selectedProject.investmentGrade}
+                        </div>
+                        <p className="grade-description">
+                          {selectedProject.investmentGrade === 'A' && 'Highly recommended for investment'}
+                          {selectedProject.investmentGrade === 'B' && 'Recommended with conditions'}
+                          {selectedProject.investmentGrade === 'C' && 'Marginal investment opportunity'}
+                          {selectedProject.investmentGrade === 'Non-Investment' && 'Does not meet investment criteria'}
+                        </p>
+                      </div>
+                      
+                      <div className="decision-card">
+                        <h4>Key Strengths</h4>
+                        <ul className="decision-list">
+                          <li>Strong strategic alignment ({selectedProject.scoringBreakdown.strategicAlignment.toFixed(0)}%)</li>
+                          <li>IRR of {selectedProject.irr.toFixed(1)}% exceeds hurdle rate</li>
+                          <li>Payback period of {selectedProject.paybackYears.toFixed(1)} years</li>
+                          <li>Positive NPV of {formatCurrency(selectedProject.npv)}</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="decision-card">
+                        <h4>Key Risks</h4>
+                        <ul className="decision-list">
+                          <li>Overall risk score: {selectedProject.riskScore}/100</li>
+                          <li>{selectedProject.businessPlan.risks.filter(r => r.probability > 50).length} high probability risks</li>
+                          <li>Mitigation cost: {formatCurrency(
+                            selectedProject.businessPlan.risks.reduce((sum, r) => sum + r.mitigationCost, 0)
+                          )}</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="decision-card">
+                        <h4>Recommendation</h4>
+                        <div className="recommendation-box">
+                          <div className={`recommendation-status ${selectedProject.validationStatus}`}>
+                            Current Status: {selectedProject.validationStatus.replace('_', ' ').toUpperCase()}
+                          </div>
+                          <div className="recommendation-actions">
+                            {selectedProject.validationStatus !== 'validated' && (
+                              <button 
+                                className="decision-btn approve"
+                                onClick={() => {
+                                  handleValidationStatusUpdate(selectedProject.id, 'validated');
+                                  setShowModal(false);
+                                }}
+                              >
+                                Validate Project
+                              </button>
+                            )}
+                            {selectedProject.validationStatus !== 'rejected' && (
+                              <button 
+                                className="decision-btn reject"
+                                onClick={() => {
+                                  handleValidationStatusUpdate(selectedProject.id, 'rejected');
+                                  setShowModal(false);
+                                }}
+                              >
+                                Reject Project
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="validation-notes">
+                      <h4>Validation Notes</h4>
+                      <textarea 
+                        className="notes-textarea"
+                        placeholder="Add validation notes or conditions..."
+                        rows={4}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -833,3 +899,5 @@ export const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataU
     </div>
   );
 };
+
+export { Tab3_ValidateProjects };
