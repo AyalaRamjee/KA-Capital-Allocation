@@ -551,7 +551,7 @@ export default function AdaniGrowthSystem() {
           padding: '1.25rem 2rem',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
           border: `2px solid ${currentTheme === 'dark' ? '#334155' : '#e2e8f0'}`,
-          maxWidth: '420px',
+          maxWidth: '500px',
           width: '90%',
           zIndex: 9999,
           animation: 'slideIn 0.5s ease-out'
@@ -701,7 +701,7 @@ export default function AdaniGrowthSystem() {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 102, 204, 0.3)';
               }}
             >
-              Generate Demo Data
+              Generate Sample Data
             </button>
 
             <button

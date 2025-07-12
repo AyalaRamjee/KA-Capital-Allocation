@@ -127,38 +127,128 @@ export const AppHeader: React.FC<HeaderProps> = ({
 
         <div className="header-right">
           <div className="header-controls">
-            {/* AI Assistant Button */}
+            {/* TADA AI Assistant Button */}
             {onShowAssistant && (
               <button 
-                className="ai-assistant-btn"
+                className="ai-assistant-btn tada-ai-btn"
                 onClick={onShowAssistant}
-                title="Launch AI Assistant"
+                title="Launch TADA AI Assistant"
                 style={{
-                  background: 'linear-gradient(135deg, #00b8d4 0%, #0066cc 100%)',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
                   color: 'white',
                   padding: '0.5rem 1rem',
                   borderRadius: '8px',
-                  border: 'none',
+                  border: '2px solid transparent',
                   cursor: 'pointer',
                   fontWeight: '600',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  marginRight: '2px',
-                  boxShadow: '0 2px 8px rgba(0, 184, 212, 0.3)',
-                  transition: 'all 0.2s ease'
+                  marginRight: '4px',
+                  boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
+                  transition: 'all 0.2s ease',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 184, 212, 0.4)';
+                  e.currentTarget.style.transform = 'translateY(-1px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(139, 92, 246, 0.5)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 184, 212, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.3)';
                 }}
               >
-                <Sparkles size={18} />
-                AI Assistant
+                {/* Animated border effect */}
+                <div className="tada-ai-border" style={{
+                  position: 'absolute',
+                  top: '-2px',
+                  left: '-2px',
+                  right: '-2px',
+                  bottom: '-2px',
+                  background: 'linear-gradient(45deg, #8b5cf6, #6366f1, #8b5cf6, #6366f1)',
+                  backgroundSize: '300% 300%',
+                  borderRadius: '8px',
+                  opacity: 0.8,
+                  zIndex: -2
+                }} />
+                
+                {/* Background TADA logo watermark */}
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  opacity: 0.1,
+                  fontSize: '40px',
+                  fontWeight: 'bold',
+                  letterSpacing: '-2px',
+                  zIndex: -1,
+                  animation: 'pulse 2s ease-in-out infinite'
+                }}>
+                  TADA
+                </div>
+                
+                {/* Floating particles effect */}
+                <div className="particles-container" style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  overflow: 'hidden',
+                  zIndex: -1
+                }}>
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        position: 'absolute',
+                        width: '4px',
+                        height: '4px',
+                        background: 'rgba(255, 255, 255, 0.6)',
+                        borderRadius: '50%',
+                        bottom: '-4px',
+                        left: `${20 + i * 30}%`,
+                        animation: `float ${2 + i * 0.5}s ease-in-out infinite`,
+                        animationDelay: `${i * 0.3}s`
+                      }}
+                    />
+                  ))}
+                </div>
+                
+                {/* T Symbol with glow */}
+                <div style={{
+                  width: '22px',
+                  height: '22px',
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                  boxShadow: '0 0 10px rgba(255, 255, 255, 0.3)',
+                  animation: 'tGlow 2s ease-in-out infinite alternate',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  T
+                </div>
+                
+                <span style={{ position: 'relative', zIndex: 1 }}>TADA AI</span>
+                
+                {/* Shimmer effect */}
+                <div className="shimmer" style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+                  animation: 'shimmer 3s ease-in-out infinite'
+                }} />
               </button>
             )}
 
@@ -809,6 +899,50 @@ export const AppHeader: React.FC<HeaderProps> = ({
           </div>
         </div>
       )}
+      
+      {/* Add CSS animations */}
+      <style>{`
+        @keyframes borderGlow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes pulse {
+          0% { opacity: 0.1; transform: translate(-50%, -50%) scale(1); }
+          50% { opacity: 0.15; transform: translate(-50%, -50%) scale(1.05); }
+          100% { opacity: 0.1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        @keyframes float {
+          0% { transform: translateY(0) translateX(0); opacity: 0; }
+          20% { opacity: 0.6; }
+          80% { opacity: 0.6; }
+          100% { transform: translateY(-30px) translateX(10px); opacity: 0; }
+        }
+        
+        @keyframes tGlow {
+          0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+          100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(139, 92, 246, 0.3); }
+        }
+        
+        @keyframes shimmer {
+          0% { left: -100%; }
+          100% { left: 200%; }
+        }
+        
+        .tada-ai-btn .tada-ai-border {
+          animation: borderGlow 3s ease-in-out infinite;
+        }
+        
+        .tada-ai-btn:hover .particles-container div {
+          animation-duration: 1.5s !important;
+        }
+        
+        .tada-ai-btn:hover .shimmer {
+          animation-duration: 1.5s !important;
+        }
+      `}</style>
     </>
   );
 };
