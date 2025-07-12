@@ -4,6 +4,7 @@ import { ValidatedProject, AdaniSector, SectorAllocation, AllocationConstraint }
 import { formatCurrency } from './mockDataAdani';
 import FileUploadModal from './FileUploadModal';
 import { parseFile, parseSectorAllocationsData } from './fileParsingUtils';
+import { useToast } from './ToastContainer';
 
 interface Tab4Props {
   sharedData: {
@@ -25,8 +26,7 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
   const [showConstraintsModal, setShowConstraintsModal] = useState(false);
   const [showProjectsModal, setShowProjectsModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const toast = useToast();
 
   // Initialize sector allocations if empty
   useEffect(() => {
@@ -175,14 +175,14 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
   // Handle file upload
   const handleFileUpload = async (file: File) => {
     try {
-      setUploadErrors([]);
-      setUploadSuccess(false);
-      
       const rawData = await parseFile(file);
       const result = parseSectorAllocationsData(rawData);
       
       if (result.errors.length > 0) {
-        setUploadErrors(result.errors);
+        toast.error(
+          'Upload Failed', 
+          `Found ${result.errors.length} error(s) in sector allocation data.`
+        );
         return;
       }
       
@@ -207,14 +207,17 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
       
       setSectorAllocations(updatedAllocations);
       onDataUpdate({ sectorAllocations: updatedAllocations, allocationConstraints });
-      setUploadSuccess(true);
       
-      setTimeout(() => {
-        setUploadSuccess(false);
-      }, 3000);
+      toast.success(
+        'Allocations Updated!', 
+        `Successfully imported sector allocation data and updated portfolio distribution.`
+      );
       
     } catch (error) {
-      setUploadErrors([`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+      toast.error(
+        'Import Error', 
+        `Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   };
 
@@ -597,69 +600,11 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
       {/* Upload Modal */}
       <FileUploadModal
         isOpen={showUploadModal}
-        onClose={() => {
-          setShowUploadModal(false);
-          setUploadErrors([]);
-        }}
+        onClose={() => setShowUploadModal(false)}
         onFileSelect={handleFileUpload}
         title="Import Sector Allocations"
         description="Upload an Excel or CSV file with sector allocation data. Required columns: Sector Name, Allocated Amount (USD), Target Percentage (%), Min Projects, Max Projects"
       />
-
-      {/* Upload Errors */}
-      {uploadErrors.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: '#dc2626',
-          color: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          maxWidth: '400px',
-          zIndex: 1001,
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-        }}>
-          <h4 style={{ margin: '0 0 8px 0' }}>Upload Errors:</h4>
-          <ul style={{ margin: 0, paddingLeft: '16px' }}>
-            {uploadErrors.map((error, index) => (
-              <li key={index} style={{ margin: '4px 0' }}>{error}</li>
-            ))}
-          </ul>
-          <button
-            onClick={() => setUploadErrors([])}
-            style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '18px'
-            }}
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Upload Success */}
-      {uploadSuccess && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: '#10b981',
-          color: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          zIndex: 1001,
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-        }}>
-          ✅ Sector allocations imported successfully!
-        </div>
-      )}
     </div>
   );
 };

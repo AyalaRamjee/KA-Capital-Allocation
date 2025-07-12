@@ -2,6 +2,7 @@
 'use client'
 import React, { useState } from 'react';
 import { Sparkles, ChevronDown, Upload, Download, FileUp, FileDown, StickyNote, Settings, Bot, Calendar, Trash2, Sun, Moon, Maximize, User, FileText, RefreshCw, HelpCircle } from 'lucide-react';
+import { useToast } from './ToastContainer';
 
 interface HeaderProps {
   onThemeChange: (theme: 'dark' | 'light') => void;
@@ -31,6 +32,7 @@ export const AppHeader: React.FC<HeaderProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showTadaMenu, setShowTadaMenu] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const toast = useToast();
 
   const handleExport = () => {
     // Export functionality
@@ -50,20 +52,35 @@ export const AppHeader: React.FC<HeaderProps> = ({
   };
 
   const handleClearAllData = () => {
-    if (window.confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
-      if (onClearAllData) {
-        onClearAllData();
+    toast.warning(
+      'Clear All Data?',
+      'This action will permanently delete all data and cannot be undone.',
+      0, // No auto-dismiss
+      {
+        label: 'Clear Data',
+        onClick: () => {
+          if (onClearAllData) {
+            onClearAllData();
+          }
+          toast.success('Data Cleared', 'All application data has been cleared successfully.');
+        }
       }
-    }
+    );
   };
 
   const handleClearCacheAndCookies = () => {
-    if (window.confirm('This will clear all cached data and cookies. You may need to sign in again. Continue?')) {
-      // Clear localStorage
-      localStorage.clear();
-      
-      // Clear sessionStorage
-      sessionStorage.clear();
+    toast.warning(
+      'Clear Cache & Cookies?',
+      'This will clear all cached data and cookies. You may need to sign in again.',
+      0, // No auto-dismiss
+      {
+        label: 'Clear Cache',
+        onClick: () => {
+          // Clear localStorage
+          localStorage.clear();
+          
+          // Clear sessionStorage
+          sessionStorage.clear();
       
       // Clear cookies (limited to same domain)
       document.cookie.split(";").forEach((c) => {
@@ -80,10 +97,14 @@ export const AppHeader: React.FC<HeaderProps> = ({
           });
         });
       }
-      
-      alert('Cache and cookies cleared successfully. The page will now refresh.');
-      window.location.reload();
-    }
+          
+          toast.success('Cache Cleared', 'Cache and cookies cleared successfully. Page will refresh now.');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        }
+      }
+    );
   };
 
   const handleStartTutorial = () => {

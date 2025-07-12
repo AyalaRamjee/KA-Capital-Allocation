@@ -4,6 +4,7 @@ import { ValidatedProject, InvestmentPriority, Opportunity, AdaniSector } from '
 import { formatCurrency } from './mockDataAdani';
 import FileUploadModal from './FileUploadModal';
 import { parseFile, parseValidatedProjectsData } from './fileParsingUtils';
+import { useToast } from './ToastContainer';
 
 interface Tab3Props {
   sharedData: {
@@ -25,8 +26,7 @@ const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }
   const [filterGrade, setFilterGrade] = useState<'all' | 'A' | 'B' | 'C' | 'Non-Investment'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'in_review' | 'validated' | 'rejected'>('all');
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const toast = useToast();
 
   // Calculate composite score
   const calculateCompositeScore = (opportunity: Opportunity, priorities: InvestmentPriority[]): number => {
@@ -291,14 +291,14 @@ const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }
   // Handle file upload
   const handleFileUpload = async (file: File) => {
     try {
-      setUploadErrors([]);
-      setUploadSuccess(false);
-      
       const rawData = await parseFile(file);
       const result = parseValidatedProjectsData(rawData);
       
       if (result.errors.length > 0) {
-        setUploadErrors(result.errors);
+        toast.error(
+          'Upload Failed', 
+          `Found ${result.errors.length} validation error(s) in the uploaded file.`
+        );
         return;
       }
       
@@ -360,14 +360,17 @@ const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }
       const updatedProjects = [...validatedProjects, ...newProjects];
       setValidatedProjects(updatedProjects);
       onDataUpdate({ validatedProjects: updatedProjects });
-      setUploadSuccess(true);
       
-      setTimeout(() => {
-        setUploadSuccess(false);
-      }, 3000);
+      toast.success(
+        'Projects Imported!', 
+        `Successfully imported ${newProjects.length} validated projects with scoring and analysis.`
+      );
       
     } catch (error) {
-      setUploadErrors([`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+      toast.error(
+        'Import Error', 
+        `Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   };
 
@@ -1017,69 +1020,11 @@ const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }
       {/* Upload Modal */}
       <FileUploadModal
         isOpen={showUploadModal}
-        onClose={() => {
-          setShowUploadModal(false);
-          setUploadErrors([]);
-        }}
+        onClose={() => setShowUploadModal(false)}
         onFileSelect={handleFileUpload}
         title="Import Validated Projects"
         description="Upload an Excel or CSV file with project data. Required columns: Project Name, Investment Amount, Expected IRR (%), Risk Score, NPV, Payback Period (years), Strategic Alignment Score"
       />
-
-      {/* Upload Errors */}
-      {uploadErrors.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: '#dc2626',
-          color: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          maxWidth: '400px',
-          zIndex: 1001,
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-        }}>
-          <h4 style={{ margin: '0 0 8px 0' }}>Upload Errors:</h4>
-          <ul style={{ margin: 0, paddingLeft: '16px' }}>
-            {uploadErrors.map((error, index) => (
-              <li key={index} style={{ margin: '4px 0' }}>{error}</li>
-            ))}
-          </ul>
-          <button
-            onClick={() => setUploadErrors([])}
-            style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '18px'
-            }}
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Upload Success */}
-      {uploadSuccess && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: '#10b981',
-          color: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          zIndex: 1001,
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-        }}>
-          ✅ Projects imported successfully!
-        </div>
-      )}
     </div>
   );
 };

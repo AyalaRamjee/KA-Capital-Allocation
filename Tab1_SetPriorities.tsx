@@ -4,6 +4,7 @@ import { InvestmentPriority, AdaniSector } from './types';
 import { formatCurrency } from './mockDataAdani';
 import FileUploadModal from './FileUploadModal';
 import { parseFile, parsePrioritiesData } from './fileParsingUtils';
+import { useToast } from './ToastContainer';
 
 interface Tab1Props {
   sharedData: {
@@ -19,8 +20,7 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
   const [selectedPriority, setSelectedPriority] = useState<InvestmentPriority | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const toast = useToast();
 
   // Calculate metrics
   const totalWeight = priorities.reduce((sum, p) => sum + p.weight, 0);
@@ -97,14 +97,14 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
   // Handle file upload
   const handleFileUpload = async (file: File) => {
     try {
-      setUploadErrors([]);
-      setUploadSuccess(false);
-      
       const rawData = await parseFile(file);
       const result = parsePrioritiesData(rawData);
       
       if (result.errors.length > 0) {
-        setUploadErrors(result.errors);
+        toast.error(
+          'Upload Failed', 
+          `Found ${result.errors.length} error(s):\n${result.errors.slice(0, 3).join('\n')}${result.errors.length > 3 ? '\n...' : ''}`
+        );
         return;
       }
       
@@ -116,14 +116,17 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
       
       setPriorities(updatedPriorities);
       onDataUpdate({ priorities: updatedPriorities });
-      setUploadSuccess(true);
       
-      setTimeout(() => {
-        setUploadSuccess(false);
-      }, 3000);
+      toast.success(
+        'Priorities Imported Successfully!', 
+        `${result.data.length} investment priorities have been imported and weights have been auto-calculated.`
+      );
       
     } catch (error) {
-      setUploadErrors([`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+      toast.error(
+        'Import Error', 
+        `Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   };
 
@@ -336,69 +339,11 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
       {/* Upload Modal */}
       <FileUploadModal
         isOpen={showUploadModal}
-        onClose={() => {
-          setShowUploadModal(false);
-          setUploadErrors([]);
-        }}
+        onClose={() => setShowUploadModal(false)}
         onFileSelect={handleFileUpload}
         title="Import Investment Priorities"
         description="Upload an Excel or CSV file with priority data. Required columns: Priority Name, Description, Weight (%), Time Horizon (years), Min ROI (%), Max Payback (years), Risk Appetite, Strategic Importance"
       />
-
-      {/* Upload Errors */}
-      {uploadErrors.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: '#dc2626',
-          color: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          maxWidth: '400px',
-          zIndex: 1001,
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-        }}>
-          <h4 style={{ margin: '0 0 8px 0' }}>Upload Errors:</h4>
-          <ul style={{ margin: 0, paddingLeft: '16px' }}>
-            {uploadErrors.map((error, index) => (
-              <li key={index} style={{ margin: '4px 0' }}>{error}</li>
-            ))}
-          </ul>
-          <button
-            onClick={() => setUploadErrors([])}
-            style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '18px'
-            }}
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Upload Success */}
-      {uploadSuccess && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: '#10b981',
-          color: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          zIndex: 1001,
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-        }}>
-          ✅ Priorities imported successfully!
-        </div>
-      )}
 
       {/* 360° View Modal */}
       {showModal && selectedPriority && (

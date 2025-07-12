@@ -11,6 +11,7 @@ import { Tab7_WhatIfAnalysis } from './Tab7_WhatIfAnalysis';
 import AdaniAssistantModal from './AdaniAssistantModal';
 import ManageWorkspaceTab from './components/ManageWorkspaceTab';
 import DynamicFooter from './components/DynamicFooter';
+import { ToastProvider } from './ToastContainer';
 import { AppState, InvestmentPriority, Opportunity, AdaniProject, AdaniSector, AdaniMetrics, ValidatedProject, SectorAllocation, AllocationConstraint, ValidationRule, DataQualityIssue, DataQualityMetrics } from './types';
 import { adaniPriorities, allOpportunities, adaniSectors, adaniMetrics, formatCurrency } from './mockDataAdani';
 import './styles.css';
@@ -524,7 +525,8 @@ export default function AdaniGrowthSystem() {
 
   // ===== RENDER SECTION =====
   return (
-    <div className={`app-container ${currentTheme}-theme adani-growth-system`} style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <ToastProvider position="top-right" maxToasts={5}>
+      <div className={`app-container ${currentTheme}-theme adani-growth-system`} style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppHeader 
         onThemeChange={handleThemeChange}
         onFullscreenToggle={handleFullscreenToggle}
@@ -1215,6 +1217,7 @@ export default function AdaniGrowthSystem() {
           }
         }
       `}</style>
-    </div>
+      </div>
+    </ToastProvider>
   );
 }

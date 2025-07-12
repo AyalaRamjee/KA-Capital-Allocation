@@ -4,6 +4,7 @@ import { Opportunity, InvestmentPriority, AdaniSector } from './types';
 import { formatCurrency } from './mockDataAdani';
 import FileUploadModal from './FileUploadModal';
 import { parseFile, parseOpportunitiesData } from './fileParsingUtils';
+import { useToast } from './ToastContainer';
 
 interface Tab2Props {
   sharedData: {
@@ -22,8 +23,7 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
   const [sortBy, setSortBy] = useState<'name' | 'investment' | 'fit' | 'risk' | 'date'>('fit');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const toast = useToast();
   const [filters, setFilters] = useState({
     status: 'all' as 'all' | 'new' | 'under_review' | 'approved' | 'rejected',
     source: 'all',
@@ -233,28 +233,31 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
   // Handle file upload
   const handleFileUpload = async (file: File) => {
     try {
-      setUploadErrors([]);
-      setUploadSuccess(false);
-      
       const rawData = await parseFile(file);
       const result = parseOpportunitiesData(rawData);
       
       if (result.errors.length > 0) {
-        setUploadErrors(result.errors);
+        toast.error(
+          'Upload Failed', 
+          `Found ${result.errors.length} error(s) in the uploaded file. Please check the data format and try again.`
+        );
         return;
       }
       
       const updatedOpportunities = [...opportunities, ...result.data];
       setOpportunities(updatedOpportunities);
       onDataUpdate({ opportunities: updatedOpportunities });
-      setUploadSuccess(true);
       
-      setTimeout(() => {
-        setUploadSuccess(false);
-      }, 3000);
+      toast.success(
+        'Opportunities Imported!', 
+        `Successfully imported ${result.data.length} new opportunities to the pipeline.`
+      );
       
     } catch (error) {
-      setUploadErrors([`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+      toast.error(
+        'Import Error', 
+        `Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   };
 
@@ -1074,69 +1077,11 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
       {/* Upload Modal */}
       <FileUploadModal
         isOpen={showUploadModal}
-        onClose={() => {
-          setShowUploadModal(false);
-          setUploadErrors([]);
-        }}
+        onClose={() => setShowUploadModal(false)}
         onFileSelect={handleFileUpload}
         title="Import Opportunities"
         description="Upload an Excel or CSV file with opportunity data. Required columns: Opportunity Name, Description, Source, Sponsor, Status, Investment Min (USD), Investment Max (USD), ROI (%), Timeline (months), Strategic Fit Score, Risk Score, Category"
       />
-
-      {/* Upload Errors */}
-      {uploadErrors.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: '#dc2626',
-          color: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          maxWidth: '400px',
-          zIndex: 1001,
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-        }}>
-          <h4 style={{ margin: '0 0 8px 0' }}>Upload Errors:</h4>
-          <ul style={{ margin: 0, paddingLeft: '16px' }}>
-            {uploadErrors.map((error, index) => (
-              <li key={index} style={{ margin: '4px 0' }}>{error}</li>
-            ))}
-          </ul>
-          <button
-            onClick={() => setUploadErrors([])}
-            style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '18px'
-            }}
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Upload Success */}
-      {uploadSuccess && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          backgroundColor: '#10b981',
-          color: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          zIndex: 1001,
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-        }}>
-          ✅ Opportunities imported successfully!
-        </div>
-      )}
 
       <style jsx>{`
         /* Enhanced 360° Modal Styles */
