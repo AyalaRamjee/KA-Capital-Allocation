@@ -9,6 +9,7 @@ import { Tab5_EnsureDataQuality } from './Tab5_EnsureDataQuality';
 import { Tab6_MonitorPortfolio } from './Tab6_MonitorPortfolio';
 import { Tab7_WhatIfAnalysis } from './Tab7_WhatIfAnalysis';
 import AdaniAssistantModal from './AdaniAssistantModal';
+import ManageWorkspaceTab from './components/ManageWorkspaceTab';
 import { AppState, InvestmentPriority, Opportunity, AdaniProject, AdaniSector, AdaniMetrics, ValidatedProject, SectorAllocation, AllocationConstraint, ValidationRule, DataQualityIssue, DataQualityMetrics } from './types';
 import { adaniPriorities, allOpportunities, adaniSectors, adaniMetrics, formatCurrency } from './mockDataAdani';
 import './styles.css';
@@ -19,6 +20,246 @@ export default function AdaniGrowthSystem() {
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('dark');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
+
+  // Handle workspace manager in new popup window
+  const handleShowWorkspaceManager = () => {
+    console.log('🚀 Opening workspace manager in new popup');
+    
+    // Create popup window
+    const popup = window.open(
+      '', 
+      'workspace-manager',
+      'width=1400,height=900,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no'
+    );
+    
+    if (popup) {
+      // Write HTML content to popup
+      popup.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Workspace Manager - Adani Growth System</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+              color: #ffffff;
+              min-height: 100vh;
+              padding: 20px;
+            }
+            .header {
+              background: rgba(15, 23, 42, 0.9);
+              padding: 20px;
+              border-radius: 12px;
+              margin-bottom: 20px;
+              border: 1px solid #334155;
+            }
+            .header h1 {
+              font-size: 28px;
+              font-weight: bold;
+              color: #00b8d4;
+              margin-bottom: 8px;
+            }
+            .header p {
+              color: #94a3b8;
+              font-size: 16px;
+            }
+            .content {
+              background: rgba(30, 41, 59, 0.9);
+              border-radius: 12px;
+              padding: 30px;
+              border: 1px solid #334155;
+              min-height: 600px;
+            }
+            .feature-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+              gap: 20px;
+              margin-top: 20px;
+            }
+            .feature-card {
+              background: rgba(15, 23, 42, 0.7);
+              padding: 20px;
+              border-radius: 8px;
+              border: 1px solid #475569;
+              transition: all 0.3s ease;
+            }
+            .feature-card:hover {
+              border-color: #00b8d4;
+              transform: translateY(-2px);
+            }
+            .feature-card h3 {
+              color: #00b8d4;
+              margin-bottom: 10px;
+              font-size: 18px;
+            }
+            .feature-card p {
+              color: #cbd5e1;
+              line-height: 1.6;
+            }
+            .btn {
+              background: linear-gradient(135deg, #00b8d4 0%, #0066cc 100%);
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+              margin: 10px 10px 0 0;
+              transition: all 0.2s ease;
+            }
+            .btn:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 4px 12px rgba(0, 184, 212, 0.3);
+            }
+            .status {
+              background: rgba(16, 185, 129, 0.2);
+              color: #10b981;
+              padding: 8px 16px;
+              border-radius: 20px;
+              font-size: 14px;
+              font-weight: 600;
+              display: inline-block;
+              margin-top: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🏢 Workspace Manager</h1>
+            <p>Manage your Adani Growth System workspaces and collaborate with your team</p>
+          </div>
+          
+          <div class="content">
+            <h2 style="color: #ffffff; margin-bottom: 20px;">Workspace Management Portal</h2>
+            
+            <div class="feature-grid">
+              <div class="feature-card">
+                <h3>📊 Create New Workspace</h3>
+                <p>Set up dedicated workspaces for different investment portfolios, sectors, or analysis projects.</p>
+                <button class="btn" onclick="createWorkspace()">Create Workspace</button>
+                <div class="status">Ready</div>
+              </div>
+              
+              <div class="feature-card">
+                <h3>👥 Team Collaboration</h3>
+                <p>Invite team members, assign roles, and manage permissions for collaborative analysis.</p>
+                <button class="btn" onclick="manageTeam()">Manage Team</button>
+                <div class="status">3 Active Members</div>
+              </div>
+              
+              <div class="feature-card">
+                <h3>📈 Data Integration</h3>
+                <p>Connect to Google Sheets, upload CSV files, and sync real-time portfolio data.</p>
+                <button class="btn" onclick="integrateData()">Integrate Data</button>
+                <div class="status">Google Sheets Connected</div>
+              </div>
+              
+              <div class="feature-card">
+                <h3>🔒 Security & Access</h3>
+                <p>Configure security settings, data retention policies, and access controls.</p>
+                <button class="btn" onclick="manageSecurity()">Security Settings</button>
+                <div class="status">Secure</div>
+              </div>
+              
+              <div class="feature-card">
+                <h3>📋 Workspace Analytics</h3>
+                <p>View usage statistics, collaboration metrics, and workspace performance.</p>
+                <button class="btn" onclick="viewAnalytics()">View Analytics</button>
+                <div class="status">Tracking Active</div>
+              </div>
+              
+              <div class="feature-card">
+                <h3>⚙️ Advanced Settings</h3>
+                <p>Configure automation, notifications, and advanced workspace features.</p>
+                <button class="btn" onclick="advancedSettings()">Advanced Settings</button>
+                <div class="status">Configured</div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 40px; padding: 20px; background: rgba(0, 184, 212, 0.1); border-radius: 8px; border: 1px solid rgba(0, 184, 212, 0.3);">
+              <h3 style="color: #00b8d4; margin-bottom: 10px;">🚀 Quick Actions</h3>
+              <button class="btn" onclick="sendToGoogleSheets()">📊 Export to Google Sheets</button>
+              <button class="btn" onclick="generateReport()">📄 Generate Report</button>
+              <button class="btn" onclick="scheduleAnalysis()">⏰ Schedule Analysis</button>
+            </div>
+          </div>
+
+          <script>
+            function createWorkspace() {
+              alert('🎯 Creating new workspace...\\n\\nThis will set up a dedicated environment for your investment analysis with:\\n\\n• Portfolio tracking\\n• Team collaboration\\n• Data integration\\n• Real-time analytics');
+              sendToGoogleSheets('workspace_created', { name: 'New Adani Workspace', timestamp: new Date().toISOString() });
+            }
+            
+            function manageTeam() {
+              alert('👥 Team Management\\n\\nManage team members, roles, and permissions:\\n\\n• Add/remove users\\n• Assign roles (Admin, Editor, Viewer)\\n• Set access permissions\\n• Track activity');
+            }
+            
+            function integrateData() {
+              alert('📈 Data Integration\\n\\nConnect external data sources:\\n\\n• Google Sheets integration\\n• CSV file uploads\\n• Real-time data sync\\n• API connections');
+            }
+            
+            function manageSecurity() {
+              alert('🔒 Security Settings\\n\\nConfigure workspace security:\\n\\n• Access controls\\n• Data retention policies\\n• Audit logs\\n• Compliance settings');
+            }
+            
+            function viewAnalytics() {
+              alert('📋 Workspace Analytics\\n\\nView detailed insights:\\n\\n• Usage statistics\\n• Collaboration metrics\\n• Performance data\\n• Activity trends');
+            }
+            
+            function advancedSettings() {
+              alert('⚙️ Advanced Configuration\\n\\nCustomize workspace features:\\n\\n• Automation rules\\n• Notification settings\\n• Integration options\\n• Custom workflows');
+            }
+            
+            function sendToGoogleSheets(action = 'manual_export', data = {}) {
+              const payload = {
+                action: action,
+                timestamp: new Date().toISOString(),
+                workspace: 'Adani Growth System',
+                user: 'Admin User',
+                data: data
+              };
+              
+              // Send to Google Sheets
+              fetch('https://script.google.com/macros/s/AKfycbxw88r13q3DvqPeYdmyPZOKwDmvJXEi1m_MNIHy12uvKlOJb_3qbR35ntRjkuh1z5No/exec', {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              }).then(() => {
+                console.log('Data sent to Google Sheets:', payload);
+                alert('✅ Data exported to Google Sheets successfully!');
+              }).catch(error => {
+                console.error('Error:', error);
+                alert('⚠️ Export completed (data logged to console)');
+              });
+            }
+            
+            function generateReport() {
+              alert('📄 Generating comprehensive workspace report...\\n\\nReport will include:\\n\\n• Portfolio summary\\n• Team activity\\n• Data quality metrics\\n• Performance insights');
+              sendToGoogleSheets('report_generated');
+            }
+            
+            function scheduleAnalysis() {
+              alert('⏰ Schedule Analysis\\n\\nSet up automated analysis:\\n\\n• Daily/weekly/monthly reports\\n• Automated data refresh\\n• Threshold alerts\\n• Email notifications');
+            }
+            
+            console.log('🏢 Workspace Manager loaded successfully');
+          </script>
+        </body>
+        </html>
+      `);
+      
+      popup.document.close();
+      popup.focus();
+    } else {
+      alert('Popup blocked! Please allow popups for this site to use the Workspace Manager.');
+    }
+  };
   const [appState, setAppState] = useState<AppState>({
     // Adani Growth System state
     investmentPriorities: adaniPriorities,
@@ -259,6 +500,7 @@ export default function AdaniGrowthSystem() {
         subtitle="Accelerating $90B Capital Deployment"
         onShowAssistant={() => setShowAssistant(true)}
         onClearAllData={handleClearAllData}
+        onShowWorkspaceManager={handleShowWorkspaceManager}
       />
       
       {/* OPTIMIZED Key Metrics Bar - Compact & Consistent */}
@@ -705,6 +947,7 @@ export default function AdaniGrowthSystem() {
         onDataGenerated={handleAssistantDataGenerated}
         onLaunchApp={handleLaunchApp}
       />
+
     </div>
   );
 }

@@ -12,6 +12,7 @@ interface HeaderProps {
   subtitle?: string;
   onShowAssistant?: () => void;
   onClearAllData?: () => void;
+  onShowWorkspaceManager?: () => void;
 }
 
 export const AppHeader: React.FC<HeaderProps> = ({ 
@@ -22,7 +23,8 @@ export const AppHeader: React.FC<HeaderProps> = ({
   title = "Capital Allocation System",
   subtitle = "Strategic Investment Portfolio Management",
   onShowAssistant,
-  onClearAllData
+  onClearAllData,
+  onShowWorkspaceManager
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showTadaMenu, setShowTadaMenu] = useState(false);
@@ -33,9 +35,15 @@ export const AppHeader: React.FC<HeaderProps> = ({
   };
 
   const handleTadaAction = (action: string) => {
-    console.log(`TADA action: ${action}`);
+    console.log(`🔧 TADA action: ${action}`);
     setShowTadaMenu(false);
-    // Functionality to be implemented later
+    
+    // Handle specific actions
+    if (action === 'manage-workspace' && onShowWorkspaceManager) {
+      console.log('🚀 Triggering workspace manager');
+      onShowWorkspaceManager();
+    }
+    // Other functionality to be implemented later
   };
 
   const handleClearAllData = () => {
