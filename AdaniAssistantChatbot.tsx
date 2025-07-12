@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, Sparkles, TrendingUp, AlertTriangle, Globe, DollarSign, 
   BarChart3, Target, Shield, Zap, ExternalLink, Rocket, 
-  Eye, Brain, Users, FileText, Trending, Activity, CheckCircle,
+  Eye, Brain, Users, FileText, Activity, CheckCircle,
   MapPin, Calendar, Award, AlertCircle, Lightbulb, ArrowRight,
   Building2, Cpu, Factory, Leaf, Ship, Plane
 } from 'lucide-react';
@@ -256,8 +256,8 @@ class PerplexityAnalysisService {
     } catch (error) {
       console.error('🔥 DEBUG: Perplexity API error caught:', error);
       console.error('🔥 DEBUG: Error type:', typeof error);
-      console.error('🔥 DEBUG: Error message:', error.message);
-      console.error('🔥 DEBUG: Error stack:', error.stack);
+      console.error('🔥 DEBUG: Error message:', error instanceof Error ? error.message : String(error));
+      console.error('🔥 DEBUG: Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       console.log('🔥 DEBUG: Falling back to mock analysis...');
     }
 
@@ -331,7 +331,7 @@ market conditions, demand forecast, competition, regulatory environment, technol
     const sections = response.split('\n\n');
     
     // Extract key metrics from the response - look for numbers and percentages
-    const extractedMetrics = [];
+    const extractedMetrics: string[] = [];
     const metricPatterns = [
       /market size.*?(\$[\d.,]+[BMK]?)/i,
       /growth rate.*?([\d.]+%)/i,
@@ -666,7 +666,7 @@ const AdaniAssistantChatbot: React.FC<AdaniAssistantChatbotProps> = ({
         
         // Add follow-up message if data is loaded and not already shown
         if (dataAlreadyLoaded) {
-          const hasFollowUp = initialMessages.some(msg => msg.type === 'nextStepsCards');
+          const hasFollowUp = initialMessages.some((msg: Message) => msg.type === 'nextStepsCards');
           if (!hasFollowUp) {
             initialMessages.push({
               id: generateUniqueId(),
@@ -772,7 +772,7 @@ What would you like me to help you with next?`,
 
     const typeChar = () => {
       if (charIndex < text.length) {
-        setMessages(prev => prev.map(msg => {
+        setMessages((prev: Message[]) => prev.map((msg: Message) => {
           if (msg.id === messageId) {
             return { ...msg, text: text.slice(0, charIndex + 1) };
           }
@@ -781,7 +781,7 @@ What would you like me to help you with next?`,
         charIndex++;
         typingTimeoutRef.current = setTimeout(typeChar, speed);
       } else {
-        setMessages(prev => prev.map(msg => {
+        setMessages((prev: Message[]) => prev.map((msg: Message) => {
           if (msg.id === messageId) {
             return { ...msg, isComplete: true };
           }
@@ -810,12 +810,12 @@ Select one or more options below to customize your portfolio:`,
       showDataOptions: true
     };
     
-    setMessages(prev => [...prev, optionsMessage]);
+    setMessages((prev: Message[]) => [...prev, optionsMessage]);
     setConversationState('selectingData');
   };
 
   const handleDataOptionSelection = (optionId: string) => {
-    setSelectedDataTypes(prev => {
+    setSelectedDataTypes((prev: string[]) => {
       let newSelection;
       
       if (optionId === 'all_above') {
@@ -832,7 +832,7 @@ Select one or more options below to customize your portfolio:`,
       }
       
       // Update the message to show selected options
-      setMessages(prevMessages => prevMessages.map(msg => {
+      setMessages((prevMessages: Message[]) => prevMessages.map((msg: Message) => {
         if (msg.showDataOptions) {
           const displaySelection = newSelection.includes('all_above') 
             ? ['🌟 All of the Above - Complete Portfolio']
@@ -871,8 +871,8 @@ Select one or more options below to customize your portfolio:
       type: 'loading'
     };
     
-    setMessages(prev => [...prev, loadingMessage]);
-
+    setMessages((prev: Message[]) => [...prev, loadingMessage]);
+    
     // Simulate data generation process
     setTimeout(() => {
       generateCustomAdaniData();
@@ -890,7 +890,7 @@ Select one or more options below to customize your portfolio:
       // Use all data as-is
     } else if (selectedDataTypes.length > 0) {
       // Filter data based on specific selections
-      let filteredOpportunities = [];
+      let filteredOpportunities: any[] = [];
       
       if (selectedDataTypes.includes('renewable_energy')) {
         filteredOpportunities = [...filteredOpportunities, ...allOpportunities.filter(opp => 
@@ -938,11 +938,11 @@ Select one or more options below to customize your portfolio:
     };
 
     onDataGenerated(completeData);
-    setUserProfile(prev => ({ ...prev, dataLoaded: true }));
+    setUserProfile((prev: any) => ({ ...prev, dataLoaded: true }));
     setIsLoading(false);
 
     // Remove loading message and add success message
-    setMessages(prev => prev.filter(msg => msg.type !== 'loading'));
+    setMessages((prev: Message[]) => prev.filter((msg: Message) => msg.type !== 'loading'));
 
     const selectedOptionsText = selectedDataTypes.includes('all_above') 
       ? 'All sectors and comprehensive portfolio data'
@@ -975,7 +975,7 @@ ${selectedOptionsText}
       generatedData: completeData
     };
 
-    setMessages(prev => [...prev, successMessage]);
+    setMessages((prev: Message[]) => [...prev, successMessage]);
     setConversationState('ready');
   };
 
@@ -991,7 +991,7 @@ ${selectedOptionsText}
       type: 'user'
     };
     
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev: Message[]) => [...prev, userMessage]);
     
     // Show relevant projects based on selection
     switch(stepType) {
@@ -1028,7 +1028,7 @@ ${selectedOptionsText}
       showSectorCards: true
     };
     
-    setMessages(prev => [...prev, sectorMessage]);
+    setMessages((prev: Message[]) => [...prev, sectorMessage]);
   };
 
   const showGeographicOptions = () => {
@@ -1042,7 +1042,7 @@ ${selectedOptionsText}
       showGeographicCards: true
     };
     
-    setMessages(prev => [...prev, geoMessage]);
+    setMessages((prev: Message[]) => [...prev, geoMessage]);
   };
 
   const handleLaunchApp = () => {
@@ -1124,7 +1124,7 @@ ${selectedOptionsText}
     console.log('🎯 DEBUG: Creating project message with projectList length:', projectMessage.projectList?.length);
     console.log('🎯 DEBUG: showProjectCards:', projectMessage.showProjectCards);
     
-    setMessages(prev => {
+    setMessages((prev: Message[]) => {
       console.log('🎯 DEBUG: Adding project message to messages array');
       console.log('🎯 DEBUG: Previous messages length:', prev.length);
       const newMessages = [...prev, projectMessage];
@@ -1136,10 +1136,10 @@ ${selectedOptionsText}
   const handleProjectSelection = async (project: any) => {
     console.log('🎯 DEBUG: handleProjectSelection called with project:', project?.name || 'undefined');
     
-    setUserProfile(prev => ({ 
+    setUserProfile((prev: any) => ({ 
       ...prev, 
       selectedProject: project,
-      analyzedProjects: [...prev.analyzedProjects.filter(p => p.id !== project.id), project]
+      analyzedProjects: [...prev.analyzedProjects.filter((p: any) => p.id !== project.id), project]
     }));
     
     const userMessage: Message = {
@@ -1151,10 +1151,10 @@ ${selectedOptionsText}
       type: 'user'
     };
     
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev: Message[]) => [...prev, userMessage]);
     
     // Check if we came from a specific analysis context
-    const lastUserMessage = messages.filter(m => !m.isBot).slice(-2)[0];
+    const lastUserMessage = messages.filter((m: Message) => !m.isBot).slice(-2)[0];
     
     console.log('🎯 DEBUG: Last user message text:', lastUserMessage?.text || 'No previous user message');
     
@@ -1179,7 +1179,7 @@ Choose your analysis type:`,
         type: 'analysisOptions'
       };
       
-      setMessages(prev => [...prev, optionsMessage]);
+      setMessages((prev: Message[]) => [...prev, optionsMessage]);
     }
   };
 
@@ -1208,7 +1208,7 @@ Choose your analysis type:`,
     };
     
     console.log('🎯 DEBUG: Adding loading message:', loadingMessage.text);
-    setMessages(prev => [...prev, loadingMessage]);
+    setMessages((prev: Message[]) => [...prev, loadingMessage]);
     setIsLoading(true);
 
     try {
@@ -1248,14 +1248,14 @@ Choose your analysis type:`,
       console.log('🎯 DEBUG: Analysis completed:', analysis?.type || 'undefined');
 
       // Remove loading message
-      setMessages(prev => prev.filter(msg => msg.type !== 'loading'));
+      setMessages((prev: Message[]) => prev.filter((msg: Message) => msg.type !== 'loading'));
       
       // Display results
       console.log('🎯 DEBUG: Displaying results...');
       displayAnalysisResults(analysis);
     } catch (error) {
       console.error('🎯 DEBUG: Analysis error:', error);
-      setMessages(prev => prev.filter(msg => msg.type !== 'loading'));
+      setMessages((prev: Message[]) => prev.filter((msg: Message) => msg.type !== 'loading'));
       
       // Still show analysis even if API fails
       console.log('🎯 DEBUG: Using fallback analysis...');
@@ -1284,7 +1284,7 @@ Choose your analysis type:`,
     };
     
     console.log('🎯 DEBUG: Created analysis message, adding to messages...');
-    setMessages(prev => [...prev, analysisMessage]);
+    setMessages((prev: Message[]) => [...prev, analysisMessage]);
     
     setTimeout(() => {
       console.log('🎯 DEBUG: Adding follow-up message...');
@@ -1308,7 +1308,7 @@ Or ask me anything like:
         type: 'followUp'
       };
       
-      setMessages(prev => [...prev, followUpMessage]);
+      setMessages((prev: Message[]) => [...prev, followUpMessage]);
     }, 1000);
   };
 
@@ -1334,7 +1334,7 @@ Would you like me to try the analysis again or explore a different project?`,
       type: 'error'
     };
     
-    setMessages(prev => [...prev, errorMessage]);
+    setMessages((prev: Message[]) => [...prev, errorMessage]);
   };
 
   const filterProjects = (criteria: string) => {
@@ -1385,7 +1385,7 @@ Would you like me to try the analysis again or explore a different project?`,
         projectList: filtered
       };
       
-      setMessages(prev => [...prev, projectListMessage]);
+      setMessages((prev: Message[]) => [...prev, projectListMessage]);
     } else {
       const noResultsMessage: Message = {
         id: generateUniqueId(),
@@ -1405,7 +1405,7 @@ Or browse our top opportunities by asking:
         type: 'noResults'
       };
       
-      setMessages(prev => [...prev, noResultsMessage]);
+      setMessages((prev: Message[]) => [...prev, noResultsMessage]);
     }
   };
 
@@ -1432,7 +1432,7 @@ Or browse our top opportunities by asking:
       type: 'user'
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev: Message[]) => [...prev, userMessage]);
     const currentInput = inputText;
     setInputText('');
     setIsLoading(true);
@@ -1474,7 +1474,7 @@ What would you like to start with?`,
           type: 'help'
         };
         
-        setMessages(prev => [...prev, helpMessage]);
+        setMessages((prev: Message[]) => [...prev, helpMessage]);
       }
       
       setIsLoading(false);
@@ -1509,7 +1509,7 @@ ${sectorSummary}
           type: 'sectorSummary'
         };
         
-        setMessages(prev => [...prev, summaryMessage]);
+        setMessages((prev: Message[]) => [...prev, summaryMessage]);
       } else {
         // For any other query, show relevant projects
         showRelevantProjects(currentInput);
@@ -1591,8 +1591,7 @@ ${sectorSummary}
     <div className="adani-chatbot">
       <div className="chat-container">
         <div className="messages-container">
-          {messages.map((message) => (
-            <div key={message.id} className={`message ${message.isBot ? 'bot-message' : 'user-message'}`}>
+          {messages.map((message: Message) => (            <div key={message.id} className={`message ${message.isBot ? 'bot-message' : 'user-message'}`}>
               {message.isBot && (
                 <div className="avatar bot-avatar">
                   <Sparkles size={16} />
@@ -1696,7 +1695,7 @@ ${sectorSummary}
                             isComplete: true,
                             type: 'user'
                           };
-                          setMessages(prev => [...prev, userMsg]);
+                          setMessages((prev: Message[]) => [...prev, userMsg]);
                           filterProjects(sector.name);
                         }}
                       >
@@ -1730,7 +1729,7 @@ ${sectorSummary}
                               isComplete: true,
                               type: 'user'
                             };
-                            setMessages(prev => [...prev, userMsg]);
+                            setMessages((prev: Message[]) => [...prev, userMsg]);
                             filterProjects(region.toLowerCase());
                           }}
                         >
@@ -2098,8 +2097,8 @@ ${sectorSummary}
                                 text: `🔍 All ${message.projectList?.length} matching projects:`,
                                 projectList: message.projectList // Show all projects
                               };
-                              setMessages(prev => 
-                                prev.map(msg => msg.id === message.id ? expandedMessage : msg)
+                              setMessages((prev: Message[]) => 
+                                prev.map((msg: Message) => msg.id === message.id ? expandedMessage : msg)
                               );
                             }}
                             style={{

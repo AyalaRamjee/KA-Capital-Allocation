@@ -1,20 +1,20 @@
 "use client";
 
-import React from 'react';
-
 interface CreateWorkspaceDialogProps {
   isOpen: boolean;
   onClose: () => void;
   uniqueSupplierCountries: string[];
-  onCreateWorkspace: (data: any) => void;
+  onCreateWorkspace: (data: Record<string, unknown>) => void;
 }
 
-// Simple placeholder component since it's referenced but we're using inline dialog
+// Simple placeholder component since we're using popup window instead
 export default function CreateWorkspaceDialog({ 
   isOpen, 
   onClose, 
   uniqueSupplierCountries, 
   onCreateWorkspace 
 }: CreateWorkspaceDialogProps) {
-  return null; // We're using inline dialog in ManageWorkspaceTab
+  // Avoid unused variable warnings
+  console.log('Dialog props:', { isOpen, onClose, uniqueSupplierCountries, onCreateWorkspace });
+  return null; // We're using popup window for workspace management
 }
