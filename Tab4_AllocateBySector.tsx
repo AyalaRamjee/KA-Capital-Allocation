@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { ValidatedProject, AdaniSector, SectorAllocation, AllocationConstraint } from './types';
 import { formatCurrency } from './mockDataAdani';
+import FileUploadModal from './FileUploadModal';
+import { parseFile, parseSectorAllocationsData } from './fileParsingUtils';
 
 interface Tab4Props {
   sharedData: {
@@ -22,6 +24,9 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const [showConstraintsModal, setShowConstraintsModal] = useState(false);
   const [showProjectsModal, setShowProjectsModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   // Initialize sector allocations if empty
   useEffect(() => {
@@ -167,6 +172,52 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
     setShowProjectsModal(true);
   };
 
+  // Handle file upload
+  const handleFileUpload = async (file: File) => {
+    try {
+      setUploadErrors([]);
+      setUploadSuccess(false);
+      
+      const rawData = await parseFile(file);
+      const result = parseSectorAllocationsData(rawData);
+      
+      if (result.errors.length > 0) {
+        setUploadErrors(result.errors);
+        return;
+      }
+      
+      // Update sector allocations with imported data
+      const updatedAllocations = sectorAllocations.map(allocation => {
+        const importedSector = result.data.find(
+          imported => imported.sectorName.toLowerCase() === allocation.sector.name.toLowerCase()
+        );
+        
+        if (importedSector) {
+          return {
+            ...allocation,
+            currentAllocation: importedSector.percentage,
+            targetAllocation: importedSector.percentage,
+            allocatedCapital: importedSector.allocatedAmount,
+            projectCount: importedSector.minProjects || allocation.projectCount
+          };
+        }
+        
+        return allocation;
+      });
+      
+      setSectorAllocations(updatedAllocations);
+      onDataUpdate({ sectorAllocations: updatedAllocations, allocationConstraints });
+      setUploadSuccess(true);
+      
+      setTimeout(() => {
+        setUploadSuccess(false);
+      }, 3000);
+      
+    } catch (error) {
+      setUploadErrors([`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+    }
+  };
+
   return (
     <div className="tab4-allocate-clean">
       <div className="main-layout">
@@ -175,6 +226,35 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
           <div className="section-header">
             <h2>Sector Allocation</h2>
             <div className="header-actions">
+              <button 
+                className="upload-btn"
+                onClick={() => setShowUploadModal(true)}
+                style={{
+                  background: '#1e293b',
+                  border: '1px solid #3b82f6',
+                  color: '#e2e8f0',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  marginRight: '16px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#334155';
+                  e.currentTarget.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#1e293b';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                📤 Import Excel/CSV
+              </button>
               <span className={`balance-status ${isBalanced ? 'balanced' : 'imbalanced'}`}>
                 {isBalanced ? '✅ Balanced' : '⚠️ Imbalanced'}
               </span>
@@ -511,6 +591,73 @@ export const Tab4_AllocateBySector: React.FC<Tab4Props> = ({ sharedData, onDataU
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      <FileUploadModal
+        isOpen={showUploadModal}
+        onClose={() => {
+          setShowUploadModal(false);
+          setUploadErrors([]);
+        }}
+        onFileSelect={handleFileUpload}
+        title="Import Sector Allocations"
+        description="Upload an Excel or CSV file with sector allocation data. Required columns: Sector Name, Allocated Amount (USD), Target Percentage (%), Min Projects, Max Projects"
+      />
+
+      {/* Upload Errors */}
+      {uploadErrors.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#dc2626',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '8px',
+          maxWidth: '400px',
+          zIndex: 1001,
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+        }}>
+          <h4 style={{ margin: '0 0 8px 0' }}>Upload Errors:</h4>
+          <ul style={{ margin: 0, paddingLeft: '16px' }}>
+            {uploadErrors.map((error, index) => (
+              <li key={index} style={{ margin: '4px 0' }}>{error}</li>
+            ))}
+          </ul>
+          <button
+            onClick={() => setUploadErrors([])}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: 'none',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '18px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Upload Success */}
+      {uploadSuccess && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#10b981',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '8px',
+          zIndex: 1001,
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+        }}>
+          ✅ Sector allocations imported successfully!
         </div>
       )}
     </div>

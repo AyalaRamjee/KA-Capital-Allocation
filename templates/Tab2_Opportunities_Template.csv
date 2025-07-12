@@ -1,0 +1,9 @@
+Opportunity Name,Description,Source,Sponsor,Status,Investment Min (USD),Investment Max (USD),ROI (%),Timeline (months),Strategic Fit Score,Risk Score,Category
+Solar Park Gujarat,500MW solar power plant in Gujarat,Internal,John Doe,new,100000000,150000000,22,18,85,25,Renewable Energy
+Mumbai Port Expansion,Expansion of container terminal capacity,External,Jane Smith,under_review,500000000,750000000,18,36,78,35,Infrastructure
+Data Center Pune,Hyperscale data center facility,Internal,Mike Johnson,new,200000000,300000000,25,24,82,30,Digital Technology
+Coal Mine Odisha,New coal mining operations,External,Sarah Wilson,approved,80000000,120000000,15,48,70,40,Mining & Resources
+Ahmedabad Airport Terminal,New passenger terminal construction,Internal,David Chen,new,300000000,450000000,16,42,75,30,Airports
+Petrochemical Plant Tamil Nadu,New ethylene production facility,External,Lisa Rodriguez,under_review,400000000,600000000,20,60,73,45,Petrochemicals
+Food Processing Hub,Integrated food processing facility,Internal,Robert Kumar,new,50000000,75000000,14,30,68,25,Agriculture
+Commercial Complex Mumbai,Mixed-use development project,External,Emily Patel,rejected,150000000,200000000,12,72,60,35,Real Estate

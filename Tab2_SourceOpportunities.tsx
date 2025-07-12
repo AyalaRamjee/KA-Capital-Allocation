@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Opportunity, InvestmentPriority, AdaniSector } from './types';
 import { formatCurrency } from './mockDataAdani';
+import FileUploadModal from './FileUploadModal';
+import { parseFile, parseOpportunitiesData } from './fileParsingUtils';
 
 interface Tab2Props {
   sharedData: {
@@ -19,6 +21,9 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
   const [modalTab, setModalTab] = useState<'summary' | 'financial' | 'risk' | 'strategic'>('summary');
   const [sortBy, setSortBy] = useState<'name' | 'investment' | 'fit' | 'risk' | 'date'>('fit');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all' as 'all' | 'new' | 'under_review' | 'approved' | 'rejected',
     source: 'all',
@@ -225,6 +230,34 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
     setModalTab('summary');
   };
 
+  // Handle file upload
+  const handleFileUpload = async (file: File) => {
+    try {
+      setUploadErrors([]);
+      setUploadSuccess(false);
+      
+      const rawData = await parseFile(file);
+      const result = parseOpportunitiesData(rawData);
+      
+      if (result.errors.length > 0) {
+        setUploadErrors(result.errors);
+        return;
+      }
+      
+      const updatedOpportunities = [...opportunities, ...result.data];
+      setOpportunities(updatedOpportunities);
+      onDataUpdate({ opportunities: updatedOpportunities });
+      setUploadSuccess(true);
+      
+      setTimeout(() => {
+        setUploadSuccess(false);
+      }, 3000);
+      
+    } catch (error) {
+      setUploadErrors([`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+    }
+  };
+
   // Handle sorting
   const handleSort = (column: typeof sortBy) => {
     if (sortBy === column) {
@@ -259,6 +292,36 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
 
       {/* Filters */}
       <div className="filter-bar">
+        <button 
+          className="upload-btn"
+          onClick={() => setShowUploadModal(true)}
+          style={{
+            background: '#1e293b',
+            border: '1px solid #3b82f6',
+            color: '#e2e8f0',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s',
+            marginRight: '16px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#334155';
+            e.currentTarget.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#1e293b';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          📤 Import Excel/CSV
+        </button>
+        
         <div className="filter-item">
           <label>Search:</label>
           <input
@@ -1005,6 +1068,73 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      <FileUploadModal
+        isOpen={showUploadModal}
+        onClose={() => {
+          setShowUploadModal(false);
+          setUploadErrors([]);
+        }}
+        onFileSelect={handleFileUpload}
+        title="Import Opportunities"
+        description="Upload an Excel or CSV file with opportunity data. Required columns: Opportunity Name, Description, Source, Sponsor, Status, Investment Min (USD), Investment Max (USD), ROI (%), Timeline (months), Strategic Fit Score, Risk Score, Category"
+      />
+
+      {/* Upload Errors */}
+      {uploadErrors.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#dc2626',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '8px',
+          maxWidth: '400px',
+          zIndex: 1001,
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+        }}>
+          <h4 style={{ margin: '0 0 8px 0' }}>Upload Errors:</h4>
+          <ul style={{ margin: 0, paddingLeft: '16px' }}>
+            {uploadErrors.map((error, index) => (
+              <li key={index} style={{ margin: '4px 0' }}>{error}</li>
+            ))}
+          </ul>
+          <button
+            onClick={() => setUploadErrors([])}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: 'none',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '18px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Upload Success */}
+      {uploadSuccess && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#10b981',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '8px',
+          zIndex: 1001,
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+        }}>
+          ✅ Opportunities imported successfully!
         </div>
       )}
 

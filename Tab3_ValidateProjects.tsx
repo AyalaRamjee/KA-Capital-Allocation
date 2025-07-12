@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { ValidatedProject, InvestmentPriority, Opportunity, AdaniSector } from './types';
 import { formatCurrency } from './mockDataAdani';
+import FileUploadModal from './FileUploadModal';
+import { parseFile, parseValidatedProjectsData } from './fileParsingUtils';
 
 interface Tab3Props {
   sharedData: {
@@ -22,6 +24,9 @@ const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterGrade, setFilterGrade] = useState<'all' | 'A' | 'B' | 'C' | 'Non-Investment'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'in_review' | 'validated' | 'rejected'>('all');
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   // Calculate composite score
   const calculateCompositeScore = (opportunity: Opportunity, priorities: InvestmentPriority[]): number => {
@@ -283,6 +288,89 @@ const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }
     }
   };
 
+  // Handle file upload
+  const handleFileUpload = async (file: File) => {
+    try {
+      setUploadErrors([]);
+      setUploadSuccess(false);
+      
+      const rawData = await parseFile(file);
+      const result = parseValidatedProjectsData(rawData);
+      
+      if (result.errors.length > 0) {
+        setUploadErrors(result.errors);
+        return;
+      }
+      
+      // Convert imported data to ValidatedProject format
+      const newProjects: ValidatedProject[] = result.data.map(project => ({
+        id: project.id,
+        opportunityId: project.id,
+        name: project.name,
+        description: `Imported project: ${project.name}`,
+        sponsor: 'Imported User',
+        status: 'planning',
+        capex: project.investmentAmount,
+        opex: project.investmentAmount * 0.1,
+        revenuePotential: project.investmentAmount * 1.5,
+        npv: project.npv,
+        irr: project.expectedIRR,
+        mirr: project.expectedIRR * 0.8,
+        paybackYears: project.paybackPeriod,
+        compositeScore: project.strategicAlignmentScore,
+        investmentGrade: project.strategicAlignmentScore > 80 ? 'A' : 
+                        project.strategicAlignmentScore > 60 ? 'B' : 
+                        project.strategicAlignmentScore > 40 ? 'C' : 'Non-Investment',
+        riskScore: project.riskScore,
+        duration: Math.floor(project.paybackPeriod * 12),
+        geography: 'India',
+        businessUnit: 'Imported',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        validationId: `VAL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        validationStatus: 'pending',
+        validationDate: new Date(),
+        validatedBy: 'System',
+        businessPlan: {
+          executiveSummary: `Imported project: ${project.name}`,
+          marketAnalysis: 'Market analysis pending',
+          marketSize: project.investmentAmount * 5,
+          competitiveLandscape: 'Competitive analysis pending',
+          investmentThesis: 'Investment thesis pending',
+          keySuccessFactors: ['Market demand', 'Operational excellence'],
+          expectedOutcomes: ['Market position', 'ROI achievement'],
+          financials: [],
+          financialProjections: [],
+          operationalPlan: 'Operational plan pending',
+          timeline: 'Timeline pending',
+          budgetBreakdown: 'Budget breakdown pending',
+          riskMitigation: [],
+          risks: [],
+          synergies: []
+        },
+        scoringBreakdown: {
+          strategicAlignment: project.strategicAlignmentScore,
+          financialScore: Math.min(100, project.expectedIRR * 4),
+          riskAdjustment: 100 - project.riskScore,
+          synergyScore: 75,
+          compositeScore: project.strategicAlignmentScore
+        }
+      }));
+      
+      const updatedProjects = [...validatedProjects, ...newProjects];
+      setValidatedProjects(updatedProjects);
+      onDataUpdate({ validatedProjects: updatedProjects });
+      setUploadSuccess(true);
+      
+      setTimeout(() => {
+        setUploadSuccess(false);
+      }, 3000);
+      
+    } catch (error) {
+      setUploadErrors([`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+    }
+  };
+
   return (
     <div className="tab3-validate-clean">
       <div className="main-layout">
@@ -290,6 +378,35 @@ const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }
           <div className="section-header">
             <h2>Validated Projects</h2>
             <div className="header-filters">
+              <button 
+                className="upload-btn"
+                onClick={() => setShowUploadModal(true)}
+                style={{
+                  background: '#1e293b',
+                  border: '1px solid #3b82f6',
+                  color: '#e2e8f0',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  marginRight: '16px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#334155';
+                  e.currentTarget.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#1e293b';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                📤 Import Excel/CSV
+              </button>
               <select 
                 value={filterGrade} 
                 onChange={(e) => setFilterGrade(e.target.value as any)}
@@ -894,6 +1011,73 @@ const Tab3_ValidateProjects: React.FC<Tab3Props> = ({ sharedData, onDataUpdate }
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      <FileUploadModal
+        isOpen={showUploadModal}
+        onClose={() => {
+          setShowUploadModal(false);
+          setUploadErrors([]);
+        }}
+        onFileSelect={handleFileUpload}
+        title="Import Validated Projects"
+        description="Upload an Excel or CSV file with project data. Required columns: Project Name, Investment Amount, Expected IRR (%), Risk Score, NPV, Payback Period (years), Strategic Alignment Score"
+      />
+
+      {/* Upload Errors */}
+      {uploadErrors.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#dc2626',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '8px',
+          maxWidth: '400px',
+          zIndex: 1001,
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+        }}>
+          <h4 style={{ margin: '0 0 8px 0' }}>Upload Errors:</h4>
+          <ul style={{ margin: 0, paddingLeft: '16px' }}>
+            {uploadErrors.map((error, index) => (
+              <li key={index} style={{ margin: '4px 0' }}>{error}</li>
+            ))}
+          </ul>
+          <button
+            onClick={() => setUploadErrors([])}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: 'none',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '18px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Upload Success */}
+      {uploadSuccess && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#10b981',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '8px',
+          zIndex: 1001,
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+        }}>
+          ✅ Projects imported successfully!
         </div>
       )}
     </div>

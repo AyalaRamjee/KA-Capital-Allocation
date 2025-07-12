@@ -1,0 +1,9 @@
+Priority Name,Description,Weight (%),Time Horizon (years),Min ROI (%),Max Payback (years),Risk Appetite,Strategic Importance
+Green Energy,Renewable energy and sustainability initiatives,32,5,18,7,moderate,10
+Infrastructure,Port and transport infrastructure development,22,6,15,10,moderate,9
+Digital Technology,Data centers and digital transformation,15,3,25,5,aggressive,8
+Mining & Resources,Coal and mineral resource extraction,12,8,12,12,conservative,7
+Airports,Airport development and expansion,10,7,16,8,moderate,8
+Petrochemicals,Chemical and petrochemical manufacturing,5,4,20,6,moderate,6
+Agriculture,Agricultural and food processing,3,5,14,9,conservative,5
+Real Estate,Commercial and residential development,1,10,10,15,conservative,4

@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { InvestmentPriority, AdaniSector } from './types';
 import { formatCurrency } from './mockDataAdani';
+import FileUploadModal from './FileUploadModal';
+import { parseFile, parsePrioritiesData } from './fileParsingUtils';
 
 interface Tab1Props {
   sharedData: {
@@ -16,6 +18,9 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
   const [priorities, setPriorities] = useState<InvestmentPriority[]>(sharedData.priorities);
   const [selectedPriority, setSelectedPriority] = useState<InvestmentPriority | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   // Calculate metrics
   const totalWeight = priorities.reduce((sum, p) => sum + p.weight, 0);
@@ -89,6 +94,39 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
     setSelectedPriority(null);
   };
 
+  // Handle file upload
+  const handleFileUpload = async (file: File) => {
+    try {
+      setUploadErrors([]);
+      setUploadSuccess(false);
+      
+      const rawData = await parseFile(file);
+      const result = parsePrioritiesData(rawData);
+      
+      if (result.errors.length > 0) {
+        setUploadErrors(result.errors);
+        return;
+      }
+      
+      // Update capital allocations based on total capital
+      const updatedPriorities = result.data.map(p => ({
+        ...p,
+        capitalAllocation: (p.weight / 100) * sharedData.totalCapital
+      }));
+      
+      setPriorities(updatedPriorities);
+      onDataUpdate({ priorities: updatedPriorities });
+      setUploadSuccess(true);
+      
+      setTimeout(() => {
+        setUploadSuccess(false);
+      }, 3000);
+      
+    } catch (error) {
+      setUploadErrors([`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+    }
+  };
+
   useEffect(() => {
     setPriorities(sharedData.priorities);
   }, [sharedData.priorities]);
@@ -107,6 +145,35 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
           <div className="section-header">
             <h2>Investment Priorities</h2>
             <div className="header-actions">
+              <button 
+                className="upload-btn"
+                onClick={() => setShowUploadModal(true)}
+                style={{
+                  background: '#1e293b',
+                  border: '1px solid #3b82f6',
+                  color: '#e2e8f0',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  marginRight: '16px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#334155';
+                  e.currentTarget.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#1e293b';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                📤 Import Excel/CSV
+              </button>
               <span className={`weight-status ${isWeightValid ? 'valid' : 'invalid'}`}>
                 Total Weight: {totalWeight.toFixed(1)}%
               </span>
@@ -265,6 +332,73 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
           </div>
         </div>
       </div>
+
+      {/* Upload Modal */}
+      <FileUploadModal
+        isOpen={showUploadModal}
+        onClose={() => {
+          setShowUploadModal(false);
+          setUploadErrors([]);
+        }}
+        onFileSelect={handleFileUpload}
+        title="Import Investment Priorities"
+        description="Upload an Excel or CSV file with priority data. Required columns: Priority Name, Description, Weight (%), Time Horizon (years), Min ROI (%), Max Payback (years), Risk Appetite, Strategic Importance"
+      />
+
+      {/* Upload Errors */}
+      {uploadErrors.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#dc2626',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '8px',
+          maxWidth: '400px',
+          zIndex: 1001,
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+        }}>
+          <h4 style={{ margin: '0 0 8px 0' }}>Upload Errors:</h4>
+          <ul style={{ margin: 0, paddingLeft: '16px' }}>
+            {uploadErrors.map((error, index) => (
+              <li key={index} style={{ margin: '4px 0' }}>{error}</li>
+            ))}
+          </ul>
+          <button
+            onClick={() => setUploadErrors([])}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: 'none',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '18px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Upload Success */}
+      {uploadSuccess && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#10b981',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '8px',
+          zIndex: 1001,
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+        }}>
+          ✅ Priorities imported successfully!
+        </div>
+      )}
 
       {/* 360° View Modal */}
       {showModal && selectedPriority && (
