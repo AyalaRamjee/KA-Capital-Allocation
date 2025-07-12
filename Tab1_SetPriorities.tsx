@@ -22,38 +22,56 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
   const totalAllocated = priorities.reduce((sum, p) => sum + p.capitalAllocation, 0);
   const isWeightValid = Math.abs(totalWeight - 100) < 0.01;
 
-  // Handle weight changes
+  // Handle weight changes with auto-adjustment
   const handleWeightChange = (id: string, newWeight: number) => {
     if (newWeight < 0 || newWeight > 100) return;
     
-    const updatedPriorities = priorities.map(p => 
-      p.id === id ? { ...p, weight: newWeight } : p
-    );
+    const oldPriorities = [...priorities];
+    const changingPriority = oldPriorities.find(p => p.id === id);
+    if (!changingPriority) return;
     
-    setPriorities(updatedPriorities);
-    onDataUpdate({ priorities: updatedPriorities });
-  };
-
-  // Handle allocation changes
-  const handleAllocationChange = (id: string, newAllocation: number) => {
-    if (newAllocation < 0) return;
+    const oldWeight = changingPriority.weight;
+    const weightDifference = newWeight - oldWeight;
     
-    const updatedPriorities = priorities.map(p => 
-      p.id === id ? { ...p, capitalAllocation: newAllocation } : p
-    );
+    // Update the changing priority
+    changingPriority.weight = newWeight;
     
-    setPriorities(updatedPriorities);
-    onDataUpdate({ priorities: updatedPriorities });
-  };
-
-  // Auto-balance weights
-  const autoBalanceWeights = () => {
-    const activePriorityCount = priorities.filter(p => p.weight > 0).length;
-    const targetWeight = 100 / activePriorityCount;
+    // Auto-adjust other priorities
+    if (weightDifference !== 0) {
+      const otherPriorities = oldPriorities.filter(p => p.id !== id);
+      const totalOtherWeight = otherPriorities.reduce((sum, p) => sum + p.weight, 0);
+      
+      if (totalOtherWeight > 0) {
+        // Distribute the difference proportionally
+        otherPriorities.forEach(priority => {
+          const proportion = priority.weight / totalOtherWeight;
+          priority.weight = Math.max(0, priority.weight - (weightDifference * proportion));
+          priority.weight = Math.round(priority.weight * 10) / 10; // Round to 1 decimal
+        });
+      } else if (newWeight < 100) {
+        // If all others are 0, distribute evenly
+        const sharePerPriority = (100 - newWeight) / otherPriorities.length;
+        otherPriorities.forEach(priority => {
+          priority.weight = Math.round(sharePerPriority * 10) / 10;
+        });
+      }
+    }
     
-    const updatedPriorities = priorities.map(p => 
-      p.weight > 0 ? { ...p, weight: Math.round(targetWeight * 100) / 100 } : p
-    );
+    // Ensure total is exactly 100
+    const newTotal = oldPriorities.reduce((sum, p) => sum + p.weight, 0);
+    if (Math.abs(newTotal - 100) > 0.01) {
+      const adjustment = 100 - newTotal;
+      const firstNonZero = oldPriorities.find(p => p.id !== id && p.weight > 0);
+      if (firstNonZero) {
+        firstNonZero.weight = Math.round((firstNonZero.weight + adjustment) * 10) / 10;
+      }
+    }
+    
+    // Update capital allocations based on weights
+    const updatedPriorities = oldPriorities.map(p => ({
+      ...p,
+      capitalAllocation: (p.weight / 100) * sharedData.totalCapital
+    }));
     
     setPriorities(updatedPriorities);
     onDataUpdate({ priorities: updatedPriorities });
@@ -75,6 +93,12 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
     setPriorities(sharedData.priorities);
   }, [sharedData.priorities]);
 
+  // Format currency for professional display
+  const formatProfessionalCurrency = (value: number): string => {
+    const formatted = formatCurrency(value);
+    return formatted;
+  };
+
   return (
     <div className="tab1-priorities-clean">
       <div className="main-layout">
@@ -86,12 +110,6 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
               <span className={`weight-status ${isWeightValid ? 'valid' : 'invalid'}`}>
                 Total Weight: {totalWeight.toFixed(1)}%
               </span>
-              <button 
-                className="btn-auto-balance"
-                onClick={autoBalanceWeights}
-              >
-                Auto-Balance
-              </button>
             </div>
           </div>
 
@@ -99,7 +117,7 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
             <thead>
               <tr>
                 <th>PRIORITY NAME</th>
-                <th>WEIGHT (%)</th>
+                <th style={{ width: '200px' }}>WEIGHT (%)</th>
                 <th>CAPITAL ALLOCATION</th>
                 <th>TIME HORIZON</th>
                 <th>MIN ROI</th>
@@ -125,18 +143,26 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
                     </a>
                   </td>
                   <td>
-                    <input
-                      type="number"
-                      value={priority.weight}
-                      onChange={(e) => handleWeightChange(priority.id, parseFloat(e.target.value) || 0)}
-                      className="weight-input-clean"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                    />
+                    <div className="weight-slider-container">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={priority.weight}
+                        onChange={(e) => handleWeightChange(priority.id, parseFloat(e.target.value))}
+                        className="weight-slider"
+                        style={{
+                          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${priority.weight}%, #334155 ${priority.weight}%, #334155 100%)`
+                        }}
+                      />
+                      <span className="weight-value">{priority.weight.toFixed(1)}%</span>
+                    </div>
                   </td>
                   <td>
-                    <span className="allocation-amount">{formatCurrency(priority.capitalAllocation)}</span>
+                    <span className="allocation-amount-professional">
+                      {formatProfessionalCurrency(priority.capitalAllocation)}
+                    </span>
                   </td>
                   <td>{priority.timeHorizon} years</td>
                   <td>{priority.minROI}%</td>
@@ -222,7 +248,11 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
             <h3>Summary</h3>
             <div className="summary-item">
               <span className="summary-label">Total Capital:</span>
-              <span className="summary-value">{formatCurrency(totalAllocated)}</span>
+              <span className="summary-value">{formatProfessionalCurrency(sharedData.totalCapital)}</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label">Allocated:</span>
+              <span className="summary-value">{formatProfessionalCurrency(totalAllocated)}</span>
             </div>
             <div className="summary-item">
               <span className="summary-label">Active Priorities:</span>
@@ -230,7 +260,7 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
             </div>
             <div className="summary-item">
               <span className="summary-label">Avg Min ROI:</span>
-              <span className="summary-value">{(priorities.reduce((sum, p) => sum + p.minROI, 0) / priorities.length).toFixed(1)}%</span>
+              <span className="summary-value">{(priorities.reduce((sum, p) => sum + p.minROI * p.weight, 0) / 100).toFixed(1)}%</span>
             </div>
           </div>
         </div>
@@ -257,7 +287,7 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
               <div className="modal-grid">
                 <div className="modal-item">
                   <label>Capital Allocation:</label>
-                  <span>{formatCurrency(selectedPriority.capitalAllocation)}</span>
+                  <span>{formatProfessionalCurrency(selectedPriority.capitalAllocation)}</span>
                 </div>
                 <div className="modal-item">
                   <label>Weight:</label>
@@ -290,6 +320,97 @@ export const Tab1_SetPriorities: React.FC<Tab1Props> = ({ sharedData, onDataUpda
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        /* Weight Slider Styles */
+        .weight-slider-container {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+        }
+
+        .weight-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 140px;
+          height: 6px;
+          border-radius: 3px;
+          outline: none;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .weight-slider:hover {
+          transform: translateY(-1px);
+        }
+
+        .weight-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: #3b82f6;
+          cursor: pointer;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          transition: all 0.2s ease;
+        }
+
+        .weight-slider::-webkit-slider-thumb:hover {
+          width: 20px;
+          height: 20px;
+          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .weight-slider::-moz-range-thumb {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: #3b82f6;
+          cursor: pointer;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          transition: all 0.2s ease;
+        }
+
+        .weight-slider::-moz-range-thumb:hover {
+          width: 20px;
+          height: 20px;
+          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .weight-value {
+          min-width: 45px;
+          text-align: right;
+          color: #cbd5e1;
+          font-weight: 600;
+          font-size: 0.875rem;
+        }
+
+        /* Professional Capital Allocation Styling */
+        .allocation-amount-professional {
+          color: #e2e8f0;
+          font-weight: 600;
+          font-size: 0.95rem;
+          letter-spacing: 0.025em;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Update table styling for better alignment */
+        .priorities-table-clean td {
+          padding: 1rem 0.75rem;
+          vertical-align: middle;
+        }
+
+        /* Ensure proper width for weight column */
+        .priorities-table-clean th:nth-child(2),
+        .priorities-table-clean td:nth-child(2) {
+          width: 200px;
+          min-width: 200px;
+        }
+      `}</style>
     </div>
   );
 };

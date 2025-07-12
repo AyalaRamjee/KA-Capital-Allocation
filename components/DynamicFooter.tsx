@@ -2,28 +2,35 @@
 import React, { useState, useEffect } from 'react';
 
 export default function DynamicFooter() {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<string>('');
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    // Set flag to indicate we're on the client
+    setIsClient(true);
+    
+    // Update time immediately when component mounts on client
+    const updateTime = () => {
+      const date = new Date();
+      setCurrentTime(date.toLocaleString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }));
+    };
+    
+    updateTime(); // Set initial time
+    
+    // Update time every second
+    const timer = setInterval(updateTime, 1000);
 
     return () => clearInterval(timer);
   }, []);
-
-  const formatDateTime = (date: Date) => {
-    return date.toLocaleString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    });
-  };
 
   return (
     <footer style={{
@@ -44,9 +51,11 @@ export default function DynamicFooter() {
       <div style={{
         color: '#ffffff',
         fontFamily: 'monospace',
-        letterSpacing: '0.5px'
+        letterSpacing: '0.5px',
+        minWidth: '250px', // Prevent layout shift
+        textAlign: 'right'
       }}>
-        {formatDateTime(currentTime)}
+        {isClient ? currentTime : ''}
       </div>
     </footer>
   );
