@@ -8,6 +8,7 @@ import { Tab4_AllocateBySector } from './Tab4_AllocateBySector';
 import { Tab5_EnsureDataQuality } from './Tab5_EnsureDataQuality';
 import { Tab6_MonitorPortfolio } from './Tab6_MonitorPortfolio';
 import { Tab7_WhatIfAnalysis } from './Tab7_WhatIfAnalysis';
+import AdaniAssistantModal from './AdaniAssistantModal';
 import { AppState, InvestmentPriority, Opportunity, AdaniProject, AdaniSector, AdaniMetrics, ValidatedProject, SectorAllocation, AllocationConstraint, ValidationRule, DataQualityIssue, DataQualityMetrics } from './types';
 import { adaniPriorities, allOpportunities, adaniSectors, adaniMetrics, formatCurrency } from './mockDataAdani';
 import './styles.css';
@@ -17,6 +18,7 @@ export default function AdaniGrowthSystem() {
   const [activeTab, setActiveTab] = useState(1);
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('dark');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
   const [appState, setAppState] = useState<AppState>({
     // Adani Growth System state
     investmentPriorities: adaniPriorities,
@@ -140,6 +142,62 @@ export default function AdaniGrowthSystem() {
     setIsFullscreen(!isFullscreen);
   };
 
+  const handleClearAllData = () => {
+    // Reset to initial empty state
+    setAppState({
+      investmentPriorities: [],
+      opportunities: [],
+      adaniProjects: [],
+      validatedProjects: [],
+      adaniSectors: [],
+      adaniMetrics: {
+        totalCapital: 0,
+        deploymentTarget: 0,
+        currentDeploymentRate: 0,
+        targetDeploymentRate: 0,
+        totalOpportunities: 0,
+        activePriorities: 0,
+        portfolioSectors: 0
+      },
+      sectorAllocations: [],
+      allocationConstraints: [],
+      validationRules: [],
+      dataQualityIssues: [],
+      dataQualityMetrics: {
+        overallScore: 0,
+        totalIssues: 0,
+        criticalIssues: 0,
+        warningIssues: 0,
+        infoIssues: 0,
+        resolvedIssues: 0,
+        categoryBreakdown: {},
+        trendData: []
+      },
+      validationIssues: [],
+      approvalStatuses: [],
+      auditTrail: [],
+      settings: {
+        discountRate: 12,
+        currency: 'USD',
+        fiscalYearStart: 4,
+        totalBudget: 0
+      }
+    });
+    // Clear localStorage
+    localStorage.removeItem('adani-growth-system-state');
+  };
+
+  const handleAssistantDataGenerated = (data: any) => {
+    setAppState(prev => ({
+      ...prev,
+      investmentPriorities: data.investmentPriorities,
+      opportunities: data.opportunities,
+      adaniSectors: data.adaniSectors,
+      adaniMetrics: data.adaniMetrics,
+      settings: data.settings
+    }));
+  };
+
   // ===== PERSISTENCE =====
   useEffect(() => {
     // Clear old data and start fresh
@@ -195,6 +253,8 @@ export default function AdaniGrowthSystem() {
         isFullscreen={isFullscreen}
         title="Adani Growth System"
         subtitle="Accelerating $90B Capital Deployment"
+        onShowAssistant={() => setShowAssistant(true)}
+        onClearAllData={handleClearAllData}
       />
       
       {/* OPTIMIZED Key Metrics Bar - Compact & Consistent */}
@@ -634,6 +694,12 @@ export default function AdaniGrowthSystem() {
           />
         )}
       </div>
+
+      <AdaniAssistantModal 
+        isOpen={showAssistant} 
+        onClose={() => setShowAssistant(false)} 
+        onDataGenerated={handleAssistantDataGenerated} 
+      />
     </div>
   );
 }
