@@ -1,11 +1,11 @@
 Project Name,Investment Amount,Expected IRR (%),Risk Score,NPV,Payback Period (years),Strategic Alignment Score
-Mumbai Port Expansion,500000000,18.5,35,750000000,5.5,88
-Solar Park Gujarat,125000000,22.3,25,187500000,4.2,92
-Data Center Pune,250000000,25.1,30,375000000,3.8,89
-Coal Mine Odisha,100000000,15.2,40,150000000,6.8,82
-Ahmedabad Airport Terminal,375000000,16.8,30,562500000,5.9,85
-Petrochemical Plant Tamil Nadu,500000000,20.4,45,750000000,4.9,86
-Food Processing Hub,62500000,14.6,25,93750000,6.2,78
-Wind Farm Rajasthan,180000000,21.7,28,270000000,4.6,90
-LNG Terminal Gujarat,300000000,17.9,38,450000000,5.6,84
-Mining Equipment Upgrade,75000000,16.3,32,112500000,6.1,80
+Mumbai Port Expansion,56000000,18.5,35,83000000,5.5,88
+Solar Park Gujarat,14000000,22.3,25,21000000,4.2,92
+Data Center Pune,28000000,25.1,30,42000000,3.8,89
+Coal Mine Odisha,11000000,15.2,40,17000000,6.8,82
+Ahmedabad Airport Terminal,42000000,16.8,30,63000000,5.9,85
+Petrochemical Plant Tamil Nadu,56000000,20.4,45,83000000,4.9,86
+Food Processing Hub,7000000,14.6,25,10500000,6.2,78
+Wind Farm Rajasthan,20000000,21.7,28,30000000,4.6,90
+LNG Terminal Gujarat,33000000,17.9,38,50000000,5.6,84
+Mining Equipment Upgrade,8500000,16.3,32,12500000,6.1,80

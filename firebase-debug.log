@@ -1,0 +1,45 @@
+[debug] [2025-07-12T17:58:16.729Z] ----------------------------------------------------------------------
+[debug] [2025-07-12T17:58:16.731Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\ramjee.ayala\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2025-07-12T17:58:16.731Z] CLI Version:   14.6.0
+[debug] [2025-07-12T17:58:16.731Z] Platform:      win32
+[debug] [2025-07-12T17:58:16.731Z] Node Version:  v22.13.1
+[debug] [2025-07-12T17:58:16.731Z] Time:          Sat Jul 12 2025 12:58:16 GMT-0500 (Central Daylight Time)
+[debug] [2025-07-12T17:58:16.731Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-07-12T17:58:16.842Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-07-12T17:58:16.842Z] > authorizing via signed-in user (sguha@tadanow.com)
+[debug] [2025-07-12T17:58:16.842Z] [iam] checking project kacapitalallocation for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2025-07-12T17:58:16.843Z] Checked if tokens are valid: true, expires at: 1752344634584
+[debug] [2025-07-12T17:58:16.843Z] Checked if tokens are valid: true, expires at: 1752344634584
+[debug] [2025-07-12T17:58:16.843Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/kacapitalallocation:testIamPermissions [none]
+[debug] [2025-07-12T17:58:16.844Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/kacapitalallocation:testIamPermissions x-goog-quota-user=projects/kacapitalallocation
+[debug] [2025-07-12T17:58:16.844Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/kacapitalallocation:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-07-12T17:58:17.098Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/kacapitalallocation:testIamPermissions 200
+[debug] [2025-07-12T17:58:17.098Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/kacapitalallocation:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-07-12T17:58:17.098Z] Checked if tokens are valid: true, expires at: 1752344634584
+[debug] [2025-07-12T17:58:17.098Z] Checked if tokens are valid: true, expires at: 1752344634584
+[debug] [2025-07-12T17:58:17.098Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/kacapitalallocation [none]
+[debug] [2025-07-12T17:58:17.489Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/kacapitalallocation 200
+[debug] [2025-07-12T17:58:17.489Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/kacapitalallocation {"projectId":"kacapitalallocation","projectNumber":"128283033855","displayName":"KACapitalAllocation","name":"projects/kacapitalallocation","resources":{"hostingSite":"kacapitalallocation"},"state":"ACTIVE","etag":"1_ca1ea70d-0a68-4b36-bba7-d2443d2e8254"}
+[info] 
+   Thank you for trying our early preview of Next.js support on Firebase Hosting.
+   During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
+   The integration is known to work with Next.js version 12 - 15.0. You may encounter errors.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/nextjs
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+[debug] [2025-07-12T17:58:21.512Z] Checked if tokens are valid: true, expires at: 1752344634584
+[debug] [2025-07-12T17:58:21.512Z] Checked if tokens are valid: true, expires at: 1752344634584
+[debug] [2025-07-12T17:58:21.512Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/kacapitalallocation/sites/kacapitalallocation [none]
+[debug] [2025-07-12T17:58:21.860Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/kacapitalallocation/sites/kacapitalallocation 200
+[debug] [2025-07-12T17:58:21.860Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/kacapitalallocation/sites/kacapitalallocation {"name":"projects/kacapitalallocation/sites/kacapitalallocation","defaultUrl":"https://kacapitalallocation.web.app","type":"DEFAULT_SITE"}
+[info]    ▲ Next.js 15.3.5
+
+[info] 
+
+[info]    Creating an optimized production build ...
+
