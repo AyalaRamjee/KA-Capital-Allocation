@@ -22,6 +22,8 @@ export default function AdaniGrowthSystem() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
+  const [showWelcomeNotification, setShowWelcomeNotification] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
 
   // Handle workspace manager in new popup window
   const handleShowWorkspaceManager = () => {
@@ -261,14 +263,24 @@ export default function AdaniGrowthSystem() {
       alert('Popup blocked! Please allow popups for this site to use the Workspace Manager.');
     }
   };
+  
+  // Initialize with empty state
   const [appState, setAppState] = useState<AppState>({
-    // Adani Growth System state
-    investmentPriorities: adaniPriorities,
-    opportunities: allOpportunities,
+    // Adani Growth System state - START WITH EMPTY DATA
+    investmentPriorities: [],
+    opportunities: [],
     adaniProjects: [],
     validatedProjects: [],
-    adaniSectors: adaniSectors,
-    adaniMetrics: adaniMetrics,
+    adaniSectors: [],
+    adaniMetrics: {
+      totalCapital: 0,
+      deploymentTarget: 0,
+      currentDeploymentRate: 0,
+      targetDeploymentRate: 0,
+      totalOpportunities: 0,
+      activePriorities: 0,
+      portfolioSectors: 0
+    },
     
     // Tab 4 - Sector Allocation
     sectorAllocations: [],
@@ -278,7 +290,7 @@ export default function AdaniGrowthSystem() {
     validationRules: [],
     dataQualityIssues: [],
     dataQualityMetrics: {
-      overallScore: 85,
+      overallScore: 0,
       totalIssues: 0,
       criticalIssues: 0,
       warningIssues: 0,
@@ -298,7 +310,7 @@ export default function AdaniGrowthSystem() {
       discountRate: 12,
       currency: 'USD',
       fiscalYearStart: 4, // April
-      totalBudget: 90000000000 // $90B
+      totalBudget: 0 // Start with 0
     }
   });
 
@@ -438,39 +450,60 @@ export default function AdaniGrowthSystem() {
       adaniMetrics: data.adaniMetrics,
       settings: data.settings
     }));
+    setShowWelcomeNotification(false); // Hide welcome notification after data is generated
   };
 
   const handleLaunchApp = () => {
     console.log('🚀 Launching Adani Growth System from chatbot...');
   };
 
+  const handleGenerateSampleData = () => {
+    // Load sample data from mockDataAdani
+    setAppState(prev => ({
+      ...prev,
+      investmentPriorities: adaniPriorities,
+      opportunities: allOpportunities,
+      adaniSectors: adaniSectors,
+      adaniMetrics: adaniMetrics,
+      settings: {
+        ...prev.settings,
+        totalBudget: 90000000000 // $90B
+      }
+    }));
+    setShowWelcomeNotification(false);
+    // Open the AI Assistant chatbot
+    setShowAssistant(true);
+  };
+
   // ===== PERSISTENCE =====
   useEffect(() => {
-    // Clear old data and start fresh
-    localStorage.removeItem('strategic-allocation-data');
-    localStorage.removeItem('allocation-data');
-    localStorage.removeItem('capital-allocation-state');
-    
+    // Check if it's first visit
+    const hasVisitedBefore = localStorage.getItem('adani-growth-system-visited');
     const savedState = localStorage.getItem('adani-growth-system-state');
-    if (savedState) {
+    
+    if (!hasVisitedBefore || !savedState) {
+      // First visit or no saved data - show welcome notification
+      setShowWelcomeNotification(true);
+      localStorage.setItem('adani-growth-system-visited', 'true');
+    } else if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
         // Validate the data structure matches our new format
         if (parsed.investmentPriorities && Array.isArray(parsed.investmentPriorities)) {
           setAppState(prev => ({ ...prev, ...parsed }));
-        } else {
-          // Clear invalid old data
-          localStorage.removeItem('adani-growth-system-state');
+          setIsFirstVisit(false);
         }
       } catch (error) {
         console.error('Error loading saved state:', error);
-        localStorage.removeItem('adani-growth-system-state');
+        setShowWelcomeNotification(true);
       }
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('adani-growth-system-state', JSON.stringify(appState));
+    if (appState.investmentPriorities.length > 0 || appState.opportunities.length > 0) {
+      localStorage.setItem('adani-growth-system-state', JSON.stringify(appState));
+    }
   }, [appState]);
 
   // ===== TAB CONFIGURATION =====
@@ -503,6 +536,224 @@ export default function AdaniGrowthSystem() {
         onClearAllData={handleClearAllData}
         onShowWorkspaceManager={handleShowWorkspaceManager}
       />
+      
+      {/* Welcome Notification */}
+      {showWelcomeNotification && (
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: currentTheme === 'dark' 
+            ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' 
+            : 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
+          borderRadius: '12px',
+          padding: '1.25rem 2rem',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+          border: `2px solid ${currentTheme === 'dark' ? '#334155' : '#e2e8f0'}`,
+          maxWidth: '420px',
+          width: '90%',
+          zIndex: 9999,
+          animation: 'slideIn 0.5s ease-out'
+        }}>
+          {/* Logo */}
+          <div style={{
+            textAlign: 'center',
+            marginBottom: '0.5rem'
+          }}>
+            <img 
+              src={currentTheme === 'dark' ? '/TADA_TM-2023_Color-White-Logo.svg' : '/TADA_TM-2023_Color-Logo (1).svg'}
+              alt="TADA Logo" 
+              style={{
+                height: '35px',
+                marginBottom: '0.5rem'
+              }}
+            />
+            <div style={{
+              fontSize: '0.75rem',
+              color: currentTheme === 'dark' ? '#64748b' : '#6b7280',
+              fontWeight: '600',
+              letterSpacing: '0.5px'
+            }}>
+              PROUDLY BUILT FOR
+            </div>
+            <div style={{
+              fontSize: '1.25rem',
+              fontWeight: '800',
+              background: 'linear-gradient(135deg, #0066cc 0%, #00b8d4 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              marginTop: '0.125rem'
+            }}>
+              ADANI GROUP
+            </div>
+          </div>
+
+          {/* Welcome Message */}
+          <h2 style={{
+            color: currentTheme === 'dark' ? '#ffffff' : '#1f2937',
+            fontSize: '1.25rem',
+            fontWeight: '700',
+            textAlign: 'center',
+            marginBottom: '0.5rem'
+          }}>
+            Welcome to Adani Growth System
+          </h2>
+
+          <p style={{
+            color: currentTheme === 'dark' ? '#cbd5e1' : '#4b5563',
+            fontSize: '0.875rem',
+            lineHeight: '1.5',
+            textAlign: 'center',
+            marginBottom: '1rem'
+          }}>
+            Start your $90B capital deployment journey with powerful portfolio management tools.
+          </p>
+
+          {/* Options */}
+          <div style={{
+            background: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+            borderRadius: '8px',
+            padding: '0.75rem',
+            marginBottom: '0.75rem'
+          }}>
+            <h3 style={{
+              color: currentTheme === 'dark' ? '#00b8d4' : '#0066cc',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              marginBottom: '0.5rem'
+            }}>
+              Choose how to get started:
+            </h3>
+
+            <div style={{ marginBottom: '0.75rem' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                marginBottom: '0.5rem'
+              }}>
+                <span style={{ fontSize: '1rem', marginRight: '0.5rem' }}>📊</span>
+                <div>
+                  <div style={{
+                    color: currentTheme === 'dark' ? '#e2e8f0' : '#1f2937',
+                    fontWeight: '600'
+                  }}>
+                    Upload Your Data
+                  </div>
+                  <div style={{
+                    color: currentTheme === 'dark' ? '#94a3b8' : '#6b7280',
+                    fontSize: '0.75rem'
+                  }}>
+                    Import existing portfolio data from Excel or CSV files
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-start'
+              }}>
+                <span style={{ fontSize: '1rem', marginRight: '0.5rem' }}>🤖</span>
+                <div>
+                  <div style={{
+                    color: currentTheme === 'dark' ? '#e2e8f0' : '#1f2937',
+                    fontWeight: '600'
+                  }}>
+                    Generate Sample Data
+                  </div>
+                  <div style={{
+                    color: currentTheme === 'dark' ? '#94a3b8' : '#6b7280',
+                    fontSize: '0.875rem'
+                  }}>
+                    Use TADA AI to create realistic demo data and explore features
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{
+            display: 'flex',
+            gap: '0.75rem',
+            justifyContent: 'center'
+          }}>
+            <button
+              onClick={handleGenerateSampleData}
+              style={{
+                background: 'linear-gradient(135deg, #00b8d4 0%, #0066cc 100%)',
+                color: 'white',
+                padding: '0.5rem 1.5rem',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 102, 204, 0.3)',
+                transition: 'all 0.3s ease',
+                flex: 1
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 102, 204, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 102, 204, 0.3)';
+              }}
+            >
+              Generate Demo Data
+            </button>
+
+            <button
+              onClick={() => setShowWelcomeNotification(false)}
+              style={{
+                background: currentTheme === 'dark' ? '#334155' : '#e5e7eb',
+                color: currentTheme === 'dark' ? '#e2e8f0' : '#1f2937',
+                padding: '0.75rem 2rem',
+                borderRadius: '10px',
+                border: 'none',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                flex: 1
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = currentTheme === 'dark' ? '#475569' : '#d1d5db';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = currentTheme === 'dark' ? '#334155' : '#e5e7eb';
+              }}
+            >
+              Start Empty
+            </button>
+          </div>
+
+          {/* Footer note */}
+          <p style={{
+            color: currentTheme === 'dark' ? '#64748b' : '#9ca3af',
+            fontSize: '0.75rem',
+            textAlign: 'center',
+            marginTop: '0.75rem',
+            fontStyle: 'italic'
+          }}>
+            You can always upload data later using the Excel import feature in each tab
+          </p>
+        </div>
+      )}
+
+      {/* Backdrop for welcome notification */}
+      {showWelcomeNotification && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 9998
+        }} />
+      )}
       
       {/* OPTIMIZED Key Metrics Bar - Compact & Consistent */}
       <div style={{
@@ -666,7 +917,7 @@ export default function AdaniGrowthSystem() {
                 fontWeight: '700',
                 lineHeight: 1,
                 margin: 0
-              }}>{((selectedOpportunities / appState.opportunities.length) * 100).toFixed(1)}%</span>
+              }}>{appState.opportunities.length > 0 ? ((selectedOpportunities / appState.opportunities.length) * 100).toFixed(1) : '0.0'}%</span>
             </div>
           </div>
 
@@ -950,6 +1201,20 @@ export default function AdaniGrowthSystem() {
       />
 
       <DynamicFooter />
+
+      {/* Add animation keyframes */}
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -45%);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+          }
+        }
+      `}</style>
     </div>
   );
 }
