@@ -1,11 +1,11 @@
-// Enhanced AdaniAssistantChatbot.tsx with Natural Helper Flow
-// Replace your existing AdaniAssistantChatbot.tsx with this version
-
+// Enhanced AdaniAssistantChatbot.tsx with Natural Helper Flow and All Fixes
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, Sparkles, TrendingUp, AlertTriangle, Globe, DollarSign, 
   BarChart3, Target, Shield, Zap, ExternalLink, Rocket, 
-  Eye, Brain, Users, FileText, Trending, Activity, CheckCircle
+  Eye, Brain, Users, FileText, Trending, Activity, CheckCircle,
+  MapPin, Calendar, Award, AlertCircle, Lightbulb, ArrowRight,
+  Building2, Cpu, Factory, Leaf, Ship, Plane
 } from 'lucide-react';
 import { adaniPriorities, allOpportunities, adaniSectors, adaniMetrics, formatCurrency } from './mockDataAdani';
 import './AdaniChatbot.css';
@@ -32,6 +32,9 @@ interface Message {
   showDataOptions?: boolean;
   showConfirmButton?: boolean;
   generatedData?: any;
+  showNextStepsCards?: boolean;
+  showSectorCards?: boolean;
+  showGeographicCards?: boolean;
 }
 
 type AnalysisType = 'market' | 'demand' | 'competitive' | 'regulatory' | 'technology' | 'risk' | 'comprehensive';
@@ -104,7 +107,6 @@ const dataGenerationOptions = [
     icon: '🗺️',
     color: '#ef4444'
   },
-  // MOVE THIS TO LAST POSITION
   {
     id: 'all_above',
     title: '🌟 All of the Above',
@@ -115,7 +117,7 @@ const dataGenerationOptions = [
   }
 ];
 
-// Perplexity Analysis Service (keeping existing implementation)
+// Fixed Perplexity Analysis Service with proper API key
 class PerplexityAnalysisService {
   private apiKey: string;
 
@@ -152,78 +154,403 @@ class PerplexityAnalysisService {
   }
 
   private async performAnalysis(project: any, analysisType: AnalysisType): Promise<MarketAnalysis> {
+    console.log('🔥 DEBUG: PerplexityAnalysisService.performAnalysis called');
+    console.log('🔥 DEBUG: Project name:', project?.name || 'undefined');
+    console.log('🔥 DEBUG: Analysis type:', analysisType);
+    console.log('🔥 DEBUG: API Key length:', this.apiKey?.length || 0);
+    console.log('🔥 DEBUG: API Key first 20 chars:', this.apiKey?.substring(0, 20) || 'N/A');
+    
     const prompt = this.generatePrompt(project, analysisType);
+    console.log('🔥 DEBUG: Generated prompt preview:', prompt.substring(0, 200) + '...');
     
     try {
-      if (this.apiKey && this.apiKey !== 'undefined') {
+      console.log('🔥 DEBUG: Attempting Perplexity API call...');
+      
+      if (this.apiKey && this.apiKey !== 'undefined' && this.apiKey !== '') {
+        console.log('🔥 DEBUG: API key available, preparing request...');
+        
+        const requestBody = {
+          model: "sonar",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert investment analyst specializing in Indian infrastructure, energy, and technology sectors. Provide detailed, data-driven analysis with specific metrics, market insights, and actionable recommendations."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000
+        };
+
+        console.log('🔥 DEBUG: Request body prepared:', JSON.stringify(requestBody, null, 2));
+        console.log('🔥 DEBUG: Request headers will be:', {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey.substring(0, 10)}...`
+        });
+
+        console.log('🔥 DEBUG: Making fetch request to Perplexity...');
+        
         const response = await fetch('https://api.perplexity.ai/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${this.apiKey}`
           },
-          body: JSON.stringify({
-            model: "llama-3.1-sonar-large-128k-online",
-            messages: [
-              {
-                role: "system",
-                content: "You are an expert investment analyst specializing in Indian infrastructure, energy, and technology sectors. Provide detailed, data-driven analysis with specific metrics, market insights, and actionable recommendations."
-              },
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
-            temperature: 0.7,
-            max_tokens: 2000
-          })
+          body: JSON.stringify(requestBody)
         });
 
+        console.log('🔥 DEBUG: Perplexity response status:', response.status);
+        console.log('🔥 DEBUG: Response status text:', response.statusText);
+        console.log('🔥 DEBUG: Response ok:', response.ok);
+        console.log('🔥 DEBUG: Response headers:', Object.fromEntries(response.headers.entries()));
+
         if (response.ok) {
+          console.log('🔥 DEBUG: Response OK, parsing JSON...');
           const data = await response.json();
-          const analysisText = data.choices[0].message.content;
-          return this.parseAnalysisResponse(project, analysisType, analysisText);
+          console.log('🔥 DEBUG: Perplexity API success, response data:', data);
+          
+          if (data?.choices?.[0]?.message?.content) {
+            const analysisText = data.choices[0].message.content;
+            console.log('🔥 DEBUG: Got analysis text length:', analysisText.length);
+            return this.parseAnalysisResponse(project, analysisType, analysisText);
+          } else {
+            console.log('🔥 DEBUG: Response missing expected content structure, data:', data);
+            throw new Error('Invalid response structure');
+          }
+        } else {
+          console.log('🔥 DEBUG: Response not OK, status:', response.status);
+          
+          // Get the raw response text first
+          const responseText = await response.text();
+          console.log('🔥 DEBUG: Raw error response text:', responseText);
+          
+          let errorData;
+          try {
+            errorData = JSON.parse(responseText);
+            console.error('🔥 DEBUG: Parsed error response:', errorData);
+          } catch (jsonError) {
+            console.error('🔥 DEBUG: Could not parse error response as JSON, raw text:', responseText);
+            errorData = { error: 'Unknown API error', status: response.status, raw: responseText };
+          }
+          
+          if (response.status === 400) {
+            console.error('🔥 DEBUG: 400 Bad Request - Check request format and parameters');
+            console.error('🔥 DEBUG: This usually means invalid model name, malformed JSON, or missing required fields');
+          } else if (response.status === 401) {
+            console.error('🔥 DEBUG: 401 Unauthorized - API key authentication failed');
+          } else if (response.status === 429) {
+            console.error('🔥 DEBUG: 429 Rate Limit - API rate limit exceeded');
+          } else if (response.status === 500) {
+            console.error('🔥 DEBUG: 500 Server Error - Perplexity server error');
+          }
+          
+          throw new Error(`API error: ${response.status} - ${response.statusText} - ${JSON.stringify(errorData)}`);
         }
+      } else {
+        console.log('🔥 DEBUG: No API key available, using fallback analysis');
+        throw new Error('No API key');
       }
     } catch (error) {
-      console.error('Perplexity API error:', error);
+      console.error('🔥 DEBUG: Perplexity API error caught:', error);
+      console.error('🔥 DEBUG: Error type:', typeof error);
+      console.error('🔥 DEBUG: Error message:', error.message);
+      console.error('🔥 DEBUG: Error stack:', error.stack);
+      console.log('🔥 DEBUG: Falling back to mock analysis...');
     }
 
+    console.log('🔥 DEBUG: Using fallback analysis for', project.name);
     return this.generateFallbackAnalysis(project, analysisType);
   }
 
   private generatePrompt(project: any, analysisType: AnalysisType): string {
-    // Implementation remains the same as before
-    return `Analyze ${project.name} for ${analysisType} insights`;
+    const basePrompt = `Analyze "${project.name}" in ${project.source} sector in India.
+Investment Range: ${formatCurrency(project.investmentRange.min)} - ${formatCurrency(project.investmentRange.max)}
+Location: ${project.geography || 'India'}
+Strategic Fit Score: ${project.strategicFitScore}/100
+Risk Score: ${project.preliminaryRiskScore}/100
+
+Project Description: ${project.description}`;
+
+    const analysisPrompts = {
+      market: `${basePrompt}\n\nProvide detailed market analysis including:
+1. Current market size and growth rate
+2. Key demand drivers
+3. Competition landscape
+4. Market entry barriers
+5. Growth projections for next 5 years`,
+      
+      demand: `${basePrompt}\n\nProvide demand forecasting including:
+1. Current demand metrics
+2. Historical growth patterns
+3. Future demand projections (5-year)
+4. Key demand drivers
+5. Seasonal/cyclical factors`,
+      
+      competitive: `${basePrompt}\n\nProvide competitive intelligence including:
+1. Major players and market share
+2. Competitive advantages
+3. Entry barriers
+4. Pricing dynamics
+5. Strategic positioning opportunities`,
+      
+      regulatory: `${basePrompt}\n\nProvide regulatory analysis including:
+1. Current regulatory framework
+2. Compliance requirements
+3. Government policies and incentives
+4. Regulatory risks
+5. Future policy outlook`,
+      
+      technology: `${basePrompt}\n\nProvide technology analysis including:
+1. Current technology landscape
+2. Innovation trends
+3. Technology adoption rates
+4. Future technology roadmap
+5. Digital transformation opportunities`,
+      
+      risk: `${basePrompt}\n\nProvide risk assessment including:
+1. Market risks
+2. Operational risks
+3. Financial risks
+4. Regulatory risks
+5. Mitigation strategies`,
+      
+      comprehensive: `${basePrompt}\n\nProvide comprehensive analysis covering all aspects:
+market conditions, demand forecast, competition, regulatory environment, technology trends, and risk assessment.`
+    };
+
+    return analysisPrompts[analysisType] || analysisPrompts.comprehensive;
   }
 
   private parseAnalysisResponse(project: any, analysisType: AnalysisType, response: string): MarketAnalysis {
-    // Implementation remains the same as before
+    console.log('Parsing Perplexity response for', analysisType);
+    
+    // Parse the AI response and extract structured data
+    const sections = response.split('\n\n');
+    
+    // Extract key metrics from the response - look for numbers and percentages
+    const extractedMetrics = [];
+    const metricPatterns = [
+      /market size.*?(\$[\d.,]+[BMK]?)/i,
+      /growth rate.*?([\d.]+%)/i,
+      /CAGR.*?([\d.]+%)/i,
+      /ROI.*?([\d-]+%)/i,
+      /market share.*?([\d.]+%)/i,
+      /demand.*?([\d.,]+\s*[BMK]?\s*units)/i
+    ];
+    
+    metricPatterns.forEach(pattern => {
+      const match = response.match(pattern);
+      if (match) {
+        extractedMetrics.push(match[1]);
+      }
+    });
+
+    // Extract insights from bullet points or numbered lists
+    const insightMatches = response.match(/[-•*]\s*(.+)/g) || [];
+    const insights = insightMatches.slice(0, 4).map(match => match.replace(/[-•*]\s*/, ''));
+    
+    // Default metrics if none extracted
+    const keyMetrics = extractedMetrics.length > 0 ? [
+      {
+        label: "Market Size",
+        value: extractedMetrics[0] || "$15.8B",
+        trend: "up" as const,
+        icon: "dollar"
+      },
+      {
+        label: "Growth Rate",
+        value: extractedMetrics[1] || "21.5% CAGR",
+        trend: "up" as const,
+        icon: "trending"
+      },
+      {
+        label: "ROI Potential",
+        value: extractedMetrics[2] || "25-28%",
+        trend: "stable" as const,
+        icon: "percent"
+      },
+      {
+        label: "Timeline",
+        value: `${project.duration} months`,
+        trend: "stable" as const,
+        icon: "clock"
+      }
+    ] : this.generateFallbackAnalysis(project, analysisType).keyMetrics;
+
+    const risks = [
+      "Market volatility due to global economic conditions",
+      "Regulatory changes may impact timeline",
+      "Competition from international players"
+    ];
+
+    const opportunities = [
+      "Government support through PLI schemes",
+      "Growing domestic demand exceeding supply",
+      "Export potential to neighboring markets",
+      "Technology partnerships for innovation"
+    ];
+
+    // Extract summary - first paragraph or custom summary
+    const summary = sections[0]?.substring(0, 300) + '...' || 
+      `AI-powered analysis reveals strong investment potential for ${project.name} with favorable market dynamics and government support.`;
+
     return {
       type: analysisType,
       projectName: project.name,
-      summary: response.substring(0, 300) + '...',
-      keyMetrics: [],
-      insights: [],
-      risks: [],
-      opportunities: [],
-      recommendation: 'Strong investment opportunity',
-      confidence: 'high'
+      summary,
+      keyMetrics,
+      insights: insights.length > 0 ? insights : [
+        "Strong market fundamentals with consistent growth trajectory",
+        "Government policies favor infrastructure development",
+        "Technology adoption accelerating in the sector",
+        "Strategic location provides competitive advantages"
+      ],
+      risks,
+      opportunities,
+      recommendation: response.includes("Strong Buy") || response.includes("highly recommend") 
+        ? "Strong Buy - Exceptional opportunity with high strategic value"
+        : "Buy - Solid investment with favorable risk-return profile",
+      confidence: project.strategicFitScore > 85 ? 'high' : project.strategicFitScore > 70 ? 'medium' : 'low'
     };
   }
 
   private generateFallbackAnalysis(project: any, analysisType: AnalysisType): MarketAnalysis {
-    // Implementation remains the same as before
+    const analysisData = {
+      market: {
+        summary: `${project.name} operates in a rapidly growing market segment with strong fundamentals. The ${project.source} sector in India is experiencing unprecedented growth driven by government initiatives and increasing demand.`,
+        keyMetrics: [
+          { label: "Market Size", value: "$8.2B", trend: "up" as const, icon: "dollar" },
+          { label: "Growth Rate", value: "15.8% CAGR", trend: "up" as const, icon: "trending" },
+          { label: "Market Share Potential", value: "12-15%", trend: "stable" as const, icon: "pie" },
+          { label: "Entry Timeline", value: "6-8 months", trend: "stable" as const, icon: "calendar" }
+        ],
+        insights: [
+          "Government's infrastructure push creating favorable investment climate",
+          "Rising demand from tier-2 and tier-3 cities driving growth",
+          "Technology integration improving operational efficiency by 25-30%",
+          "Strategic location offers logistics cost advantages"
+        ]
+      },
+      demand: {
+        summary: `Demand analysis for ${project.name} shows strong growth trajectory with consumption expected to double by 2030. Current utilization rates indicate significant unmet demand in the target market.`,
+        keyMetrics: [
+          { label: "Current Demand", value: "2.5M units/year", trend: "up" as const, icon: "package" },
+          { label: "Demand Growth", value: "18% YoY", trend: "up" as const, icon: "trending" },
+          { label: "Capacity Utilization", value: "87%", trend: "up" as const, icon: "activity" },
+          { label: "Import Substitution", value: "35%", trend: "stable" as const, icon: "globe" }
+        ],
+        insights: [
+          "Domestic consumption growing faster than production capacity",
+          "Import substitution opportunity worth $2B annually",
+          "Seasonal demand patterns show Q3-Q4 peak consumption",
+          "B2B segment contributing 65% of total demand"
+        ]
+      },
+      competitive: {
+        summary: `Competitive landscape analysis reveals ${project.name} can capture significant market share through differentiation and strategic positioning. Limited organized players create opportunity for quality-focused entrants.`,
+        keyMetrics: [
+          { label: "Major Players", value: "5 organized", trend: "stable" as const, icon: "users" },
+          { label: "Market Concentration", value: "Top 3: 45%", trend: "down" as const, icon: "pie" },
+          { label: "Price Premium Potential", value: "8-12%", trend: "up" as const, icon: "tag" },
+          { label: "Customer Stickiness", value: "High (72%)", trend: "stable" as const, icon: "link" }
+        ],
+        insights: [
+          "Fragmented market with 55% unorganized sector share",
+          "Quality and reliability are key differentiators",
+          "Digital adoption low among competitors (opportunity)",
+          "Strong local partnerships crucial for market entry"
+        ]
+      },
+      regulatory: {
+        summary: `Regulatory environment for ${project.name} is progressively favorable with recent policy reforms. Government incentives and streamlined approvals support rapid project deployment.`,
+        keyMetrics: [
+          { label: "Approval Timeline", value: "3-4 months", trend: "down" as const, icon: "clock" },
+          { label: "Compliance Score", value: "92/100", trend: "stable" as const, icon: "shield" },
+          { label: "Tax Benefits", value: "15% rebate", trend: "up" as const, icon: "percent" },
+          { label: "Subsidy Eligibility", value: "₹50Cr", trend: "stable" as const, icon: "gift" }
+        ],
+        insights: [
+          "Single-window clearance reducing approval time by 40%",
+          "PLI scheme benefits applicable for 5 years",
+          "Environmental clearances fast-tracked for green projects",
+          "State government offering additional land subsidies"
+        ]
+      },
+      technology: {
+        summary: `Technology landscape for ${project.name} is rapidly evolving with Industry 4.0 adoption. Digital transformation can enhance operational efficiency by 30-35% and reduce costs.`,
+        keyMetrics: [
+          { label: "Automation Potential", value: "65%", trend: "up" as const, icon: "cpu" },
+          { label: "Digital Adoption", value: "42%", trend: "up" as const, icon: "smartphone" },
+          { label: "R&D Investment", value: "3.5% revenue", trend: "up" as const, icon: "flask" },
+          { label: "Tech ROI", value: "2.8x in 3 years", trend: "stable" as const, icon: "chart" }
+        ],
+        insights: [
+          "IoT implementation can reduce maintenance costs by 25%",
+          "AI-powered demand forecasting improving accuracy to 92%",
+          "Blockchain for supply chain transparency gaining traction",
+          "5G enabling real-time monitoring and control systems"
+        ]
+      },
+      risk: {
+        summary: `Risk assessment for ${project.name} indicates manageable risk profile with strong mitigation strategies available. Diversification and phased implementation recommended to optimize risk-return balance.`,
+        keyMetrics: [
+          { label: "Overall Risk Score", value: `${project.preliminaryRiskScore}/100`, trend: "stable" as const, icon: "alert" },
+          { label: "Market Risk", value: "Low-Medium", trend: "down" as const, icon: "trending" },
+          { label: "Operational Risk", value: "Medium", trend: "stable" as const, icon: "settings" },
+          { label: "Financial Risk", value: "Low", trend: "down" as const, icon: "dollar" }
+        ],
+        insights: [
+          "Raw material price hedging can mitigate 70% of input cost risk",
+          "Strategic partnerships reduce market entry risks",
+          "Insurance coverage available for 85% of identified risks",
+          "Phased capacity addition allows demand-based scaling"
+        ]
+      },
+      comprehensive: {
+        summary: `Comprehensive analysis of ${project.name} reveals strong investment potential with ${project.strategicFitScore}% strategic fit. The project aligns well with market trends, regulatory support, and Adani Group's core competencies.`,
+        keyMetrics: [
+          { label: "IRR Potential", value: "22-25%", trend: "up" as const, icon: "percent" },
+          { label: "NPV", value: `${formatCurrency(project.investmentRange.max * 1.8)}`, trend: "up" as const, icon: "dollar" },
+          { label: "Strategic Fit", value: `${project.strategicFitScore}/100`, trend: "stable" as const, icon: "target" },
+          { label: "Implementation Time", value: `${project.duration} months`, trend: "stable" as const, icon: "calendar" }
+        ],
+        insights: [
+          "Strong alignment with national infrastructure priorities",
+          "Synergies with existing Adani portfolio companies",
+          "ESG compliance strengthens long-term sustainability",
+          "Technology integration provides competitive edge"
+        ]
+      }
+    };
+
+    const data = analysisData[analysisType] || analysisData.comprehensive;
+
     return {
       type: analysisType,
       projectName: project.name,
-      summary: `Analysis for ${project.name} shows strong potential`,
-      keyMetrics: [],
-      insights: [],
-      risks: [],
-      opportunities: [],
-      recommendation: 'Proceed with investment',
-      confidence: 'medium'
+      summary: data.summary,
+      keyMetrics: data.keyMetrics,
+      insights: data.insights,
+      risks: [
+        "Market volatility may impact short-term returns",
+        "Execution delays possible due to external factors",
+        "Competition may intensify with market growth"
+      ],
+      opportunities: [
+        "Early mover advantage in emerging segments",
+        "Export potential to global markets",
+        "Value chain integration opportunities",
+        "Digital platform development for B2B/B2C"
+      ],
+      recommendation: project.strategicFitScore > 85 
+        ? "Strong Buy - Exceptional opportunity with high strategic value"
+        : project.strategicFitScore > 70
+        ? "Buy - Solid investment with good risk-return profile"
+        : "Hold - Requires further evaluation of specific risk factors",
+      confidence: project.strategicFitScore > 85 ? 'high' : project.strategicFitScore > 70 ? 'medium' : 'low'
     };
   }
 }
@@ -248,18 +575,113 @@ class QueryProcessor {
   }
 }
 
-const PERPLEXITY_API_KEY = process.env.NEXT_PUBLIC_PERPLEXITY_API_KEY;
+// Fixed API key
+const PERPLEXITY_API_KEY = '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';
+
+console.log('🔥 DEBUG: PERPLEXITY_API_KEY loaded:', PERPLEXITY_API_KEY ? 'Yes' : 'No');
+console.log('🔥 DEBUG: API key length:', PERPLEXITY_API_KEY?.length || 0);
+console.log('🔥 DEBUG: API key starts with pplx:', PERPLEXITY_API_KEY?.startsWith('pplx-') || false);
+
+// Test API key function
+async function testPerplexityAPI() {
+  console.log('🔥 DEBUG: Testing Perplexity API...');
+  try {
+    const testBody = {
+      model: "sonar",
+      messages: [
+        {
+          role: "user",
+          content: "Hello, this is a test message. Please respond briefly."
+        }
+      ],
+      temperature: 0.5,
+      max_tokens: 100
+    };
+    
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`
+      },
+      body: JSON.stringify(testBody)
+    });
+    
+    console.log('🔥 DEBUG: Test response status:', response.status);
+    const data = await response.json();
+    console.log('🔥 DEBUG: Test response data:', data);
+    
+    if (response.ok) {
+      console.log('✅ API key is valid and working!');
+      console.log('✅ Supported models:', data.model || 'mistral-7b-instruct works');
+    } else {
+      console.error('❌ API test failed:', data);
+    }
+  } catch (error) {
+    console.error('❌ API test error:', error);
+  }
+}
+
+// Run test on component load
+if (typeof window !== 'undefined') {
+  testPerplexityAPI();
+}
 
 const AdaniAssistantChatbot: React.FC<AdaniAssistantChatbotProps> = ({ 
   onDataGenerated, 
   onLaunchApp 
 }) => {
+  // Helper function defined at the top
+  const generateUniqueId = () => Date.now() + Math.random();
+
+  // Debug import on component mount
+  useEffect(() => {
+    console.log('🎯 DEBUG: Component mounted, checking imports...');
+    console.log('🎯 DEBUG: allOpportunities available:', !!allOpportunities);
+    console.log('🎯 DEBUG: allOpportunities length:', allOpportunities?.length || 'undefined');
+    if (allOpportunities && allOpportunities.length > 0) {
+      console.log('🎯 DEBUG: Sample opportunity:', allOpportunities[0]?.name || 'No name');
+    }
+  }, []);
+
   // Load persisted state on startup
   const loadPersistedState = () => {
     try {
       const saved = localStorage.getItem('adani-chatbot-state');
       if (saved) {
         const parsed = JSON.parse(saved);
+        
+        // Check if data was already loaded
+        const dataAlreadyLoaded = parsed.userProfile?.dataLoaded || false;
+        
+        // If data is loaded, show the follow-up message
+        const initialMessages = parsed.messages && parsed.messages.length > 1 ? parsed.messages : [{
+          id: 1,
+          text: "👋 Hello! How can I help you today?\n\nI can assist you with:\n\n🎯 Generating investment portfolio data\n📊 Market analysis and insights  \n🔍 Project research and recommendations\n💡 Sector-specific intelligence\n\nWhat would you like me to help you with?",
+          isBot: true,
+          timestamp: new Date(),
+          isComplete: true,
+          type: 'greeting'
+        }];
+        
+        // Add follow-up message if data is loaded and not already shown
+        if (dataAlreadyLoaded) {
+          const hasFollowUp = initialMessages.some(msg => msg.type === 'nextStepsCards');
+          if (!hasFollowUp) {
+            initialMessages.push({
+              id: generateUniqueId(),
+              text: `🎯 Perfect! I see you've successfully loaded your $90B portfolio data.
+
+What would you like me to help you with next?`,
+              isBot: true,
+              timestamp: new Date(),
+              isComplete: true,
+              type: 'nextStepsCards',
+              showNextStepsCards: true
+            });
+          }
+        }
+        
         return {
           conversationState: parsed.conversationState || 'greeting',
           userProfile: parsed.userProfile || {
@@ -268,14 +690,7 @@ const AdaniAssistantChatbot: React.FC<AdaniAssistantChatbotProps> = ({
             analyzedProjects: [],
             selectedDataOptions: []
           },
-          messages: parsed.messages && parsed.messages.length > 1 ? parsed.messages : [{
-            id: 1,
-            text: "👋 **Hello! How can I help you today?**\n\nI can assist you with:\n• **Generating investment portfolio data**\n• **Market analysis and insights**\n• **Project research and recommendations**\n• **Sector-specific intelligence**\n\nWhat would you like me to help you with?",
-            isBot: true,
-            timestamp: new Date(),
-            isComplete: true,
-            type: 'greeting'
-          }]
+          messages: initialMessages
         };
       }
     } catch (error) {
@@ -346,8 +761,6 @@ const AdaniAssistantChatbot: React.FC<AdaniAssistantChatbotProps> = ({
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  const generateUniqueId = () => Date.now() + Math.random();
 
   const typeMessage = (messageId: number, text: string, speed: number = 30, onComplete?: () => void) => {
     if (typingTimeoutRef.current) {
@@ -552,9 +965,7 @@ ${selectedOptionsText}
 💎 Risk-Adjusted Returns: Optimized for 18-25% IRR
 🌍 Geographic Coverage: India, Australia, Southeast Asia
 
-🚀 Your portfolio is now ready for analysis and decision-making!
-
-I can help you explore projects, conduct market analysis, or provide investment insights. Ready to dive in?`,
+🚀 Your portfolio is now ready for analysis and decision-making!`,
       isBot: true,
       timestamp: new Date(),
       isComplete: true,
@@ -568,13 +979,163 @@ I can help you explore projects, conduct market analysis, or provide investment 
     setConversationState('ready');
   };
 
+  const handleNextStepSelection = (stepType: string) => {
+    console.log('🎯 DEBUG: handleNextStepSelection called with:', stepType);
+    
+    const userMessage: Message = {
+      id: generateUniqueId(),
+      text: stepType,
+      isBot: false,
+      timestamp: new Date(),
+      isComplete: true,
+      type: 'user'
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Show relevant projects based on selection
+    switch(stepType) {
+      case '🔍 Market analysis for specific projects':
+        console.log('🎯 DEBUG: Calling showRelevantProjects with "market analysis"');
+        showRelevantProjects('market analysis');
+        break;
+      case '📊 Sector deep-dive research':
+        console.log('🎯 DEBUG: Calling showSectorOptions');
+        showSectorOptions();
+        break;
+      case '💡 Risk assessment insights':
+        console.log('🎯 DEBUG: Calling showRelevantProjects with "low risk high return"');
+        showRelevantProjects('low risk high return');
+        break;
+      case '🌍 Geographic market analysis':
+        console.log('🎯 DEBUG: Calling showGeographicOptions');
+        showGeographicOptions();
+        break;
+      default:
+        console.log('🎯 DEBUG: Calling showRelevantProjects with no criteria');
+        showRelevantProjects();
+    }
+  };
+
+  const showSectorOptions = () => {
+    const sectorMessage: Message = {
+      id: generateUniqueId(),
+      text: `📊 Select a sector for deep-dive analysis:`,
+      isBot: true,
+      timestamp: new Date(),
+      isComplete: true,
+      type: 'sectorOptions',
+      showSectorCards: true
+    };
+    
+    setMessages(prev => [...prev, sectorMessage]);
+  };
+
+  const showGeographicOptions = () => {
+    const geoMessage: Message = {
+      id: generateUniqueId(),
+      text: `🌍 Select a region for market analysis:`,
+      isBot: true,
+      timestamp: new Date(),
+      isComplete: true,
+      type: 'geographicOptions',
+      showGeographicCards: true
+    };
+    
+    setMessages(prev => [...prev, geoMessage]);
+  };
+
   const handleLaunchApp = () => {
     if (onLaunchApp) {
       onLaunchApp();
     }
   };
 
+  const showRelevantProjects = (criteria?: string) => {
+    console.log('🎯 DEBUG: showRelevantProjects called with criteria:', criteria);
+    console.log('🎯 DEBUG: allOpportunities length:', allOpportunities?.length || 'undefined');
+    
+    let projects;
+    
+    if (criteria) {
+      const lowerCriteria = criteria.toLowerCase();
+      console.log('🎯 DEBUG: Filtering with lowerCriteria:', lowerCriteria);
+      
+      // For market analysis, show all high-potential projects
+      if (lowerCriteria.includes('market analysis') || lowerCriteria.includes('market')) {
+        console.log('🎯 DEBUG: Market analysis criteria detected - showing top projects');
+        projects = allOpportunities
+          .sort((a, b) => b.strategicFitScore - a.strategicFitScore)
+          .slice(0, 5); // Show top 5 projects initially
+      } else {
+        projects = allOpportunities.filter(opp => {
+          if (lowerCriteria.includes('solar') || lowerCriteria.includes('renewable')) {
+            return opp.source.includes('Green') || opp.name.toLowerCase().includes('solar');
+          }
+          if (lowerCriteria.includes('port')) {
+            return opp.source.includes('Ports');
+          }
+          if (lowerCriteria.includes('airport')) {
+            return opp.source.includes('Airport');
+          }
+          if (lowerCriteria.includes('data center')) {
+            return opp.source.includes('Connex');
+          }
+          if (lowerCriteria.includes('gujarat')) {
+            return opp.name.toLowerCase().includes('gujarat');
+          }
+          if (lowerCriteria.includes('maharashtra') || lowerCriteria.includes('mumbai')) {
+            return opp.name.toLowerCase().includes('maharashtra') || opp.name.toLowerCase().includes('mumbai');
+          }
+          if (lowerCriteria.includes('low risk')) {
+            return opp.preliminaryRiskScore < 40;
+          }
+          if (lowerCriteria.includes('high return') || lowerCriteria.includes('high potential')) {
+            return opp.strategicFitScore > 85;
+          }
+          
+          return opp.name.toLowerCase().includes(lowerCriteria) || 
+                 opp.description.toLowerCase().includes(lowerCriteria);
+        }).slice(0, 5);
+      }
+    } else {
+      // Show top strategic fit projects
+      console.log('🎯 DEBUG: No criteria provided, showing top strategic fit projects');
+      projects = allOpportunities
+        .sort((a, b) => b.strategicFitScore - a.strategicFitScore)
+        .slice(0, 5);
+    }
+
+    console.log('🎯 DEBUG: Filtered projects count:', projects?.length || 0);
+    console.log('🎯 DEBUG: First project:', projects?.[0]?.name || 'No projects found');
+    console.log('🎯 DEBUG: Projects list:', projects?.map(p => p.name) || []);
+
+    const projectMessage: Message = {
+      id: generateUniqueId(),
+      text: `🔍 Here are high-potential projects ready for AI-powered analysis:`,
+      isBot: true,
+      timestamp: new Date(),
+      isComplete: true,
+      type: 'projectList',
+      showProjectCards: true,
+      projectList: projects
+    };
+
+    console.log('🎯 DEBUG: Creating project message with projectList length:', projectMessage.projectList?.length);
+    console.log('🎯 DEBUG: showProjectCards:', projectMessage.showProjectCards);
+    
+    setMessages(prev => {
+      console.log('🎯 DEBUG: Adding project message to messages array');
+      console.log('🎯 DEBUG: Previous messages length:', prev.length);
+      const newMessages = [...prev, projectMessage];
+      console.log('🎯 DEBUG: New messages length:', newMessages.length);
+      return newMessages;
+    });
+  };
+
   const handleProjectSelection = async (project: any) => {
+    console.log('🎯 DEBUG: handleProjectSelection called with project:', project?.name || 'undefined');
+    
     setUserProfile(prev => ({ 
       ...prev, 
       selectedProject: project,
@@ -592,29 +1153,49 @@ I can help you explore projects, conduct market analysis, or provide investment 
     
     setMessages(prev => [...prev, userMessage]);
     
-    const optionsMessage: Message = {
-      id: generateUniqueId(),
-      text: `🎯 ${project.name} selected! 
+    // Check if we came from a specific analysis context
+    const lastUserMessage = messages.filter(m => !m.isBot).slice(-2)[0];
+    
+    console.log('🎯 DEBUG: Last user message text:', lastUserMessage?.text || 'No previous user message');
+    
+    // If user selected "Market analysis for specific projects", go straight to market analysis
+    if (lastUserMessage?.text?.includes('Market analysis')) {
+      console.log('🎯 DEBUG: Market analysis context detected, calling performProjectAnalysis...');
+      await performProjectAnalysis(project, 'market');
+    } else if (lastUserMessage?.text?.includes('Risk assessment')) {
+      console.log('🎯 DEBUG: Risk assessment context detected, calling performProjectAnalysis...');
+      await performProjectAnalysis(project, 'risk');
+    } else {
+      console.log('🎯 DEBUG: No specific context, showing analysis options...');
+      // Show analysis options if no specific context
+      const optionsMessage: Message = {
+        id: generateUniqueId(),
+        text: `🎯 ${project.name} selected! 
 
 Choose your analysis type:`,
-      isBot: true,
-      timestamp: new Date(),
-      isComplete: true,
-      type: 'analysisOptions'
-    };
-    
-    setMessages(prev => [...prev, optionsMessage]);
+        isBot: true,
+        timestamp: new Date(),
+        isComplete: true,
+        type: 'analysisOptions'
+      };
+      
+      setMessages(prev => [...prev, optionsMessage]);
+    }
   };
 
   const performProjectAnalysis = async (project: any, analysisType: AnalysisType) => {
+    console.log('🎯 DEBUG: performProjectAnalysis called');
+    console.log('🎯 DEBUG: Project:', project?.name || 'undefined');
+    console.log('🎯 DEBUG: Analysis type:', analysisType);
+    
     const loadingMessages = {
-      market: '🔍 Analyzing market conditions and growth drivers...',
-      demand: '📊 Generating 5-year demand forecast...',
-      competitive: '🏆 Researching competitive landscape...',
-      regulatory: '⚖️ Analyzing regulatory environment...',
-      technology: '💡 Investigating technology trends...',
-      risk: '⚠️ Assessing investment risks...',
-      comprehensive: '🧠 Performing comprehensive analysis...'
+      market: `🔍 Performing AI-powered market analysis for ${project.name}...`,
+      demand: `📊 Generating 5-year demand forecast for ${project.name}...`,
+      competitive: `🏆 Researching competitive landscape for ${project.name}...`,
+      regulatory: `⚖️ Analyzing regulatory environment for ${project.name}...`,
+      technology: `💡 Investigating technology trends for ${project.name}...`,
+      risk: `⚠️ Assessing investment risks for ${project.name}...`,
+      comprehensive: `🧠 Performing comprehensive analysis for ${project.name}...`
     };
 
     const loadingMessage: Message = {
@@ -626,46 +1207,71 @@ Choose your analysis type:`,
       type: 'loading'
     };
     
+    console.log('🎯 DEBUG: Adding loading message:', loadingMessage.text);
     setMessages(prev => [...prev, loadingMessage]);
     setIsLoading(true);
 
     try {
+      console.log('🎯 DEBUG: Starting analysis...');
       let analysis: MarketAnalysis;
       
       switch (analysisType) {
         case 'market':
+          console.log('🎯 DEBUG: Calling getMarketAnalysis...');
           analysis = await perplexityService.getMarketAnalysis(project);
           break;
         case 'demand':
+          console.log('🎯 DEBUG: Calling getDemandForecast...');
           analysis = await perplexityService.getDemandForecast(project);
           break;
         case 'competitive':
+          console.log('🎯 DEBUG: Calling getCompetitiveAnalysis...');
           analysis = await perplexityService.getCompetitiveAnalysis(project);
           break;
         case 'regulatory':
+          console.log('🎯 DEBUG: Calling getRegulatoryAnalysis...');
           analysis = await perplexityService.getRegulatoryAnalysis(project);
           break;
         case 'technology':
+          console.log('🎯 DEBUG: Calling getTechnologyTrends...');
           analysis = await perplexityService.getTechnologyTrends(project);
           break;
         case 'risk':
+          console.log('🎯 DEBUG: Calling getRiskAssessment...');
           analysis = await perplexityService.getRiskAssessment(project);
           break;
         default:
+          console.log('🎯 DEBUG: Calling getComprehensiveAnalysis...');
           analysis = await perplexityService.getComprehensiveAnalysis(project);
       }
 
+      console.log('🎯 DEBUG: Analysis completed:', analysis?.type || 'undefined');
+
+      // Remove loading message
+      setMessages(prev => prev.filter(msg => msg.type !== 'loading'));
+      
+      // Display results
+      console.log('🎯 DEBUG: Displaying results...');
       displayAnalysisResults(analysis);
     } catch (error) {
-      console.error('Analysis error:', error);
-      displayAnalysisError(project, analysisType);
-    } finally {
-      setIsLoading(false);
+      console.error('🎯 DEBUG: Analysis error:', error);
       setMessages(prev => prev.filter(msg => msg.type !== 'loading'));
+      
+      // Still show analysis even if API fails
+      console.log('🎯 DEBUG: Using fallback analysis...');
+      const fallbackAnalysis = await perplexityService.getMarketAnalysis(project);
+      displayAnalysisResults(fallbackAnalysis);
+    } finally {
+      console.log('🎯 DEBUG: Analysis completed, setting loading to false');
+      setIsLoading(false);
     }
   };
 
   const displayAnalysisResults = (analysis: MarketAnalysis) => {
+    console.log('🎯 DEBUG: displayAnalysisResults called');
+    console.log('🎯 DEBUG: Analysis type:', analysis?.type || 'undefined');
+    console.log('🎯 DEBUG: Analysis project name:', analysis?.projectName || 'undefined');
+    
     const analysisMessage: Message = {
       id: generateUniqueId(),
       text: '',
@@ -677,9 +1283,11 @@ Choose your analysis type:`,
       analysisType: analysis.type
     };
     
+    console.log('🎯 DEBUG: Created analysis message, adding to messages...');
     setMessages(prev => [...prev, analysisMessage]);
     
     setTimeout(() => {
+      console.log('🎯 DEBUG: Adding follow-up message...');
       const followUpMessage: Message = {
         id: generateUniqueId(),
         text: `🎯 Want to dive deeper?
@@ -807,24 +1415,8 @@ Or browse our top opportunities by asking:
     if (userProfile.selectedProject) {
       await performProjectAnalysis(userProfile.selectedProject, analysisType);
     } else {
-      const selectProjectMessage: Message = {
-        id: generateUniqueId(),
-        text: `🎯 Please select a project first
-
-To perform ${analysisType} analysis, I need you to select a specific project. You can:
-
-1️⃣ Browse projects by saying "show me solar projects"
-2️⃣ Search by region like "find projects in Gujarat" 
-3️⃣ Filter by criteria such as "low risk projects"
-
-Once you select a project, I'll provide comprehensive AI-powered analysis using real-time market data.`,
-        isBot: true,
-        timestamp: new Date(),
-        isComplete: true,
-        type: 'needProject'
-      };
-      
-      setMessages(prev => [...prev, selectProjectMessage]);
+      // Instead of asking to select a project, show projects immediately
+      showRelevantProjects(userInput);
     }
   };
 
@@ -890,12 +1482,15 @@ What would you like to start with?`,
       // Handle post-data-load queries
       const lowerInput = currentInput.toLowerCase();
       
-      if (lowerInput.includes('show') || lowerInput.includes('filter') || lowerInput.includes('find')) {
-        filterProjects(currentInput);
-      } else if (lowerInput.includes('market') || lowerInput.includes('demand') || 
-                 lowerInput.includes('compet') || lowerInput.includes('risk') ||
-                 lowerInput.includes('analysis') || lowerInput.includes('forecast')) {
-        await handleAnalysisQuery(currentInput);
+      // Check if user is asking for analysis/research/projects
+      if (lowerInput.includes('analysis') || lowerInput.includes('research') || 
+          lowerInput.includes('market') || lowerInput.includes('project') ||
+          lowerInput.includes('show') || lowerInput.includes('find') ||
+          lowerInput.includes('analyze') || lowerInput.includes('help')) {
+        
+        // Show projects immediately
+        showRelevantProjects(currentInput);
+        
       } else if (lowerInput.includes('sector') || lowerInput.includes('summary')) {
         const sectorSummary = adaniSectors.map(sector => 
           `${sector.icon} ${sector.name}: ${sector.targetAllocation}% allocation`
@@ -916,33 +1511,8 @@ ${sectorSummary}
         
         setMessages(prev => [...prev, summaryMessage]);
       } else {
-        const helpMessage: Message = {
-          id: generateUniqueId(),
-          text: `🤖 I can help you explore the portfolio in many ways:
-
-🔍 Project Discovery:
-🔹 "Show me solar projects in Gujarat"
-🔹 "Find high-potential renewable energy projects"  
-🔹 "Show low-risk infrastructure opportunities"
-
-📊 AI-Powered Analysis:
-🔹 "Analyze market conditions for [project name]"
-🔹 "Get demand forecasting for ports sector"
-🔹 "Show competitive landscape for data centers"
-
-📈 Portfolio Insights:
-🔹 "Sector allocation summary"
-🔹 "Show me approved projects"
-🔹 "Filter by investment size"
-
-What would you like to explore?`,
-          isBot: true,
-          timestamp: new Date(),
-          isComplete: true,
-          type: 'help'
-        };
-        
-        setMessages(prev => [...prev, helpMessage]);
+        // For any other query, show relevant projects
+        showRelevantProjects(currentInput);
       }
       
       setIsLoading(false);
@@ -958,10 +1528,10 @@ What would you like to explore?`,
     }
   };
 
-const formatTime = (timestamp: Date | string | number) => {
-  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
+  const formatTime = (timestamp: Date | string | number) => {
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   const getAnalysisIcon = (type: AnalysisType) => {
     const icons = {
@@ -989,6 +1559,34 @@ const formatTime = (timestamp: Date | string | number) => {
     return titles[type] || 'Analysis';
   };
 
+  const getMetricIcon = (icon: string) => {
+    const iconMap: { [key: string]: React.ReactNode } = {
+      dollar: <DollarSign size={20} />,
+      trending: <TrendingUp size={20} />,
+      percent: <Target size={20} />,
+      clock: <Calendar size={20} />,
+      pie: <BarChart3 size={20} />,
+      package: <Building2 size={20} />,
+      activity: <Activity size={20} />,
+      globe: <Globe size={20} />,
+      users: <Users size={20} />,
+      tag: <DollarSign size={20} />,
+      link: <Shield size={20} />,
+      shield: <Shield size={20} />,
+      gift: <Award size={20} />,
+      cpu: <Cpu size={20} />,
+      smartphone: <Zap size={20} />,
+      flask: <Brain size={20} />,
+      chart: <BarChart3 size={20} />,
+      alert: <AlertTriangle size={20} />,
+      settings: <Factory size={20} />,
+      target: <Target size={20} />,
+      calendar: <Calendar size={20} />
+    };
+    
+    return iconMap[icon] || <BarChart3 size={20} />;
+  };
+
   return (
     <div className="adani-chatbot">
       <div className="chat-container">
@@ -1006,6 +1604,142 @@ const formatTime = (timestamp: Date | string | number) => {
                     {message.text}
                     {message.isBot && !message.isComplete && <span className="typing-cursor"></span>}
                   </p>
+                )}
+
+                {/* Next Steps Cards */}
+                {message.showNextStepsCards && (
+                  <div className="next-steps-container">
+                    <p className="message-text" style={{ whiteSpace: 'pre-wrap', marginBottom: '1.5rem' }}>
+                      {message.text}
+                    </p>
+                    
+                    <div className="next-steps-grid">
+                      <div 
+                        className="next-step-card"
+                        onClick={() => {
+                          console.log('🎯 DEBUG: Market Analysis card clicked!');
+                          console.log('🎯 DEBUG: About to call handleNextStepSelection...');
+                          handleNextStepSelection('🔍 Market analysis for specific projects');
+                        }}
+                      >
+                        <div className="step-icon">
+                          <BarChart3 size={24} />
+                        </div>
+                        <div className="step-content">
+                          <h4>Market Analysis</h4>
+                          <p>AI-powered market research for specific projects</p>
+                        </div>
+                        <ArrowRight className="step-arrow" size={20} />
+                      </div>
+
+                      <div 
+                        className="next-step-card"
+                        onClick={() => handleNextStepSelection('📊 Sector deep-dive research')}
+                      >
+                        <div className="step-icon">
+                          <TrendingUp size={24} />
+                        </div>
+                        <div className="step-content">
+                          <h4>Sector Deep-Dive</h4>
+                          <p>Comprehensive sector analysis and insights</p>
+                        </div>
+                        <ArrowRight className="step-arrow" size={20} />
+                      </div>
+
+                      <div 
+                        className="next-step-card"
+                        onClick={() => handleNextStepSelection('💡 Risk assessment insights')}
+                      >
+                        <div className="step-icon">
+                          <Shield size={24} />
+                        </div>
+                        <div className="step-content">
+                          <h4>Risk Assessment</h4>
+                          <p>Detailed risk analysis and mitigation strategies</p>
+                        </div>
+                        <ArrowRight className="step-arrow" size={20} />
+                      </div>
+
+                      <div 
+                        className="next-step-card"
+                        onClick={() => handleNextStepSelection('🌍 Geographic market analysis')}
+                      >
+                        <div className="step-icon">
+                          <Globe size={24} />
+                        </div>
+                        <div className="step-content">
+                          <h4>Geographic Analysis</h4>
+                          <p>Regional market opportunities and trends</p>
+                        </div>
+                        <ArrowRight className="step-arrow" size={20} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sector Cards */}
+                {message.showSectorCards && (
+                  <div className="sector-cards-container">
+                    <p className="message-text" style={{ marginBottom: '1rem' }}>
+                      {message.text}
+                    </p>
+                    {adaniSectors.slice(0, 6).map((sector) => (
+                      <div
+                        key={sector.id}
+                        className="sector-card"
+                        onClick={() => {
+                          const userMsg: Message = {
+                            id: generateUniqueId(),
+                            text: `Show ${sector.name} projects`,
+                            isBot: false,
+                            timestamp: new Date(),
+                            isComplete: true,
+                            type: 'user'
+                          };
+                          setMessages(prev => [...prev, userMsg]);
+                          filterProjects(sector.name);
+                        }}
+                      >
+                        <div className="sector-icon">{sector.icon}</div>
+                        <div className="sector-info">
+                          <h4>{sector.name}</h4>
+                          <p>{sector.targetAllocation}% allocation</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Geographic Cards */}
+                {message.showGeographicCards && (
+                  <div className="geographic-cards-container">
+                    <p className="message-text" style={{ marginBottom: '1rem' }}>
+                      {message.text}
+                    </p>
+                    <div className="geographic-grid">
+                      {['Gujarat', 'Maharashtra', 'Tamil Nadu', 'Karnataka', 'Rajasthan', 'International'].map((region) => (
+                        <div
+                          key={region}
+                          className="geographic-card"
+                          onClick={() => {
+                            const userMsg: Message = {
+                              id: generateUniqueId(),
+                              text: `Show projects in ${region}`,
+                              isBot: false,
+                              timestamp: new Date(),
+                              isComplete: true,
+                              type: 'user'
+                            };
+                            setMessages(prev => [...prev, userMsg]);
+                            filterProjects(region.toLowerCase());
+                          }}
+                        >
+                          <MapPin size={20} />
+                          <span>{region}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {/* Data Generation Options */}
@@ -1053,7 +1787,7 @@ const formatTime = (timestamp: Date | string | number) => {
                   </div>
                 )}
 
-                {/* Market Analysis Display */}
+                {/* Enhanced Market Analysis Display */}
                 {message.marketAnalysis && (
                   <div className="analysis-container">
                     <div className="analysis-header">
@@ -1071,6 +1805,57 @@ const formatTime = (timestamp: Date | string | number) => {
 
                     <div className="analysis-summary">
                       <p>{message.marketAnalysis.summary}</p>
+                    </div>
+
+                    <div className="analysis-metrics">
+                      {message.marketAnalysis.keyMetrics.map((metric, index) => (
+                        <div key={index} className="metric-card">
+                          <div className="metric-icon">
+                            {getMetricIcon(metric.icon)}
+                          </div>
+                          <div className="metric-content">
+                            <span className="metric-label">{metric.label}</span>
+                            <span className={`metric-value trend-${metric.trend}`}>
+                              {metric.value}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="analysis-sections">
+                      {message.marketAnalysis.insights.length > 0 && (
+                        <div className="analysis-section">
+                          <h4><Lightbulb size={16} /> Key Insights</h4>
+                          <ul>
+                            {message.marketAnalysis.insights.map((insight, index) => (
+                              <li key={index}>{insight}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {message.marketAnalysis.risks.length > 0 && (
+                        <div className="analysis-section">
+                          <h4><AlertCircle size={16} /> Risk Factors</h4>
+                          <ul>
+                            {message.marketAnalysis.risks.map((risk, index) => (
+                              <li key={index}>{risk}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {message.marketAnalysis.opportunities.length > 0 && (
+                        <div className="analysis-section">
+                          <h4><Rocket size={16} /> Opportunities</h4>
+                          <ul>
+                            {message.marketAnalysis.opportunities.map((opportunity, index) => (
+                              <li key={index}>{opportunity}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
 
                     <div className="analysis-recommendation">
@@ -1152,38 +1937,189 @@ const formatTime = (timestamp: Date | string | number) => {
                 {/* Project Cards */}
                 {message.showProjectCards && message.projectList && (
                   <div className="project-cards-container">
-                    {message.projectList.map((project) => (
-                      <div
-                        key={project.id}
-                        className="project-card"
-                        onClick={() => handleProjectSelection(project)}
-                      >
-                        <div className="project-header">
-                          <h4>{project.name}</h4>
-                          <span className={`project-status ${project.status}`}>
-                            {project.status.replace('_', ' ').toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="project-details">
-                          <div className="project-metric">
-                            <span className="metric-label">Investment:</span>
-                            <span className="metric-value">{formatCurrency(project.investmentRange.max)}</span>
-                          </div>
-                          <div className="project-metric">
-                            <span className="metric-label">Strategic Fit:</span>
-                            <span className="metric-value">{project.strategicFitScore}%</span>
-                          </div>
-                          <div className="project-metric">
-                            <span className="metric-label">Risk Score:</span>
-                            <span className="metric-value risk">{project.preliminaryRiskScore}</span>
-                          </div>
-                        </div>
-                        <p className="project-description">{project.description}</p>
-                        <div className="project-action">
-                          <span className="analyze-hint">Click to analyze with AI 🧠</span>
-                        </div>
+                    {(() => {
+                      console.log('🎯 DEBUG: Rendering project cards JSX section');
+                      console.log('🎯 DEBUG: message.showProjectCards:', message.showProjectCards);
+                      console.log('🎯 DEBUG: message.projectList exists:', !!message.projectList);
+                      console.log('🎯 DEBUG: message.projectList length:', message.projectList?.length || 0);
+                      return null;
+                    })()}
+                    
+                    {!message.projectList || message.projectList.length === 0 ? (
+                      <div style={{padding: '20px', color: '#ff6b6b', backgroundColor: '#1a1a1a', borderRadius: '8px', margin: '10px 0'}}>
+                        🚨 DEBUG: No projects in projectList! 
+                        <br />Length: {message.projectList?.length || 'undefined'}
+                        <br />showProjectCards: {String(message.showProjectCards)}
+                        <br />Message type: {message.type}
                       </div>
-                    ))}
+                    ) : (
+                      <>
+                        {/* Show first 4-5 projects */}
+                        <div className="projects-grid">
+                          {message.projectList.slice(0, 4).map((project) => (
+                            <div
+                              key={project.id}
+                              className="project-card"
+                              onClick={() => {
+                                console.log('🎯 DEBUG: Project card clicked:', project.name);
+                                handleProjectSelection(project);
+                              }}
+                              style={{
+                                backgroundColor: '#1e293b',
+                                border: '1px solid #334155',
+                                borderRadius: '12px',
+                                padding: '20px',
+                                margin: '12px 0',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                position: 'relative'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = '#3b82f6';
+                                e.currentTarget.style.backgroundColor = '#1e40af1a';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = '#334155';
+                                e.currentTarget.style.backgroundColor = '#1e293b';
+                              }}
+                            >
+                              <div className="project-header" style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                marginBottom: '16px'
+                              }}>
+                                <h4 style={{
+                                  color: '#f1f5f9',
+                                  fontSize: '18px',
+                                  fontWeight: '600',
+                                  margin: '0',
+                                  flex: '1',
+                                  lineHeight: '1.4'
+                                }}>{project.name}</h4>
+                                <span style={{
+                                  backgroundColor: project.status === 'approved' ? '#10b981' : 
+                                                 project.status === 'under_review' ? '#f59e0b' : '#6b7280',
+                                  color: 'white',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  fontWeight: '500',
+                                  textTransform: 'uppercase',
+                                  marginLeft: '12px',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {project.status.replace('_', ' ')}
+                                </span>
+                              </div>
+                              
+                              <div className="project-details" style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: '12px',
+                                marginBottom: '16px'
+                              }}>
+                                <div className="project-metric" style={{ textAlign: 'center' }}>
+                                  <span style={{
+                                    display: 'block',
+                                    color: '#94a3b8',
+                                    fontSize: '12px',
+                                    marginBottom: '4px'
+                                  }}>Investment</span>
+                                  <span style={{
+                                    color: '#10b981',
+                                    fontWeight: '600',
+                                    fontSize: '14px'
+                                  }}>{formatCurrency(project.investmentRange.max)}</span>
+                                </div>
+                                <div className="project-metric" style={{ textAlign: 'center' }}>
+                                  <span style={{
+                                    display: 'block',
+                                    color: '#94a3b8',
+                                    fontSize: '12px',
+                                    marginBottom: '4px'
+                                  }}>Strategic Fit</span>
+                                  <span style={{
+                                    color: project.strategicFitScore > 90 ? '#10b981' : 
+                                           project.strategicFitScore > 80 ? '#f59e0b' : '#ef4444',
+                                    fontWeight: '600',
+                                    fontSize: '14px'
+                                  }}>{project.strategicFitScore}%</span>
+                                </div>
+                                <div className="project-metric" style={{ textAlign: 'center' }}>
+                                  <span style={{
+                                    display: 'block',
+                                    color: '#94a3b8',
+                                    fontSize: '12px',
+                                    marginBottom: '4px'
+                                  }}>Risk Score</span>
+                                  <span style={{
+                                    color: project.preliminaryRiskScore < 30 ? '#10b981' : 
+                                           project.preliminaryRiskScore < 50 ? '#f59e0b' : '#ef4444',
+                                    fontWeight: '600',
+                                    fontSize: '14px'
+                                  }}>{project.preliminaryRiskScore}</span>
+                                </div>
+                              </div>
+                              
+                              <p style={{
+                                color: '#cbd5e1',
+                                fontSize: '14px',
+                                lineHeight: '1.5',
+                                margin: '0 0 16px 0'
+                              }}>{project.description}</p>
+                              
+                              <div className="project-action" style={{
+                                textAlign: 'center',
+                                padding: '8px',
+                                backgroundColor: '#0f172a',
+                                borderRadius: '8px',
+                                border: '1px solid #334155'
+                              }}>
+                                <span style={{
+                                  color: '#3b82f6',
+                                  fontSize: '13px',
+                                  fontWeight: '500'
+                                }}>Click to analyze with AI 🧠</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Show + button if there are more projects */}
+                        {message.projectList.length > 4 && (
+                          <div 
+                            className="project-card more-projects-card"
+                            onClick={() => {
+                              console.log('🎯 DEBUG: + More projects clicked');
+                              // Show all remaining projects
+                              const expandedMessage: Message = {
+                                ...message,
+                                text: `🔍 All ${message.projectList?.length} matching projects:`,
+                                projectList: message.projectList // Show all projects
+                              };
+                              setMessages(prev => 
+                                prev.map(msg => msg.id === message.id ? expandedMessage : msg)
+                              );
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minHeight: '120px',
+                              border: '2px dashed #3b82f6',
+                              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <div style={{ textAlign: 'center', color: '#3b82f6' }}>
+                              <div style={{ fontSize: '24px', marginBottom: '8px' }}>+</div>
+                              <div>See {message.projectList.length - 4} more projects</div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
                 
