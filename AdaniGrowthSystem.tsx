@@ -198,6 +198,10 @@ export default function AdaniGrowthSystem() {
     }));
   };
 
+  const handleLaunchApp = () => {
+    console.log('🚀 Launching Adani Growth System from chatbot...');
+  };
+
   // ===== PERSISTENCE =====
   useEffect(() => {
     // Clear old data and start fresh
@@ -698,7 +702,8 @@ export default function AdaniGrowthSystem() {
       <AdaniAssistantModal 
         isOpen={showAssistant} 
         onClose={() => setShowAssistant(false)} 
-        onDataGenerated={handleAssistantDataGenerated} 
+        onDataGenerated={handleAssistantDataGenerated}
+        onLaunchApp={handleLaunchApp}
       />
     </div>
   );

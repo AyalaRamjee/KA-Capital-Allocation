@@ -8,6 +8,7 @@ interface AdaniAssistantModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDataGenerated: (data: any) => void;
+  onLaunchApp?: () => void; // New prop for launching the main app
   className?: string;
 }
 
@@ -15,6 +16,7 @@ const AdaniAssistantModal: React.FC<AdaniAssistantModalProps> = ({
   isOpen,
   onClose,
   onDataGenerated,
+  onLaunchApp,
   className = ''
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
@@ -41,6 +43,14 @@ const AdaniAssistantModal: React.FC<AdaniAssistantModalProps> = ({
   const handleDataGenerated = (data: any) => {
     onDataGenerated(data);
     // Keep modal open after data generation for continued interaction
+  };
+
+  const handleLaunchApp = () => {
+    if (onLaunchApp) {
+      onLaunchApp();
+      // Close the modal after launching the app
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
@@ -87,7 +97,10 @@ const AdaniAssistantModal: React.FC<AdaniAssistantModalProps> = ({
 
         {!isMinimized && (
           <div className="adani-modal-body">
-            <AdaniAssistantChatbot onDataGenerated={handleDataGenerated} />
+            <AdaniAssistantChatbot 
+              onDataGenerated={handleDataGenerated} 
+              onLaunchApp={handleLaunchApp}
+            />
           </div>
         )}
       </div>
