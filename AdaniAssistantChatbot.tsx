@@ -20,7 +20,7 @@ interface Message {
   id: number;
   text: string;
   isBot: boolean;
-  timestamp: Date;
+  timestamp: Date | string | number;
   isComplete: boolean;
   type: string;
   showProjectCards?: boolean;
@@ -63,14 +63,6 @@ interface ProjectContext {
 // Data Generation Options
 const dataGenerationOptions = [
   {
-    id: 'all_above',
-    title: '🌟 All of the Above',
-    description: 'Complete comprehensive portfolio with all sectors included',
-    icon: '✨',
-    color: '#ff6b6b',
-    isSpecial: true
-  },
-  {
     id: 'complete_portfolio',
     title: '🎯 Complete Investment Portfolio',
     description: 'Full $90B portfolio with 200+ projects across all sectors',
@@ -111,6 +103,15 @@ const dataGenerationOptions = [
     description: 'Australia, Sri Lanka, Africa projects ($9B allocation)',
     icon: '🗺️',
     color: '#ef4444'
+  },
+  // MOVE THIS TO LAST POSITION
+  {
+    id: 'all_above',
+    title: '🌟 All of the Above',
+    description: 'Complete comprehensive portfolio with all sectors included',
+    icon: '✨',
+    color: '#ff6b6b',
+    isSpecial: true
   }
 ];
 
@@ -957,9 +958,10 @@ What would you like to explore?`,
     }
   };
 
-  const formatTime = (timestamp: Date) => {
-    return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+const formatTime = (timestamp: Date | string | number) => {
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
   const getAnalysisIcon = (type: AnalysisType) => {
     const icons = {
