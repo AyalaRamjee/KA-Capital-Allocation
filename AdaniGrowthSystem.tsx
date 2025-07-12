@@ -10,6 +10,7 @@ import { Tab6_MonitorPortfolio } from './Tab6_MonitorPortfolio';
 import { Tab7_WhatIfAnalysis } from './Tab7_WhatIfAnalysis';
 import AdaniAssistantModal from './AdaniAssistantModal';
 import ManageWorkspaceTab from './components/ManageWorkspaceTab';
+import DynamicFooter from './components/DynamicFooter';
 import { AppState, InvestmentPriority, Opportunity, AdaniProject, AdaniSector, AdaniMetrics, ValidatedProject, SectorAllocation, AllocationConstraint, ValidationRule, DataQualityIssue, DataQualityMetrics } from './types';
 import { adaniPriorities, allOpportunities, adaniSectors, adaniMetrics, formatCurrency } from './mockDataAdani';
 import './styles.css';
@@ -490,7 +491,7 @@ export default function AdaniGrowthSystem() {
 
   // ===== RENDER SECTION =====
   return (
-    <div className={`app-container ${currentTheme}-theme adani-growth-system`}>
+    <div className={`app-container ${currentTheme}-theme adani-growth-system`} style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppHeader 
         onThemeChange={handleThemeChange}
         onFullscreenToggle={handleFullscreenToggle}
@@ -856,7 +857,7 @@ export default function AdaniGrowthSystem() {
         </div>
       </div>
 
-      <div className="tab-container adani-tab-container" style={{ paddingTop: 0, marginTop: 0 }}>
+      <div className="tab-container adani-tab-container" style={{ paddingTop: 0, marginTop: 0, flex: 1 }}>
         {activeTab === 1 && (
           <Tab1_SetPriorities
             sharedData={{
@@ -948,6 +949,7 @@ export default function AdaniGrowthSystem() {
         onLaunchApp={handleLaunchApp}
       />
 
+      <DynamicFooter />
     </div>
   );
 }
