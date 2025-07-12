@@ -1,7 +1,7 @@
 // AppHeader.tsx - Application header with logo and controls
 'use client'
 import React, { useState } from 'react';
-import { Sparkles, ChevronDown, Upload, Download, FileUp, FileDown, StickyNote, Settings, Bot, Calendar, Trash2 } from 'lucide-react';
+import { Sparkles, ChevronDown, Upload, Download, FileUp, FileDown, StickyNote, Settings, Bot, Calendar, Trash2, Sun, Moon, Maximize, User, FileText } from 'lucide-react';
 
 interface HeaderProps {
   onThemeChange: (theme: 'dark' | 'light') => void;
@@ -95,7 +95,7 @@ export const AppHeader: React.FC<HeaderProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                marginRight: '0.75rem',
+                marginRight: '0.25rem',
                 boxShadow: '0 2px 8px rgba(0, 184, 212, 0.3)',
                 transition: 'all 0.2s ease'
               }}
@@ -130,7 +130,7 @@ export const AppHeader: React.FC<HeaderProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                marginRight: '0.75rem',
+                marginRight: '0.25rem',
                 boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
                 transition: 'all 0.2s ease'
               }}
@@ -402,35 +402,36 @@ export const AppHeader: React.FC<HeaderProps> = ({
           {/* Clear All Data Button */}
           {onClearAllData && (
             <button 
-              className="clear-data-btn"
+              className="control-btn"
               onClick={handleClearAllData}
               title="Clear All Data"
               style={{
-                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
+                background: currentTheme === 'dark' ? '#334155' : '#f1f5f9',
+                color: currentTheme === 'dark' ? '#e2e8f0' : '#475569',
+                padding: '0.5rem',
+                borderRadius: '6px',
                 border: 'none',
                 cursor: 'pointer',
-                fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                marginRight: '0.75rem',
-                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
-                transition: 'all 0.2s ease'
+                justifyContent: 'center',
+                marginRight: '0.25rem',
+                transition: 'all 0.2s ease',
+                width: '36px',
+                height: '36px'
               }}
               onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#ef4444';
+                e.currentTarget.style.color = 'white';
                 e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 16px rgba(239, 68, 68, 0.4)';
               }}
               onMouseLeave={(e) => {
+                e.currentTarget.style.background = currentTheme === 'dark' ? '#334155' : '#f1f5f9';
+                e.currentTarget.style.color = currentTheme === 'dark' ? '#e2e8f0' : '#475569';
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.3)';
               }}
             >
-              <Trash2 size={18} />
-              Clear All Data
+              <Trash2 size={16} />
             </button>
           )}
 
@@ -438,33 +439,124 @@ export const AppHeader: React.FC<HeaderProps> = ({
             className="control-btn"
             onClick={() => onThemeChange(currentTheme === 'dark' ? 'light' : 'dark')}
             title="Toggle Theme"
+            style={{
+              background: currentTheme === 'dark' ? '#334155' : '#f1f5f9',
+              color: currentTheme === 'dark' ? '#e2e8f0' : '#475569',
+              padding: '0.5rem',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '0.5rem',
+              transition: 'all 0.2s ease',
+              width: '36px',
+              height: '36px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = currentTheme === 'dark' ? '#475569' : '#e2e8f0';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = currentTheme === 'dark' ? '#334155' : '#f1f5f9';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
-            {currentTheme === 'dark' ? '🌞' : '🌙'}
+            {currentTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
           
           <button 
             className="control-btn"
             onClick={onFullscreenToggle}
             title="Toggle Fullscreen"
+            style={{
+              background: currentTheme === 'dark' ? '#334155' : '#f1f5f9',
+              color: currentTheme === 'dark' ? '#e2e8f0' : '#475569',
+              padding: '0.5rem',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '0.5rem',
+              transition: 'all 0.2s ease',
+              width: '36px',
+              height: '36px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = currentTheme === 'dark' ? '#475569' : '#e2e8f0';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = currentTheme === 'dark' ? '#334155' : '#f1f5f9';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
-            {isFullscreen ? '🪟' : '⛶'}
+            <Maximize size={16} />
           </button>
           
           <button 
             className="control-btn"
             onClick={handleExport}
             title="Export Data"
+            style={{
+              background: currentTheme === 'dark' ? '#334155' : '#f1f5f9',
+              color: currentTheme === 'dark' ? '#e2e8f0' : '#475569',
+              padding: '0.5rem',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '0.5rem',
+              transition: 'all 0.2s ease',
+              width: '36px',
+              height: '36px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = currentTheme === 'dark' ? '#475569' : '#e2e8f0';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = currentTheme === 'dark' ? '#334155' : '#f1f5f9';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
-            📤
+            <FileText size={16} />
           </button>
           
           <div className="user-menu">
             <button 
-              className="user-btn"
+              className="control-btn"
               onClick={() => setShowUserMenu(!showUserMenu)}
               title="User Menu"
+              style={{
+                background: currentTheme === 'dark' ? '#334155' : '#f1f5f9',
+                color: currentTheme === 'dark' ? '#e2e8f0' : '#475569',
+                padding: '0.5rem',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                width: '36px',
+                height: '36px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = currentTheme === 'dark' ? '#475569' : '#e2e8f0';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = currentTheme === 'dark' ? '#334155' : '#f1f5f9';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
             >
-              👤
+              <User size={16} />
             </button>
             
             {showUserMenu && (
