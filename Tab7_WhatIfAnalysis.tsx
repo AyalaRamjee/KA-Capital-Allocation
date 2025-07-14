@@ -28,9 +28,11 @@ interface PortfolioMetrics {
 }
 
 export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpdate }) => {
-  const [riskThreshold, setRiskThreshold] = useState(65);
+  const [riskThreshold, setRiskThreshold] = useState(5);
   const [showProjectDetails, setShowProjectDetails] = useState(false);
   const [animateChanges, setAnimateChanges] = useState(false);
+  const [previousMetrics, setPreviousMetrics] = useState({ projectCount: 0, totalCapital: 0 });
+  const [lastProjectCount, setLastProjectCount] = useState(0);
 
   // Filter projects based on risk threshold
   const qualifyingProjects = sharedData.validatedProjects.filter(
@@ -56,30 +58,60 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
       };
     }
 
-    const totalCapital = qualifyingProjects.reduce((sum, p) => sum + p.capex, 0);
-    const weightedIRR = qualifyingProjects.reduce((sum, p) => sum + (p.irr * p.capex), 0) / totalCapital;
-    const averageRisk = qualifyingProjects.reduce((sum, p) => sum + p.riskScore, 0) / qualifyingProjects.length;
+    // Sort projects by IRR descending to prioritize higher returns
+    const sortedProjects = [...qualifyingProjects].sort((a, b) => b.irr - a.irr);
+    
+    // Select projects up to $10B limit
+    const selectedProjects = [];
+    let runningTotal = 0;
+    const maxCapital = 10000000000; // $10B cap
+    
+    for (const project of sortedProjects) {
+      if (runningTotal + project.capex <= maxCapital) {
+        selectedProjects.push(project);
+        runningTotal += project.capex;
+      }
+    }
+
+    const totalCapital = runningTotal;
+    const projectCount = selectedProjects.length;
+    
+    if (projectCount === 0) {
+      return {
+        projectCount: 0,
+        totalCapital: 0,
+        averageIRR: 0,
+        averageRisk: 0,
+        deploymentMonths: 0,
+        riskDistribution: { low: 0, medium: 0, high: 0 },
+        sectorBreakdown: {},
+        quarterlyDeployment: []
+      };
+    }
+
+    const weightedIRR = selectedProjects.reduce((sum, p) => sum + (p.irr * p.capex), 0) / totalCapital;
+    const averageRisk = selectedProjects.reduce((sum, p) => sum + p.riskScore, 0) / projectCount;
 
     // Risk distribution
-    const lowRisk = qualifyingProjects.filter(p => p.riskScore <= 30).length;
-    const mediumRisk = qualifyingProjects.filter(p => p.riskScore > 30 && p.riskScore <= 60).length;
-    const highRisk = qualifyingProjects.filter(p => p.riskScore > 60).length;
+    const lowRisk = selectedProjects.filter(p => p.riskScore <= 30).length;
+    const mediumRisk = selectedProjects.filter(p => p.riskScore > 30 && p.riskScore <= 60).length;
+    const highRisk = selectedProjects.filter(p => p.riskScore > 60).length;
 
     // Sector breakdown
     const sectorBreakdown: { [key: string]: number } = {};
-    qualifyingProjects.forEach(project => {
+    selectedProjects.forEach(project => {
       const sector = project.businessUnit.split(' ')[0]; // Get first word as sector
       sectorBreakdown[sector] = (sectorBreakdown[sector] || 0) + project.capex;
     });
 
-    // Quarterly deployment schedule
-    const targetMonthlyDeployment = 1500000000; // $1.5B per month
-    const deploymentMonths = Math.ceil(totalCapital / targetMonthlyDeployment);
+    // Quarterly deployment schedule - adjust rate based on capital amount
+    const monthlyDeploymentRate = totalCapital < 5000000000 ? 500000000 : 1500000000; // $500M/month for smaller amounts
+    const deploymentMonths = Math.ceil(totalCapital / monthlyDeploymentRate);
     const quarterlyDeployment = [];
     
     for (let i = 0; i < Math.min(20, Math.ceil(deploymentMonths / 3)); i++) {
       const quarter = `Q${(i % 4) + 1} ${2025 + Math.floor(i / 4)}`;
-      const quarterlyAmount = Math.min(targetMonthlyDeployment * 3, totalCapital - (i * targetMonthlyDeployment * 3));
+      const quarterlyAmount = Math.min(monthlyDeploymentRate * 3, totalCapital - (i * monthlyDeploymentRate * 3));
       if (quarterlyAmount > 0) {
         quarterlyDeployment.push({
           quarter,
@@ -89,7 +121,7 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
     }
 
     return {
-      projectCount: qualifyingProjects.length,
+      projectCount,
       totalCapital,
       averageIRR: weightedIRR,
       averageRisk,
@@ -102,12 +134,48 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
 
   const portfolioMetrics = calculatePortfolioMetrics();
 
-  // Animation trigger
+  // Get selected projects for display (those within $10B cap)
+  const getSelectedProjects = () => {
+    const sortedProjects = [...qualifyingProjects].sort((a, b) => b.irr - a.irr);
+    const selected = [];
+    let runningTotal = 0;
+    const maxCapital = 10000000000;
+    
+    for (const project of sortedProjects) {
+      if (runningTotal + project.capex <= maxCapital) {
+        selected.push(project);
+        runningTotal += project.capex;
+      }
+    }
+    return selected;
+  };
+
+  const selectedProjects = getSelectedProjects();
+  const projectsExcludedByCapLimit = qualifyingProjects.filter(p => !selectedProjects.includes(p));
+
+  // Animation trigger with change detection
   useEffect(() => {
-    setAnimateChanges(true);
-    const timer = setTimeout(() => setAnimateChanges(false), 500);
+    if (portfolioMetrics.projectCount !== previousMetrics.projectCount || 
+        portfolioMetrics.totalCapital !== previousMetrics.totalCapital) {
+      setAnimateChanges(true);
+      setPreviousMetrics({ 
+        projectCount: portfolioMetrics.projectCount, 
+        totalCapital: portfolioMetrics.totalCapital 
+      });
+      const timer = setTimeout(() => setAnimateChanges(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [portfolioMetrics.projectCount, portfolioMetrics.totalCapital, previousMetrics]);
+
+  // Track project count changes
+  const projectCountChange = portfolioMetrics.projectCount - lastProjectCount;
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLastProjectCount(portfolioMetrics.projectCount);
+    }, 100);
     return () => clearTimeout(timer);
-  }, [riskThreshold]);
+  }, [portfolioMetrics.projectCount]);
 
   // Get risk level label
   const getRiskLevel = (score: number): string => {
@@ -125,9 +193,12 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
 
   // Calculate improvement metrics
   const totalProjectsAvailable = sharedData.validatedProjects.length;
-  const totalCapitalAvailable = sharedData.validatedProjects.reduce((sum, p) => sum + p.capex, 0);
+  const totalCapitalAvailable = Math.min(
+    sharedData.validatedProjects.reduce((sum, p) => sum + p.capex, 0),
+    10000000000 // Cap at $10B
+  );
   const utilizationRate = (portfolioMetrics.totalCapital / totalCapitalAvailable) * 100;
-  const targetCapital = 90000000000; // $90B
+  const targetCapital = 10000000000; // $10B
   const targetAchievement = (portfolioMetrics.totalCapital / targetCapital) * 100;
 
   return (
@@ -140,10 +211,15 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
             <div className="metric-value">
               <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.projectCount}</span>
               <span className="metric-unit">projects</span>
+              {projectCountChange !== 0 && animateChanges && (
+                <span className={`change-indicator ${projectCountChange > 0 ? 'positive' : 'negative'}`}>
+                  {projectCountChange > 0 ? '+' : ''}{projectCountChange}
+                </span>
+              )}
             </div>
-            <div className="metric-label">Available for Investment</div>
+            <div className="metric-label">Selected for Investment</div>
             <div className="metric-detail">
-              out of {totalProjectsAvailable} total projects
+              {qualifyingProjects.length} qualify by risk • {portfolioMetrics.projectCount} fit in $10B budget
             </div>
           </div>
         </div>
@@ -156,7 +232,7 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
             </div>
             <div className="metric-label">Total Investment Capital</div>
             <div className="metric-detail">
-              {targetAchievement.toFixed(1)}% of $90B target
+              {targetAchievement.toFixed(1)}% of $10B target
             </div>
           </div>
         </div>
@@ -183,7 +259,7 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
             </div>
             <div className="metric-label">Deployment Timeline</div>
             <div className="metric-detail">
-              At $1.5B/month rate
+              At ${portfolioMetrics.totalCapital < 5000000000 ? '500M' : '1.5B'}/month rate
             </div>
           </div>
         </div>
@@ -207,7 +283,7 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
             <div className="slider-wrapper">
               <input
                 type="range"
-                min="20"
+                min="5"
                 max="90"
                 value={riskThreshold}
                 onChange={(e) => setRiskThreshold(Number(e.target.value))}
@@ -216,20 +292,60 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
               <div className="slider-track">
                 <div 
                   className="slider-fill"
-                  style={{ width: `${((riskThreshold - 20) / 70) * 100}%` }}
+                  style={{ width: `${((riskThreshold - 5) / 85) * 100}%` }}
                 />
+                <div 
+                  className="threshold-line"
+                  style={{ left: `${((riskThreshold - 5) / 85) * 100}%` }}
+                >
+                  <div className="threshold-handle"></div>
+                </div>
+              </div>
+              
+              {/* Risk Distribution Overlay */}
+              <div className="risk-distribution-overlay">
+                {sharedData.validatedProjects.map((project, index) => {
+                  const position = ((project.riskScore - 5) / 85) * 100;                  const isQualifying = project.riskScore <= riskThreshold;
+                  return (
+                    <div
+                      key={project.id}
+                      className={`project-dot ${isQualifying ? 'qualifying' : 'excluded'} ${animateChanges ? 'animating' : ''}`}
+                      style={{ 
+                        left: `${position}%`,
+                        animationDelay: `${index * 10}ms`
+                      }}
+                      title={`${project.name}: Risk ${project.riskScore}`}
+                    />
+                  );
+                })}
               </div>
             </div>
             
             <div className="threshold-display">
               <div className="threshold-value">
-                <span className="threshold-number">{riskThreshold}%</span>
+                <span className={`threshold-number ${animateChanges ? 'changing' : ''}`}>{riskThreshold}%</span>
                 <span className="threshold-label">Risk Threshold</span>
               </div>
-              <div className="threshold-description">
-                {riskThreshold <= 40 ? 'Conservative approach - Only low-risk projects' :
-                 riskThreshold <= 70 ? 'Balanced approach - Mix of risk levels' :
-                 'Aggressive approach - Higher risk, higher returns'}
+              <div className="threshold-info">
+                <div className="threshold-description">
+                  {riskThreshold <= 40 ? 'Conservative approach - Only low-risk projects' :
+                   riskThreshold <= 70 ? 'Balanced approach - Mix of risk levels' :
+                   'Aggressive approach - Higher risk, higher returns'}
+                </div>
+                <div className="qualifying-indicator">
+                  <span className={`qualifying-count ${animateChanges ? 'pulse' : ''}`}>
+                    {qualifyingProjects.length} projects pass risk filter
+                  </span>
+                  <span className="separator">→</span>
+                  <span className={`selected-count ${animateChanges ? 'pulse' : ''}`}>
+                    {portfolioMetrics.projectCount} fit in $10B budget
+                  </span>
+                  {qualifyingProjects.length > portfolioMetrics.projectCount && (
+                    <span className="overflow-warning">
+                      ({qualifyingProjects.length - portfolioMetrics.projectCount} exceed budget)
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -296,11 +412,11 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
         <h3>Capital Deployment Schedule</h3>
         <div className="timeline-chart">
           <div className="timeline-header">
-            <span>Quarterly Deployment at Current Risk Level</span>
+            <span>Quarterly Deployment at Current Risk Level (Capped at $10B)</span>
             <span className="timeline-total">{formatCurrency(portfolioMetrics.totalCapital)} Total</span>
           </div>
           <div className="timeline-bars">
-            {portfolioMetrics.quarterlyDeployment.slice(0, 8).map((quarter, index) => (
+            {portfolioMetrics.quarterlyDeployment.slice(0, 10).map((quarter, index) => (
               <div key={quarter.quarter} className="timeline-bar">
                 <div 
                   className="timeline-fill"
@@ -339,7 +455,7 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
             
             {showProjectDetails && (
               <div className="project-list">
-                {qualifyingProjects.slice(0, 10).map(project => (
+                {selectedProjects.slice(0, 10).map(project => (
                   <div key={project.id} className="project-item qualifying">
                     <div className="project-header">
                       <span className="project-name">{project.name}</span>
@@ -357,9 +473,9 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
                     </div>
                   </div>
                 ))}
-                {qualifyingProjects.length > 10 && (
+                {selectedProjects.length > 10 && (
                   <div className="project-item more">
-                    +{qualifyingProjects.length - 10} more projects...
+                    +{selectedProjects.length - 10} more projects...
                   </div>
                 )}
               </div>
@@ -369,13 +485,33 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
           {/* Excluded Projects */}
           <div className="projects-section excluded">
             <div className="section-header">
-              <h4>❌ Excluded Projects ({excludedProjects.length})</h4>
-              <span className="section-value">{formatCurrency(excludedProjects.reduce((sum, p) => sum + p.capex, 0))}</span>
+              <h4>❌ Excluded Projects ({excludedProjects.length + projectsExcludedByCapLimit.length})</h4>
+              <span className="section-value">{formatCurrency(excludedProjects.reduce((sum, p) => sum + p.capex, 0) + projectsExcludedByCapLimit.reduce((sum, p) => sum + p.capex, 0))}</span>
             </div>
             
             {showProjectDetails && (
               <div className="project-list">
-                {excludedProjects.slice(0, 5).map(project => (
+                {projectsExcludedByCapLimit.slice(0, 3).map(project => (
+                  <div key={project.id} className="project-item excluded">
+                    <div className="project-header">
+                      <span className="project-name">{project.name}</span>
+                      <span className="project-investment">{formatCurrency(project.capex)}</span>
+                    </div>
+                    <div className="project-details">
+                      <span className="project-irr">IRR: {project.irr.toFixed(1)}%</span>
+                      <span 
+                        className="project-risk"
+                        style={{ color: getRiskColor(project.riskScore) }}
+                      >
+                        Risk: {project.riskScore} ({getRiskLevel(project.riskScore)})
+                      </span>
+                      <span className="exclusion-reason">
+                        Exceeds $10B capital limit
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {excludedProjects.slice(0, 3).map(project => (
                   <div key={project.id} className="project-item excluded">
                     <div className="project-header">
                       <span className="project-name">{project.name}</span>
@@ -395,9 +531,9 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
                     </div>
                   </div>
                 ))}
-                {excludedProjects.length > 5 && (
+                {(excludedProjects.length + projectsExcludedByCapLimit.length) > 6 && (
                   <div className="project-item more">
-                    +{excludedProjects.length - 5} more excluded...
+                    +{excludedProjects.length + projectsExcludedByCapLimit.length - 6} more excluded...
                   </div>
                 )}
               </div>
@@ -412,9 +548,23 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
         <div className="comparison-grid">
           {[40, 50, 60, 70, 80].map(threshold => {
             const scenarioProjects = sharedData.validatedProjects.filter(p => p.riskScore <= threshold);
-            const scenarioCapital = scenarioProjects.reduce((sum, p) => sum + p.capex, 0);
-            const scenarioIRR = scenarioProjects.length > 0 
-              ? scenarioProjects.reduce((sum, p) => sum + (p.irr * p.capex), 0) / scenarioCapital 
+            
+            // Apply $10B cap to scenario calculations
+            const sortedScenarioProjects = [...scenarioProjects].sort((a, b) => b.irr - a.irr);
+            const selectedScenarioProjects = [];
+            let scenarioRunningTotal = 0;
+            const maxCapital = 10000000000; // $10B cap
+            
+            for (const project of sortedScenarioProjects) {
+              if (scenarioRunningTotal + project.capex <= maxCapital) {
+                selectedScenarioProjects.push(project);
+                scenarioRunningTotal += project.capex;
+              }
+            }
+            
+            const scenarioCapital = scenarioRunningTotal;
+            const scenarioIRR = selectedScenarioProjects.length > 0 
+              ? selectedScenarioProjects.reduce((sum, p) => sum + (p.irr * p.capex), 0) / scenarioCapital 
               : 0;
             const isCurrentThreshold = threshold === riskThreshold;
             
@@ -425,7 +575,12 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
                 onClick={() => setRiskThreshold(threshold)}
               >
                 <div className="scenario-threshold">{threshold}% Risk</div>
-                <div className="scenario-projects">{scenarioProjects.length} projects</div>
+                <div className="scenario-projects">
+                  {selectedScenarioProjects.length} projects
+                  {scenarioProjects.length > selectedScenarioProjects.length && (
+                    <span className="scenario-limited"> (of {scenarioProjects.length})</span>
+                  )}
+                </div>
                 <div className="scenario-capital">{formatCurrency(scenarioCapital)}</div>
                 <div className="scenario-irr">{scenarioIRR.toFixed(1)}% IRR</div>
                 {isCurrentThreshold && <div className="current-indicator">Current</div>}
@@ -483,28 +638,102 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
         .slider-wrapper {
           position: relative;
           margin-bottom: 1.25rem;
+          height: 24px;
+        }
+
+        .risk-distribution-overlay {
+          position: absolute;
+          top: 12px;
+          left: 0;
+          right: 0;
+          height: 8px;
+          pointer-events: none;
+        }
+
+        .project-dot {
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          top: 2px;
+          transition: all 0.3s ease;
+          opacity: 0.7;
+        }
+
+        .project-dot.animating {
+          animation: dotPulse 0.6s ease-out;
+        }
+
+        @keyframes dotPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.5); }
+        }
+
+        .project-dot.qualifying {
+          background: #10b981;
+          box-shadow: 0 0 4px rgba(16, 185, 129, 0.5);
+        }
+
+        .threshold-line {
+          position: absolute;
+          top: -4px;
+          width: 2px;
+          height: 16px;
+          background: #ffffff;
+          transition: left 0.1s ease;
+          pointer-events: none;
+        }
+
+        .threshold-handle {
+          position: absolute;
+          top: 6px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 16px;
+          height: 16px;
+          background: #3b82f6;
+          border: 2px solid #ffffff;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .risk-threshold-slider {
           width: 100%;
-          height: 8px;
+          height: 24px;
           background: transparent;
           outline: none;
           opacity: 0;
           position: relative;
           z-index: 2;
           cursor: pointer;
+          -webkit-appearance: none;
+          appearance: none;
+        }
+
+        .risk-threshold-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+        }
+
+        .risk-threshold-slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+          border: none;
+          background: transparent;
         }
 
         .slider-track {
           position: absolute;
-          top: 50%;
+          top: 0;
           left: 0;
           right: 0;
           height: 8px;
           background: rgba(255, 255, 255, 0.08);
           border-radius: 4px;
-          transform: translateY(-50%);
         }
 
         .slider-fill {
@@ -533,6 +762,30 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
           color: #3b82f6;
           line-height: 1;
           margin-bottom: 0.25rem;
+          transition: all 0.3s ease;
+        }
+
+        .threshold-number.changing {
+          animation: numberGlow 0.6s ease-out;
+        }
+
+        @keyframes numberGlow {
+          0%, 100% { 
+            text-shadow: 0 0 0 rgba(59, 130, 246, 0);
+            transform: scale(1);
+          }
+          50% { 
+            text-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+            transform: scale(1.1);
+          }
+        }
+
+        .overflow-warning {
+          color: #ef4444;
+          font-size: 0.75rem;
+          font-weight: 500;
+          margin-left: 0.5rem;
+          opacity: 0.8;
         }
 
         .threshold-label {
@@ -543,11 +796,83 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
           font-weight: 500;
         }
 
+        .threshold-info {
+          flex: 1;
+        }
+
         .threshold-description {
           color: #e2e8f0;
           font-size: 0.9375rem;
           font-weight: 500;
           line-height: 1.4;
+          margin-bottom: 0.5rem;
+        }
+
+        .qualifying-indicator {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          font-size: 0.875rem;
+        }
+
+        .qualifying-count {
+          color: #f59e0b;
+          font-weight: 600;
+          transition: all 0.3s ease;
+        }
+
+        .selected-count {
+          color: #10b981;
+          font-weight: 600;
+          transition: all 0.3s ease;
+        }
+
+        .separator {
+          color: #64748b;
+        }
+
+        .qualifying-count.pulse,
+        .selected-count.pulse {
+          animation: pulseGlow 0.8s ease-out;
+        }
+
+        @keyframes pulseGlow {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        .change-indicator {
+          position: absolute;
+          top: -10px;
+          right: -20px;
+          font-size: 0.875rem;
+          font-weight: 700;
+          animation: changeFloat 0.8s ease-out forwards;
+          opacity: 0;
+        }
+
+        .change-indicator.positive {
+          color: #10b981;
+        }
+
+        .change-indicator.negative {
+          color: #ef4444;
+        }
+
+        @keyframes changeFloat {
+          0% { 
+            opacity: 0;
+            transform: translateY(0);
+          }
+          50% { 
+            opacity: 1;
+            transform: translateY(-10px);
+          }
+          100% { 
+            opacity: 0;
+            transform: translateY(-20px);
+          }
         }
 
         /* Impact Dashboard */
@@ -598,6 +923,7 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
           align-items: baseline;
           gap: 0.375rem;
           margin-bottom: 0.375rem;
+          position: relative;
         }
 
         .metric-value span:first-child {
@@ -609,8 +935,24 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
         }
 
         .metric-value .animating {
-          transform: scale(1.05);
+          animation: valueChange 0.8s ease-out;
           color: #3b82f6;
+        }
+
+        @keyframes valueChange {
+          0% { 
+            transform: scale(1);
+            color: #ffffff;
+          }
+          50% { 
+            transform: scale(1.15);
+            color: #3b82f6;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+          }
+          100% { 
+            transform: scale(1);
+            color: #3b82f6;
+          }
         }
 
         .metric-unit {
@@ -665,11 +1007,41 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
           margin-bottom: 0.625rem;
         }
 
+        .utilization-metrics {
+          margin-bottom: 0.75rem;
+        }
+
+        .utilization-stat {
+          display: flex;
+          align-items: baseline;
+          gap: 0.5rem;
+        }
+
+        .stat-value {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #3b82f6;
+        }
+
+        .stat-label {
+          color: #94a3b8;
+          font-size: 0.8125rem;
+        }
+
         .utilization-fill {
           height: 100%;
           background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
           border-radius: 5px;
           transition: width 0.5s ease;
+        }
+
+        .utilization-fill.animating {
+          animation: fillPulse 0.8s ease-out;
+        }
+
+        @keyframes fillPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.8; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
         }
 
         .utilization-text {
@@ -708,12 +1080,23 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
         .risk-bar-fill {
           height: 100%;
           border-radius: 3px;
-          transition: width 0.5s ease;
+          transition: width 0.8s ease;
         }
 
-        .risk-bar-fill.low { background: #10b981; }
-        .risk-bar-fill.medium { background: #f59e0b; }
-        .risk-bar-fill.high { background: #ef4444; }
+        .risk-bar-fill.low { 
+          background: #10b981;
+          box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.3);
+        }
+        
+        .risk-bar-fill.medium { 
+          background: #f59e0b;
+          box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.3);
+        }
+        
+        .risk-bar-fill.high { 
+          background: #ef4444;
+          box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.3);
+        }
 
         .risk-count {
           color: #94a3b8;
@@ -1056,6 +1439,12 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
           color: #94a3b8;
           font-size: 0.6875rem;
           font-weight: 500;
+        }
+
+        .scenario-limited {
+          color: #ef4444;
+          font-size: 0.625rem;
+          font-weight: 400;
         }
 
         .current-indicator {
