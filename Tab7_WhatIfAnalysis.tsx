@@ -132,7 +132,64 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
 
   return (
     <div className="tab7-whatif-analysis">
-      {/* Risk Threshold Control Header */}
+      {/* Primary Metrics - MOVED ABOVE RISK TOLERANCE */}
+      <div className="dashboard-grid">
+        <div className="metric-card primary">
+          <div className="metric-icon">🎯</div>
+          <div className="metric-content">
+            <div className="metric-value">
+              <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.projectCount}</span>
+              <span className="metric-unit">projects</span>
+            </div>
+            <div className="metric-label">Available for Investment</div>
+            <div className="metric-detail">
+              out of {totalProjectsAvailable} total projects
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card primary">
+          <div className="metric-icon">💰</div>
+          <div className="metric-content">
+            <div className="metric-value">
+              <span className={animateChanges ? 'animating' : ''}>{formatCurrency(portfolioMetrics.totalCapital)}</span>
+            </div>
+            <div className="metric-label">Total Investment Capital</div>
+            <div className="metric-detail">
+              {targetAchievement.toFixed(1)}% of $90B target
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card primary">
+          <div className="metric-icon">📈</div>
+          <div className="metric-content">
+            <div className="metric-value">
+              <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.averageIRR.toFixed(1)}%</span>
+            </div>
+            <div className="metric-label">Expected Portfolio IRR</div>
+            <div className="metric-detail">
+              Weighted average return
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card primary">
+          <div className="metric-icon">⏱️</div>
+          <div className="metric-content">
+            <div className="metric-value">
+              <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.deploymentMonths}</span>
+              <span className="metric-unit">months</span>
+            </div>
+            <div className="metric-label">Deployment Timeline</div>
+            <div className="metric-detail">
+              At $1.5B/month rate
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Risk Control Header */}
       <div className="risk-control-header">
         <div className="control-section">
           <div className="control-title">
@@ -181,63 +238,6 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
 
       {/* Impact Dashboard */}
       <div className="impact-dashboard">
-        <div className="dashboard-grid">
-          {/* Primary Metrics */}
-          <div className="metric-card primary">
-            <div className="metric-icon">🎯</div>
-            <div className="metric-content">
-              <div className="metric-value">
-                <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.projectCount}</span>
-                <span className="metric-unit">projects</span>
-              </div>
-              <div className="metric-label">Available for Investment</div>
-              <div className="metric-detail">
-                out of {totalProjectsAvailable} total projects
-              </div>
-            </div>
-          </div>
-
-          <div className="metric-card primary">
-            <div className="metric-icon">💰</div>
-            <div className="metric-content">
-              <div className="metric-value">
-                <span className={animateChanges ? 'animating' : ''}>{formatCurrency(portfolioMetrics.totalCapital)}</span>
-              </div>
-              <div className="metric-label">Total Investment Capital</div>
-              <div className="metric-detail">
-                {targetAchievement.toFixed(1)}% of $90B target
-              </div>
-            </div>
-          </div>
-
-          <div className="metric-card primary">
-            <div className="metric-icon">📈</div>
-            <div className="metric-content">
-              <div className="metric-value">
-                <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.averageIRR.toFixed(1)}%</span>
-              </div>
-              <div className="metric-label">Expected Portfolio IRR</div>
-              <div className="metric-detail">
-                Weighted average return
-              </div>
-            </div>
-          </div>
-
-          <div className="metric-card primary">
-            <div className="metric-icon">⏱️</div>
-            <div className="metric-content">
-              <div className="metric-value">
-                <span className={animateChanges ? 'animating' : ''}>{portfolioMetrics.deploymentMonths}</span>
-                <span className="metric-unit">months</span>
-              </div>
-              <div className="metric-label">Deployment Timeline</div>
-              <div className="metric-detail">
-                At $1.5B/month rate
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Secondary Metrics */}
         <div className="secondary-metrics">
           <div className="utilization-card">
