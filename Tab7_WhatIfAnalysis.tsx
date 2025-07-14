@@ -43,14 +43,7 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
     project => project.riskScore > riskThreshold
   );
 
-  console.log('=== DEBUG INFO ===');
-  console.log('Risk Threshold:', riskThreshold);
-  console.log('Total Projects Available:', sharedData.validatedProjects.length);
-  console.log('All Project Risk Scores:', sharedData.validatedProjects.map(p => p.riskScore));
-  console.log('Qualifying Projects Count:', qualifyingProjects.length);
-  console.log('Qualifying Projects:', qualifyingProjects.map(p => ({ name: p.name, riskScore: p.riskScore })));
-  console.log('Excluded Projects Count:', excludedProjects.length);
-  console.log('=== END DEBUG ===');
+
 
   // Calculate portfolio metrics
   const calculatePortfolioMetrics = (): PortfolioMetrics => {
