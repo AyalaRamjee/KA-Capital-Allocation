@@ -35,6 +35,7 @@ interface Message {
   showNextStepsCards?: boolean;
   showSectorCards?: boolean;
   showGeographicCards?: boolean;
+  showGreetingOptions?: boolean;
 }
 
 type AnalysisType = 'market' | 'demand' | 'competitive' | 'regulatory' | 'technology' | 'risk' | 'comprehensive';
@@ -680,6 +681,13 @@ What would you like me to help you with next?`,
               showNextStepsCards: true
             });
           }
+        } else {
+          // Update the greeting message to show clickable options
+          const greetingMessage = initialMessages.find((msg: Message) => msg.type === 'greeting');
+          if (greetingMessage) {
+            greetingMessage.text = "👋 Hello! How can I help you today?";
+            greetingMessage.showGreetingOptions = true;
+          }
         }
         
         return {
@@ -708,11 +716,12 @@ What would you like me to help you with next?`,
       },
       messages: [{
         id: 1,
-        text: "👋 Hello! How can I help you today?\n\nI can assist you with:\n\n🎯 Generating investment portfolio data\n📊 Market analysis and insights  \n🔍 Project research and recommendations\n💡 Sector-specific intelligence\n\nWhat would you like me to help you with?",
+        text: "👋 Hello! How can I help you today?",
         isBot: true,
         timestamp: new Date(),
         isComplete: true,
-        type: 'greeting'
+        type: 'greeting',
+        showGreetingOptions: true
       }]
     };
   };
@@ -793,6 +802,31 @@ What would you like me to help you with next?`,
     };
 
     typeChar();
+  };
+
+  const handleGreetingOptionSelection = (option: string) => {
+    // Add user message to show their selection
+    const userMessage: Message = {
+      id: generateUniqueId(),
+      text: option,
+      isBot: false,
+      timestamp: new Date(),
+      isComplete: true,
+      type: 'user'
+    };
+    
+    setMessages((prev: Message[]) => [...prev, userMessage]);
+    
+    // Handle different greeting options
+    if (option.includes('Generating investment portfolio data')) {
+      handleDataGenerationRequest();
+    } else if (option.includes('Market analysis and insights')) {
+      showRelevantProjects('market analysis');
+    } else if (option.includes('Project research and recommendations')) {
+      showRelevantProjects();
+    } else if (option.includes('Sector-specific intelligence')) {
+      showSectorOptions();
+    }
   };
 
   const handleDataGenerationRequest = () => {
@@ -1598,11 +1632,78 @@ ${sectorSummary}
                 </div>
               )}
               <div className={`message-bubble ${message.isBot ? 'bot-bubble' : 'user-bubble'}`}>
-                {!message.marketAnalysis && !message.showDataOptions && (
+                {!message.marketAnalysis && !message.showDataOptions && !message.showGreetingOptions && !message.showNextStepsCards && (
                   <p className="message-text" style={{ whiteSpace: 'pre-wrap' }}>
                     {message.text}
                     {message.isBot && !message.isComplete && <span className="typing-cursor"></span>}
                   </p>
+                )}
+
+                {/* Greeting Options Cards */}
+                {message.showGreetingOptions && (
+                  <div className="greeting-options-container">
+                    <p className="message-text" style={{ whiteSpace: 'pre-wrap', marginBottom: '1.5rem' }}>
+                      {message.text}
+                    </p>
+                    
+                    <div className="greeting-options-grid">
+                      <div 
+                        className="greeting-option-card"
+                        onClick={() => handleGreetingOptionSelection('🎯 Generating investment portfolio data')}
+                      >
+                        <div className="option-icon">
+                          <Target size={24} />
+                        </div>
+                        <div className="option-content">
+                          <h4>🎯 Generating investment portfolio data</h4>
+                          <p>Create comprehensive portfolio with strategic allocation</p>
+                        </div>
+                        <ArrowRight className="option-arrow" size={20} />
+                      </div>
+
+                      <div 
+                        className="greeting-option-card"
+                        onClick={() => handleGreetingOptionSelection('📊 Market analysis and insights')}
+                      >
+                        <div className="option-icon">
+                          <BarChart3 size={24} />
+                        </div>
+                        <div className="option-content">
+                          <h4>📊 Market analysis and insights</h4>
+                          <p>AI-powered market research and competitive intelligence</p>
+                        </div>
+                        <ArrowRight className="option-arrow" size={20} />
+                      </div>
+
+                      <div 
+                        className="greeting-option-card"
+                        onClick={() => handleGreetingOptionSelection('🔍 Project research and recommendations')}
+                      >
+                        <div className="option-icon">
+                          <Eye size={24} />
+                        </div>
+                        <div className="option-content">
+                          <h4>🔍 Project research and recommendations</h4>
+                          <p>Deep-dive analysis of specific investment opportunities</p>
+                        </div>
+                        <ArrowRight className="option-arrow" size={20} />
+                      </div>
+
+                      <div 
+                        className="greeting-option-card"
+                        onClick={() => handleGreetingOptionSelection('💡 Sector-specific intelligence')}
+                      >
+                        <div className="option-icon">
+                          <Lightbulb size={24} />
+                        </div>
+                        <div className="option-content">
+                          <h4>💡 Sector-specific intelligence</h4>
+                          <p>Comprehensive sector analysis and trend insights</p>
+                        </div>
+                        <ArrowRight className="option-arrow" size={20} />
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {/* Next Steps Cards */}
