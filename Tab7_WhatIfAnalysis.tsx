@@ -28,7 +28,7 @@ interface PortfolioMetrics {
 }
 
 export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpdate }) => {
-  const [riskThreshold, setRiskThreshold] = useState(5);
+  const [riskThreshold, setRiskThreshold] = useState(25);
   const [showProjectDetails, setShowProjectDetails] = useState(false);
   const [animateChanges, setAnimateChanges] = useState(false);
   const [previousMetrics, setPreviousMetrics] = useState({ projectCount: 0, totalCapital: 0 });
@@ -42,6 +42,15 @@ export const Tab7_WhatIfAnalysis: React.FC<Tab7Props> = ({ sharedData, onDataUpd
   const excludedProjects = sharedData.validatedProjects.filter(
     project => project.riskScore > riskThreshold
   );
+
+  console.log('=== DEBUG INFO ===');
+  console.log('Risk Threshold:', riskThreshold);
+  console.log('Total Projects Available:', sharedData.validatedProjects.length);
+  console.log('All Project Risk Scores:', sharedData.validatedProjects.map(p => p.riskScore));
+  console.log('Qualifying Projects Count:', qualifyingProjects.length);
+  console.log('Qualifying Projects:', qualifyingProjects.map(p => ({ name: p.name, riskScore: p.riskScore })));
+  console.log('Excluded Projects Count:', excludedProjects.length);
+  console.log('=== END DEBUG ===');
 
   // Calculate portfolio metrics
   const calculatePortfolioMetrics = (): PortfolioMetrics => {
