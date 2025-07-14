@@ -533,7 +533,7 @@ export default function AdaniGrowthSystem() {
         currentTheme={currentTheme}
         isFullscreen={isFullscreen}
         title="Adani Growth System"
-        subtitle="Accelerating $90B Capital Deployment"
+        subtitle="Accelerating $10B Capital Deployment"
         onShowAssistant={() => setShowAssistant(true)}
         onClearAllData={handleClearAllData}
         onShowWorkspaceManager={handleShowWorkspaceManager}
