@@ -69,7 +69,7 @@ const dataGenerationOptions = [
   {
     id: 'complete_portfolio',
     title: '🎯 Complete Investment Portfolio',
-    description: 'Full $90B portfolio with 200+ projects across all sectors',
+    description: 'Full $10B portfolio with 200+ projects across all sectors',
     icon: '💼',
     color: '#00b8d4'
   },
@@ -671,7 +671,7 @@ const AdaniAssistantChatbot: React.FC<AdaniAssistantChatbotProps> = ({
           if (!hasFollowUp) {
             initialMessages.push({
               id: generateUniqueId(),
-              text: `🎯 Perfect! I see you've successfully loaded your $90B portfolio data.
+              text: `🎯 Perfect! I see you've successfully loaded your $10B portfolio data.
 
 What would you like me to help you with next?`,
               isBot: true,
@@ -682,10 +682,10 @@ What would you like me to help you with next?`,
             });
           }
         } else {
-          // Update the greeting message to show clickable options
+          // Update the greeting message to show only data generation option when no data is loaded
           const greetingMessage = initialMessages.find((msg: Message) => msg.type === 'greeting');
           if (greetingMessage) {
-            greetingMessage.text = "👋 Hello! How can I help you today?";
+            greetingMessage.text = "👋 Hey! I don't see any data loaded in your system.\n\nCan we generate some sample investment portfolio data for you to get started?";
             greetingMessage.showGreetingOptions = true;
           }
         }
@@ -716,7 +716,7 @@ What would you like me to help you with next?`,
       },
       messages: [{
         id: 1,
-        text: "👋 Hello! How can I help you today?",
+        text: "👋 Hey! I don't see any data loaded in your system.\n\nCan we generate some sample investment portfolio data for you to get started?",
         isBot: true,
         timestamp: new Date(),
         isComplete: true,
@@ -993,7 +993,7 @@ Select one or more options below to customize your portfolio:
 ${selectedOptionsText}
 
 🎯 Portfolio Overview:
-💰 Total Capital: $90B strategically allocated
+💰 Total Capital: $10B strategically allocated
 📈 Investment Opportunities: ${customOpportunities.length} projects analyzed  
 🏭 Sectors Covered: ${customSectors.length} business verticals
 💎 Risk-Adjusted Returns: Optimized for 18-25% IRR
@@ -1084,6 +1084,7 @@ ${selectedOptionsText}
       onLaunchApp();
     }
   };
+
 
   const showRelevantProjects = (criteria?: string) => {
     console.log('🎯 DEBUG: showRelevantProjects called with criteria:', criteria);
@@ -1647,61 +1648,81 @@ ${sectorSummary}
                     </p>
                     
                     <div className="greeting-options-grid">
-                      <div 
-                        className="greeting-option-card"
-                        onClick={() => handleGreetingOptionSelection('🎯 Generating investment portfolio data')}
-                      >
-                        <div className="option-icon">
-                          <Target size={24} />
+                      {/* Show only data generation option when no data is loaded */}
+                      {!userProfile.dataLoaded ? (
+                        <div 
+                          className="greeting-option-card"
+                          onClick={() => handleGreetingOptionSelection('🎯 Generating investment portfolio data')}
+                        >
+                          <div className="option-icon">
+                            <Target size={24} />
+                          </div>
+                          <div className="option-content">
+                            <h4>🎯 Generate sample portfolio data</h4>
+                            <p>Create comprehensive $10B portfolio with strategic allocation</p>
+                          </div>
+                          <ArrowRight className="option-arrow" size={20} />
                         </div>
-                        <div className="option-content">
-                          <h4>🎯 Generating investment portfolio data</h4>
-                          <p>Create comprehensive portfolio with strategic allocation</p>
-                        </div>
-                        <ArrowRight className="option-arrow" size={20} />
-                      </div>
+                      ) : (
+                        /* Show all options when data is loaded */
+                        <>
+                          <div 
+                            className="greeting-option-card"
+                            onClick={() => handleGreetingOptionSelection('🎯 Generating investment portfolio data')}
+                          >
+                            <div className="option-icon">
+                              <Target size={24} />
+                            </div>
+                            <div className="option-content">
+                              <h4>🎯 Generating investment portfolio data</h4>
+                              <p>Create comprehensive portfolio with strategic allocation</p>
+                            </div>
+                            <ArrowRight className="option-arrow" size={20} />
+                          </div>
 
-                      <div 
-                        className="greeting-option-card"
-                        onClick={() => handleGreetingOptionSelection('📊 Market analysis and insights')}
-                      >
-                        <div className="option-icon">
-                          <BarChart3 size={24} />
-                        </div>
-                        <div className="option-content">
-                          <h4>📊 Market analysis and insights</h4>
-                          <p>AI-powered market research and competitive intelligence</p>
-                        </div>
-                        <ArrowRight className="option-arrow" size={20} />
-                      </div>
+                          <div 
+                            className="greeting-option-card"
+                            onClick={() => handleGreetingOptionSelection('📊 Market analysis and insights')}
+                          >
+                            <div className="option-icon">
+                              <BarChart3 size={24} />
+                            </div>
+                            <div className="option-content">
+                              <h4>📊 Market analysis and insights</h4>
+                              <p>AI-powered market research and competitive intelligence</p>
+                            </div>
+                            <ArrowRight className="option-arrow" size={20} />
+                          </div>
 
-                      <div 
-                        className="greeting-option-card"
-                        onClick={() => handleGreetingOptionSelection('🔍 Project research and recommendations')}
-                      >
-                        <div className="option-icon">
-                          <Eye size={24} />
-                        </div>
-                        <div className="option-content">
-                          <h4>🔍 Project research and recommendations</h4>
-                          <p>Deep-dive analysis of specific investment opportunities</p>
-                        </div>
-                        <ArrowRight className="option-arrow" size={20} />
-                      </div>
+                          <div 
+                            className="greeting-option-card"
+                            onClick={() => handleGreetingOptionSelection('🔍 Project research and recommendations')}
+                          >
+                            <div className="option-icon">
+                              <Eye size={24} />
+                            </div>
+                            <div className="option-content">
+                              <h4>🔍 Project research and recommendations</h4>
+                              <p>Deep-dive analysis of specific investment opportunities</p>
+                            </div>
+                            <ArrowRight className="option-arrow" size={20} />
+                          </div>
 
-                      <div 
-                        className="greeting-option-card"
-                        onClick={() => handleGreetingOptionSelection('💡 Sector-specific intelligence')}
-                      >
-                        <div className="option-icon">
-                          <Lightbulb size={24} />
-                        </div>
-                        <div className="option-content">
-                          <h4>💡 Sector-specific intelligence</h4>
-                          <p>Comprehensive sector analysis and trend insights</p>
-                        </div>
-                        <ArrowRight className="option-arrow" size={20} />
-                      </div>
+                          <div 
+                            className="greeting-option-card"
+                            onClick={() => handleGreetingOptionSelection('💡 Sector-specific intelligence')}
+                          >
+                            <div className="option-icon">
+                              <Lightbulb size={24} />
+                            </div>
+                            <div className="option-content">
+                              <h4>💡 Sector-specific intelligence</h4>
+                              <p>Comprehensive sector analysis and trend insights</p>
+                            </div>
+                            <ArrowRight className="option-arrow" size={20} />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -2250,24 +2271,23 @@ ${sectorSummary}
         </div>
       </div>
 
-      <div className="input-area">
-        <div className="input-container">
-          <div className="input-wrapper">
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={
-                conversationState === 'greeting' ? 'Tell me what you need help with...' :
-                conversationState === 'selectingData' ? 'Click the options above to select data types...' :
-                userProfile.dataLoaded ? 'Ask about projects, get AI analysis, or explore sectors...' :
-                'Type your message...'
-              }
-              className="message-input"
-              rows={1}
-              disabled={isLoading}
-            />
-          </div>
+    <div className="input-area">
+      <div className="input-container">
+        <div className="input-wrapper">
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={
+              conversationState === 'greeting' ? 'Tell me what you need help with...' :
+              conversationState === 'selectingData' ? 'Click the options above to select data types...' :
+              userProfile.dataLoaded ? 'Ask about projects, get AI analysis, or explore sectors...' :
+              'Type your message...'
+            }
+            className="message-input"
+            rows={1}
+            disabled={isLoading}
+          />
           <button
             onClick={sendMessage}
             disabled={!inputText.trim() || isLoading}
@@ -2277,6 +2297,7 @@ ${sectorSummary}
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 };
