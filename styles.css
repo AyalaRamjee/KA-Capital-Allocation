@@ -3830,10 +3830,7 @@ input:checked + .slider:before {
   overflow-y: auto;
 }
 
-.modal-tabs {
-  display: flex;
-  flex-direction: column;
-}
+
 
 .tab-nav {
   display: flex;
@@ -5983,12 +5980,14 @@ input:checked + .slider:before {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
-  font-size: 2rem;
+  font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 1rem;
+  text-align: center;
+  line-height: 1.1;
 }
 
 .tab3-validate-clean .grade-description {
