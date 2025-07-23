@@ -1214,6 +1214,31 @@ export const Tab2_SourceOpportunities: React.FC<Tab2Props> = ({ sharedData, onDa
           color: #e2e8f0;
         }
 
+        /* Dark theme scrollbar styling */
+        .modal-body-360::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .modal-body-360::-webkit-scrollbar-track {
+          background: rgba(30, 41, 59, 0.5);
+          border-radius: 4px;
+        }
+
+        .modal-body-360::-webkit-scrollbar-thumb {
+          background: rgba(71, 85, 105, 0.8);
+          border-radius: 4px;
+        }
+
+        .modal-body-360::-webkit-scrollbar-thumb:hover {
+          background: rgba(100, 116, 139, 0.9);
+        }
+
+        /* Firefox scrollbar styling */
+        .modal-body-360 {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(71, 85, 105, 0.8) rgba(30, 41, 59, 0.5);
+        }
+
         /* Summary Tab Styles */
         .metrics-grid {
           display: grid;

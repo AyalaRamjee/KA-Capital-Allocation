@@ -274,13 +274,13 @@ export default function AdaniGrowthSystem() {
     validatedProjects: [],
     adaniSectors: [],
     adaniMetrics: {
-      totalCapital: 0,
-      deploymentTarget: 0,
-      currentDeploymentRate: 0,
-      targetDeploymentRate: 0,
-      totalOpportunities: 0,
-      activePriorities: 0,
-      portfolioSectors: 0
+      totalCapital: adaniMetrics.totalCapital,
+      deploymentTarget: adaniMetrics.deploymentTarget,
+      currentDeploymentRate: adaniMetrics.currentDeploymentRate,
+      targetDeploymentRate: adaniMetrics.targetDeploymentRate,
+      totalOpportunities: adaniMetrics.totalOpportunities,
+      activePriorities: adaniMetrics.activePriorities,
+      portfolioSectors: adaniMetrics.portfolioSectors
     },
     
     // Tab 4 - Sector Allocation
@@ -311,7 +311,7 @@ export default function AdaniGrowthSystem() {
       discountRate: 12,
       currency: 'USD',
       fiscalYearStart: 4, // April
-      totalBudget: 0 // Start with 0
+      totalBudget: adaniMetrics.totalCapital // Use 10B from adaniMetrics
     }
   });
 
@@ -406,13 +406,13 @@ export default function AdaniGrowthSystem() {
       validatedProjects: [],
       adaniSectors: [],
       adaniMetrics: {
-        totalCapital: 0,
-        deploymentTarget: 0,
-        currentDeploymentRate: 0,
-        targetDeploymentRate: 0,
-        totalOpportunities: 0,
-        activePriorities: 0,
-        portfolioSectors: 0
+        totalCapital: adaniMetrics.totalCapital,
+        deploymentTarget: adaniMetrics.deploymentTarget,
+        currentDeploymentRate: adaniMetrics.currentDeploymentRate,
+        targetDeploymentRate: adaniMetrics.targetDeploymentRate,
+        totalOpportunities: adaniMetrics.totalOpportunities,
+        activePriorities: adaniMetrics.activePriorities,
+        portfolioSectors: adaniMetrics.portfolioSectors
       },
       sectorAllocations: [],
       allocationConstraints: [],
@@ -435,7 +435,7 @@ export default function AdaniGrowthSystem() {
         discountRate: 12,
         currency: 'USD',
         fiscalYearStart: 4,
-        totalBudget: 0
+        totalBudget: adaniMetrics.totalCapital
       }
     });
     // Clear localStorage
@@ -459,16 +459,24 @@ export default function AdaniGrowthSystem() {
   };
 
   const handleGenerateSampleData = () => {
+    const totalBudget = 10000000000; // $10B
+    
+    // Recalculate capital allocations based on the correct total budget
+    const updatedPriorities = adaniPriorities.map(priority => ({
+      ...priority,
+      capitalAllocation: (priority.weight / 100) * totalBudget
+    }));
+    
     // Load sample data from mockDataAdani
     setAppState(prev => ({
       ...prev,
-      investmentPriorities: adaniPriorities,
+      investmentPriorities: updatedPriorities,
       opportunities: allOpportunities,
       adaniSectors: adaniSectors,
       adaniMetrics: adaniMetrics,
       settings: {
         ...prev.settings,
-        totalBudget: 90000000000 // $90B
+        totalBudget: totalBudget
       }
     }));
     setShowWelcomeNotification(false);
@@ -491,6 +499,20 @@ export default function AdaniGrowthSystem() {
         const parsed = JSON.parse(savedState);
         // Validate the data structure matches our new format
         if (parsed.investmentPriorities && Array.isArray(parsed.investmentPriorities)) {
+          // Check if totalBudget is incorrect (90B) and fix it
+          if (parsed.settings && parsed.settings.totalBudget === 90000000000) {
+            console.log('Fixing incorrect totalBudget from 90B to 10B');
+            parsed.settings.totalBudget = 10000000000; // Fix to 10B
+            
+            // Recalculate capital allocations for priorities
+            if (parsed.investmentPriorities) {
+              parsed.investmentPriorities = parsed.investmentPriorities.map((priority: any) => ({
+                ...priority,
+                capitalAllocation: (priority.weight / 100) * 10000000000
+              }));
+            }
+          }
+          
           setAppState(prev => ({ ...prev, ...parsed }));
           setIsFirstVisit(false);
         }
@@ -609,7 +631,7 @@ export default function AdaniGrowthSystem() {
             textAlign: 'center',
             marginBottom: '1rem'
           }}>
-            Start your $90B capital deployment journey with powerful portfolio management tools.
+            Start your $10B capital deployment journey with powerful portfolio management tools.
           </p>
 
           {/* Options */}
